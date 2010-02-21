@@ -16,6 +16,10 @@ namespace TinyIoC.Tests
 
         internal class TestClass : ITestInterface
         {
+            public TestClass()
+            {
+                
+            }
         }
 
         [TestMethod]
@@ -50,5 +54,16 @@ namespace TinyIoC.Tests
 
             Assert.IsTrue(true);
         }
+
+        [TestMethod]
+        public void Resolve_RegisteredType_ReturnsInstanceOfCorrectType()
+        {
+            TinyIoC.Register<ITestInterface, TestClass>();
+
+            var output = TinyIoC.Resolve<ITestInterface>();
+
+            Assert.IsInstanceOfType(output, typeof(TestClass));
+        }
+
     }
 }

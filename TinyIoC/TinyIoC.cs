@@ -8,13 +8,15 @@ namespace TinyIoC
     #region Exceptions
     public class TinyIoCResolutionException : Exception
     {
-        public TinyIoCResolutionException(string message)
-            : base(message)
+        private const string ERROR_TEXT = "Unable to resolve type: {0}";
+
+        public TinyIoCResolutionException(Type type)
+            : base(String.Format(ERROR_TEXT, type.FullName))
         {
         }
 
-        public TinyIoCResolutionException(string message, Exception innerException)
-            : base(message, innerException)
+        public TinyIoCResolutionException(Type type, Exception innerException)
+            : base(String.Format(ERROR_TEXT, type.FullName), innerException)
         {
         }
     }
@@ -40,7 +42,7 @@ namespace TinyIoC
                 }
                 catch (System.MissingMemberException ex)
                 {
-                    throw new TinyIoCResolutionException(String.Format("Unable to construct type: {0}", typeof(RegisterImplementation)), ex);
+                    throw new TinyIoCResolutionException(typeof(RegisterImplementation), ex);
                 }
             }
         }
@@ -61,7 +63,9 @@ namespace TinyIoC
         }
         #endregion
 
-        public sealed class RegisterOptions
+        public sealed class RegisterOptions<RegisterType, RegisterImplementation>
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
         {
         }
 
@@ -84,21 +88,26 @@ namespace TinyIoC
             }
         }
 
-        private object _TypeLock = new object();
         private readonly Dictionary<Type, IObjectFactory> _RegisteredTypes;
 
         #region Static Methods
-        public static RegisterOptions Register<RegisterImplementation>()
+        public static RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>()
             where RegisterImplementation : class
         {
             return _Current.RegisterPrivate<RegisterImplementation>();
         }
 
-        public static RegisterOptions Register<RegisterType, RegisterImplementation>()
+        public static RegisterOptions<RegisterType, RegisterImplementation> Register<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
             return _Current.RegisterPrivate<RegisterType, RegisterImplementation>();
+        }
+
+        public static RegisterType Resolve<RegisterType>()
+            where RegisterType : class
+        {
+            return _Current.ResolvePrivate<RegisterType>();
         }
 
         private static IObjectFactory GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
@@ -111,17 +120,34 @@ namespace TinyIoC
         #endregion
 
         #region Instance Methods
-        private RegisterOptions RegisterPrivate<RegisterImplementation>()
+        private RegisterOptions<RegisterImplementation, RegisterImplementation> RegisterPrivate<RegisterImplementation>()
             where RegisterImplementation : class
         {
             return RegisterPrivate<RegisterImplementation, RegisterImplementation>();
         }
 
-        private RegisterOptions RegisterPrivate<RegisterType, RegisterImplementation>()
+        private RegisterOptions<RegisterType, RegisterImplementation> RegisterPrivate<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            throw new NotImplementedException();
+            // TODO : Do something if type already exists
+            _RegisteredTypes[typeof(RegisterType)] = GetDefaultObjectFactory<RegisterType, RegisterImplementation>();
+            return new RegisterOptions<RegisterType, RegisterImplementation>();
+        }
+
+        public RegisterType ResolvePrivate<RegisterType>()
+            where RegisterType : class
+        {
+            IObjectFactory factory;
+
+            if (_RegisteredTypes.TryGetValue(typeof(RegisterType), out factory))
+            {
+                return factory.GetObject() as RegisterType;
+            }
+            else
+            {
+                throw new TinyIoCResolutionException(typeof(RegisterType));
+            }
         }
         #endregion
 
