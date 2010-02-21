@@ -47,6 +47,24 @@ namespace TinyIoC
             }
         }
 
+        private class DelegateFactory<RegisterType> : IObjectFactory
+        {
+            private Func<TinyIoC, RegisterType> _Factory;
+
+            public DelegateFactory(Func<TinyIoC, RegisterType> factory)
+            {
+                if (factory == null)
+                    throw new ArgumentNullException("factory");
+
+                _Factory = factory;
+            }
+
+            public object GetObject()
+            {
+                return _Factory.Invoke(_Current);
+            }
+        }
+
         private class SingletonFactory<RegisterType, RegisterImplementation> : IObjectFactory
         {
             private static readonly RegisterType _Current;
@@ -104,6 +122,11 @@ namespace TinyIoC
             return _Current.RegisterPrivate<RegisterType, RegisterImplementation>();
         }
 
+        public static void Register<RegisterType>(Func<TinyIoC, RegisterType> factory)
+        {
+            _Current.RegisterPrivate<RegisterType>(factory);
+        }
+
         public static RegisterType Resolve<RegisterType>()
             where RegisterType : class
         {
@@ -133,6 +156,11 @@ namespace TinyIoC
             // TODO : Do something if type already exists
             _RegisteredTypes[typeof(RegisterType)] = GetDefaultObjectFactory<RegisterType, RegisterImplementation>();
             return new RegisterOptions<RegisterType, RegisterImplementation>();
+        }
+
+        public void RegisterPrivate<RegisterType>(Func<TinyIoC, RegisterType> factory)
+        {
+            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory);
         }
 
         public RegisterType ResolvePrivate<RegisterType>()

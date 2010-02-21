@@ -16,9 +16,16 @@ namespace TinyIoC.Tests
 
         internal class TestClassDefaultCtor : ITestInterface
         {
+            public string Prop1 { get; set; }
+
             public TestClassDefaultCtor()
             {
                 
+            }
+
+            public static ITestInterface CreateNew(TinyIoC container)
+            {
+                return new TestClassDefaultCtor() {Prop1="Testing"};
             }
         }
 
@@ -30,9 +37,20 @@ namespace TinyIoC.Tests
         {
             public ITestInterface Dependency { get; set; }
 
+            public int Param1 { get; private set; }
+
+            public string Param2 { get; private set; }
+
             public TestClassWithDependency(ITestInterface dependency)
             {
                 Dependency = dependency;
+            }
+
+            public TestClassWithDependency(ITestInterface dependency, int param1, string param2)
+            {
+                Dependency = dependency;
+                Param1 = param1;
+                Param2 = param2;
             }
         }
 
@@ -107,5 +125,40 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
 
+        [TestMethod]
+        public void Register_WithDelegateFactoryStaticMethod_CanRegister()
+        {
+            TinyIoC.Register<ITestInterface>((c) => TestClassDefaultCtor.CreateNew(c));
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_WithDelegateFactoryLambda_CanRegister()
+        {
+            TinyIoC.Register<ITestInterface>((c) => new TestClassDefaultCtor() {Prop1="Testing"});
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Resolve_TypeRegisteredWithDelegateFactoryStaticMethod_ResolvesCorrectlyUsingDelegateFactory()
+        {
+            TinyIoC.Register<ITestInterface>((c) => TestClassDefaultCtor.CreateNew(c));
+
+            TestClassDefaultCtor output = TinyIoC.Resolve<ITestInterface>() as TestClassDefaultCtor;
+
+            Assert.AreEqual("Testing", output.Prop1);
+        }
+
+        [TestMethod]
+        public void Resolve_TypeRegisteredWithDelegateFactoryLambda_ResolvesCorrectlyUsingDelegateFactory()
+        {
+            TinyIoC.Register<ITestInterface>((c) => new TestClassDefaultCtor() { Prop1 = "Testing" });
+
+            TestClassDefaultCtor output = TinyIoC.Resolve<ITestInterface>() as TestClassDefaultCtor;
+
+            Assert.AreEqual("Testing", output.Prop1);
+        }
     }
 }
