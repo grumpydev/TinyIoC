@@ -10,6 +10,7 @@ namespace TinyIoC.Tests
     [TestClass]
     public class TinyIoCTests
     {
+        #region Utility Classes / Interfaces
         internal interface ITestInterface
         {
         }
@@ -20,12 +21,12 @@ namespace TinyIoC.Tests
 
             public TestClassDefaultCtor()
             {
-                
+
             }
 
             public static ITestInterface CreateNew(TinyIoC container)
             {
-                return new TestClassDefaultCtor() {Prop1="Testing"};
+                return new TestClassDefaultCtor() { Prop1 = "Testing" };
             }
         }
 
@@ -58,7 +59,7 @@ namespace TinyIoC.Tests
         {
             public TestClassNoInterfaceDefaultCtor()
             {
-                
+
             }
         }
 
@@ -71,6 +72,7 @@ namespace TinyIoC.Tests
                 Dependency = dependency;
             }
         }
+        #endregion
 
         [TestMethod]
         public void Current_Get_ReturnsInstanceOfTinyIoC()

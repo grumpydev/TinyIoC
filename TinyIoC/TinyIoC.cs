@@ -50,18 +50,20 @@ namespace TinyIoC
         private class DelegateFactory<RegisterType> : IObjectFactory
         {
             private Func<TinyIoC, RegisterType> _Factory;
+            private TinyIoC _Container;
 
-            public DelegateFactory(Func<TinyIoC, RegisterType> factory)
+            public DelegateFactory(Func<TinyIoC, RegisterType> factory, TinyIoC container)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
 
                 _Factory = factory;
+                _Container = container;
             }
 
             public object GetObject()
             {
-                return _Factory.Invoke(_Current);
+                return _Factory.Invoke(_Container);
             }
         }
 
@@ -76,7 +78,7 @@ namespace TinyIoC
 
             public object GetObject()
             {
-                return _Current;
+                throw new NotImplementedException();
             }
         }
         #endregion
@@ -160,7 +162,7 @@ namespace TinyIoC
 
         public void RegisterPrivate<RegisterType>(Func<TinyIoC, RegisterType> factory)
         {
-            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory);
+            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory, this);
         }
 
         public RegisterType ResolvePrivate<RegisterType>()
