@@ -14,11 +14,43 @@ namespace TinyIoC.Tests
         {
         }
 
-        internal class TestClass : ITestInterface
+        internal class TestClassDefaultCtor : ITestInterface
         {
-            public TestClass()
+            public TestClassDefaultCtor()
             {
                 
+            }
+        }
+
+        internal interface ITestInterace2
+        {
+        }
+
+        internal class TestClassWithDependency : ITestInterace2
+        {
+            public ITestInterface Dependency { get; set; }
+
+            public TestClassWithDependency(ITestInterface dependency)
+            {
+                Dependency = dependency;
+            }
+        }
+
+        internal class TestClassNoInterfaceDefaultCtor
+        {
+            public TestClassNoInterfaceDefaultCtor()
+            {
+                
+            }
+        }
+
+        internal class TestClassNoInterfaceDependency
+        {
+            public ITestInterface Dependency { get; set; }
+
+            public TestClassNoInterfaceDependency(ITestInterface dependency)
+            {
+                Dependency = dependency;
             }
         }
 
@@ -42,7 +74,7 @@ namespace TinyIoC.Tests
         [TestMethod]
         public void Register_ImplementationOnly_CanRegister()
         {
-            TinyIoC.Register<TestClass>();
+            TinyIoC.Register<TestClassDefaultCtor>();
 
             Assert.IsTrue(true);
         }
@@ -50,19 +82,29 @@ namespace TinyIoC.Tests
         [TestMethod]
         public void Register_InterfaceAndImplementation_CanRegister()
         {
-            TinyIoC.Register<ITestInterface, TestClass>();
+            TinyIoC.Register<ITestInterface, TestClassDefaultCtor>();
 
             Assert.IsTrue(true);
         }
 
         [TestMethod]
-        public void Resolve_RegisteredType_ReturnsInstanceOfCorrectType()
+        public void Resolve_RegisteredTypeWithImplementation_ReturnsInstanceOfCorrectType()
         {
-            TinyIoC.Register<ITestInterface, TestClass>();
+            TinyIoC.Register<ITestInterface, TestClassDefaultCtor>();
 
             var output = TinyIoC.Resolve<ITestInterface>();
 
-            Assert.IsInstanceOfType(output, typeof(TestClass));
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void Resolve_RegisteredTypeImplementationOnly_ReturnsInstanceOfCorrectType()
+        {
+            TinyIoC.Register<TestClassDefaultCtor>();
+
+            var output = TinyIoC.Resolve<TestClassDefaultCtor>();
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
 
     }
