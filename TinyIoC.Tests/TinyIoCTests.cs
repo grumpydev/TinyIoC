@@ -10,6 +10,13 @@ namespace TinyIoC.Tests
     [TestClass]
     public class TinyIoCTests
     {
+        internal interface ITestInterface
+        {
+        }
+
+        internal class TestClass : ITestInterface
+        {
+        }
 
         [TestMethod]
         public void Current_Get_ReturnsInstanceOfTinyIoC()
@@ -26,6 +33,22 @@ namespace TinyIoC.Tests
             var container2 = TinyIoC.Current;
 
             Assert.ReferenceEquals(container1, container2);
-        }        
+        }
+
+        [TestMethod]
+        public void Register_ImplementationOnly_CanRegister()
+        {
+            TinyIoC.Register<TestClass>();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_InterfaceAndImplementation_CanRegister()
+        {
+            TinyIoC.Register<ITestInterface, TestClass>();
+
+            Assert.IsTrue(true);
+        }
     }
 }
