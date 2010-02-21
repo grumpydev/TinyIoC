@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 
 namespace TinyIoC
 {
@@ -82,6 +83,9 @@ namespace TinyIoC
             }
         }
         #endregion
+        public sealed class NamedParameterOverloads : Dictionary<string, object>
+        {
+        }
 
         public sealed class RegisterOptions<RegisterType, RegisterImplementation>
             where RegisterType : class
@@ -112,6 +116,11 @@ namespace TinyIoC
         private readonly Dictionary<Type, IObjectFactory> _RegisteredTypes;
 
         #region Static Methods
+        public static void ClearTypes()
+        {
+            _Current.ClearTypesPrivate();
+        }
+
         public static RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>()
             where RegisterImplementation : class
         {
@@ -136,6 +145,16 @@ namespace TinyIoC
             return _Current.ResolvePrivate<RegisterType>();
         }
 
+        public static bool CanResolve(Type type)
+        {
+            return _Current.CanResolvePrivate(type);
+        }
+
+        public static bool CanResolve(Type type, NamedParameterOverloads parameters)
+        {
+            return _Current.CanResolvePrivate(type, parameters);
+        }
+
         private static IObjectFactory GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
@@ -146,6 +165,11 @@ namespace TinyIoC
         #endregion
 
         #region Private Instance Methods
+        private void ClearTypesPrivate()
+        {
+            _RegisteredTypes.Clear();
+        }
+
         private RegisterOptions<RegisterImplementation, RegisterImplementation> RegisterPrivate<RegisterImplementation>()
             where RegisterImplementation : class
         {
@@ -193,6 +217,45 @@ namespace TinyIoC
                 }
 
             }
+        }
+
+        private bool CanResolvePrivate(Type type)
+        {
+            return CanResolvePrivate(type, new NamedParameterOverloads());
+        }
+
+        private bool CanResolvePrivate(Type type, NamedParameterOverloads parameters)
+        {
+            if (parameters == null)
+                throw new ArgumentNullException("parameters");
+
+            // TODO - change to different type if registered
+
+            var ctors = from ctor in type.GetConstructors()
+                        orderby ctor.GetParameters().Count()
+                        select ctor;
+
+            foreach (var ctor in ctors)
+            {
+                if (CanConstruct(ctor, parameters))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters)
+        {
+            if (parameters == null)
+                throw new ArgumentNullException("parameters");
+
+            foreach (var parameter in ctor.GetParameters())
+            {
+                if (!parameters.ContainsKey(parameter.Name) && !CanResolvePrivate(parameter.ParameterType))
+                    return false;
+            }
+
+            return true;
         }
         #endregion
 
