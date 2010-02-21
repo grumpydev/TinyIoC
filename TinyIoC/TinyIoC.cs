@@ -108,6 +108,7 @@ namespace TinyIoC
             }
         }
 
+        // TODO - Replace Type with custom class to allow for named resolution?
         private readonly Dictionary<Type, IObjectFactory> _RegisteredTypes;
 
         #region Static Methods
@@ -176,7 +177,21 @@ namespace TinyIoC
             }
             else
             {
-                throw new TinyIoCResolutionException(typeof(RegisterType));
+                // TODO - use main object creation to create
+                if (typeof(RegisterType).IsAbstract || typeof(RegisterType).IsInterface)
+                    throw new TinyIoCResolutionException(typeof(RegisterType));
+                else
+                {
+                    try
+                    {
+                        return Activator.CreateInstance(typeof(RegisterType)) as RegisterType;
+                    }
+                    catch (System.MissingMemberException ex)
+                    {
+                        throw new TinyIoCResolutionException(typeof(RegisterType), ex);
+                    }
+                }
+
             }
         }
         #endregion

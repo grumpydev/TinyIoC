@@ -162,5 +162,22 @@ namespace TinyIoC.Tests
 
             Assert.AreEqual("Testing", output.Prop1);
         }
+
+        [TestMethod]
+        public void Resolve_UnregisteredClassTypeWithDefaultCtor_ResolvesType()
+        {
+            var output = TinyIoC.Resolve<TestClassDefaultCtor>();
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_UnregisteredInterface_ThrowsException()
+        {
+            var output = TinyIoC.Resolve<ITestInterface>();
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
     }
 }
