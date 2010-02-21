@@ -145,7 +145,7 @@ namespace TinyIoC
         }
         #endregion
 
-        #region Instance Methods
+        #region Private Instance Methods
         private RegisterOptions<RegisterImplementation, RegisterImplementation> RegisterPrivate<RegisterImplementation>()
             where RegisterImplementation : class
         {
@@ -161,12 +161,12 @@ namespace TinyIoC
             return new RegisterOptions<RegisterType, RegisterImplementation>();
         }
 
-        public void RegisterPrivate<RegisterType>(Func<TinyIoC, RegisterType> factory)
+        private void RegisterPrivate<RegisterType>(Func<TinyIoC, RegisterType> factory)
         {
             _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory, this);
         }
 
-        public RegisterType ResolvePrivate<RegisterType>()
+        private RegisterType ResolvePrivate<RegisterType>()
             where RegisterType : class
         {
             IObjectFactory factory;
