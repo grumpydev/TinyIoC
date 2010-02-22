@@ -213,7 +213,7 @@ namespace TinyIoC
                 if (parameters.Count != 0)
                     throw new ArgumentException("Cannot specify parameters for singleton types");
 
-                // TODO - Better singleton implementation? Maybe ditch lazy instantiation?
+                // TODO - Better singleton implementation? Maybe ditch lazy instantiation or always lock rather than double if
                 if (_Current == null)
                     lock (SingletonLock)
                         if (_Current == null)
