@@ -190,6 +190,18 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_RegisteredTypeWithImplementation_ReturnsSingleton()
+        {
+            var container = GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            var output = container.Resolve<ITestInterface>();
+            var output2 = container.Resolve<ITestInterface>();
+
+            Assert.ReferenceEquals(output, output2);
+        }
+
+        [TestMethod]
         public void Resolve_RegisteredTypeImplementationOnly_ReturnsInstanceOfCorrectType()
         {
             var container = GetContainer();
@@ -198,6 +210,18 @@ namespace TinyIoC.Tests
             var output = container.Resolve<TestClassDefaultCtor>();
 
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void Resolve_RegisteredTypeImplementationOnly_ReturnsMultipleInstances()
+        {
+            var container = GetContainer();
+            container.Register<TestClassDefaultCtor>();
+
+            var output = container.Resolve<TestClassDefaultCtor>();
+            var output2 = container.Resolve<TestClassDefaultCtor>();
+
+            Assert.IsFalse(object.ReferenceEquals(output, output2));
         }
 
         [TestMethod]

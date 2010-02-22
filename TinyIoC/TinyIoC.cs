@@ -115,6 +115,7 @@ namespace TinyIoC
         /// </summary>
         /// <typeparam name="RegisterType">Registered type to be constructed</typeparam>
         private class DelegateFactory<RegisterType> : ObjectFactoryBase
+            where RegisterType : class
         {
             private Func<TinyIoC, NamedParameterOverloads, RegisterType> _Factory;
 
@@ -137,6 +138,8 @@ namespace TinyIoC
         }
 
         private class InstanceFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase, IDisposable
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
         {
             private RegisterImplementation instance;
 
@@ -164,33 +167,53 @@ namespace TinyIoC
             }
         }
 
-        //private class SingletonFactory<RegisterType, RegisterImplementation> : IObjectFactory
-        //{
-        //    private static readonly RegisterType _Current;
+        private class SingletonFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase, IDisposable
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
+        {
+            private readonly object SingletonLock = new object();
+            private RegisterImplementation _Current;
 
-        //    static SingletonFactory()
-        //    {
-        //        // TODO - Instantiate _Current
-        //    }
+            public override Type CreatesType
+            {
+                get { return typeof(RegisterImplementation); }
+            }
 
-        //    public bool AssumeConstruction
-        //    {
-        //        get
-        //        {
-        //            return false;
-        //        }
-        //    }
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
+            {
+                if (parameters.Count != 0)
+                    throw new ArgumentException("Cannot specify parameters for singleton types");
 
-        //    public Type CreatesType
-        //    {
-        //        get { return typeof(RegisterImplementation); }
-        //    }
+                // TODO - Better singleton implementation? Maybe ditch lazy instantiation?
+                if (_Current == null)
+                    lock (SingletonLock)
+                        if (_Current == null)
+                            _Current = container.ConstructType(typeof(RegisterImplementation)) as RegisterImplementation;
 
-        //    public object GetObject(NamedParameterOverloads parameters)
-        //    {
-        //        throw new NotImplementedException();
-        //    }
-        //}
+                return _Current;
+            }
+
+            public SingletonFactory(RegisterImplementation instance)
+            {
+                _Current = instance;
+            }
+
+            public SingletonFactory()
+            {
+                
+            }
+
+            public void Dispose()
+            {
+                if (_Current != null)
+                {
+                    var disposable = _Current as IDisposable;
+
+                    if (disposable != null)
+                        disposable.Dispose();
+                }
+            }
+        }
         #endregion
         #region Setup / Settings Classes
         /// <summary>
@@ -271,6 +294,8 @@ namespace TinyIoC
         #endregion
 
         #region Public API
+
+        // TODO - Refactor to single register method and dispose of old factory if possible
         public RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>()
        where RegisterImplementation : class
         {
@@ -324,7 +349,6 @@ namespace TinyIoC
             }
             else
             {
-                // TODO - use main object creation to create
                 if (typeof(RegisterType).IsAbstract || typeof(RegisterType).IsInterface)
                     throw new TinyIoCResolutionException(typeof(RegisterType));
                 else
@@ -367,13 +391,14 @@ namespace TinyIoC
         }
         #endregion
 
-
         #region Utility Methods
         private static ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            // TODO : Add logic
+            if (typeof(RegisterType).IsInterface)
+                return new SingletonFactory<RegisterType, RegisterImplementation>();
+
             return new NewInstanceFactory<RegisterType, RegisterImplementation>();
         }
 
