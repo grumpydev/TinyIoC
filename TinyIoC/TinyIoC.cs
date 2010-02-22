@@ -38,7 +38,7 @@ namespace TinyIoC
     }
     #endregion
 
-    public sealed class TinyIoC
+    public sealed class TinyIoC : IDisposable
     {
         #region Object Factories
         private abstract class ObjectFactoryBase
@@ -100,7 +100,7 @@ namespace TinyIoC
             {
                 try
                 {
-                    return container.ConstructPrivate(typeof(RegisterImplementation), parameters);
+                    return container.ConstructType(typeof(RegisterImplementation), parameters);
                 }
                 catch (TinyIoCResolutionException ex)
                 {
@@ -116,16 +116,7 @@ namespace TinyIoC
         /// <typeparam name="RegisterType">Registered type to be constructed</typeparam>
         private class DelegateFactory<RegisterType> : ObjectFactoryBase
         {
-            // TODO : Weak reference?
             private Func<TinyIoC, NamedParameterOverloads, RegisterType> _Factory;
-
-            public DelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
-            {
-                if (factory == null)
-                    throw new ArgumentNullException("factory");
-
-                _Factory = factory;
-            }
 
             public override bool AssumeConstruction { get { return true; } }
 
@@ -134,6 +125,42 @@ namespace TinyIoC
             public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
             {
                 return _Factory.Invoke(container, parameters);
+            }
+
+            public DelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
+            {
+                if (factory == null)
+                    throw new ArgumentNullException("factory");
+
+                _Factory = factory;
+            }
+        }
+
+        private class InstanceFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase, IDisposable
+        {
+            private RegisterImplementation instance;
+
+            public override Type CreatesType
+            {
+                get { return typeof(RegisterImplementation); }
+            }
+
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
+            {
+                return instance;
+            }
+
+            public InstanceFactory(RegisterImplementation instance)
+            {
+                this.instance = instance;
+            }
+
+            public void Dispose()
+            {
+                var disposable = instance as IDisposable;
+
+                if (disposable != null)
+                    disposable.Dispose();
             }
         }
 
@@ -211,17 +238,12 @@ namespace TinyIoC
             // TODO - Implement
         }
         #endregion
+
+        #region Singleton Container
         private static readonly TinyIoC _Current = new TinyIoC();
 
         static TinyIoC()
         {
-        }
-
-        public TinyIoC()
-        {
-            _RegisteredTypes = new Dictionary<Type, ObjectFactoryBase>();
-
-            RegisterDefaultTypes();
         }
 
         /// <summary>
@@ -234,58 +256,64 @@ namespace TinyIoC
                 return _Current;
             }
         }
+        #endregion
 
         // TODO - Replace Type with custom class to allow for named resolution?
         private readonly Dictionary<Type, ObjectFactoryBase> _RegisteredTypes;
 
-        #region Utility Methods
-        private static ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
-            where RegisterType : class
-            where RegisterImplementation : class, RegisterType
+        #region Constructors
+        public TinyIoC()
         {
-            // TODO : Add logic
-            return new NewInstanceFactory<RegisterType, RegisterImplementation>();
-        }
+            _RegisteredTypes = new Dictionary<Type, ObjectFactoryBase>();
 
-        private void RegisterDefaultTypes()
-        {
-            // TODO - register the container and other classes if required
+            RegisterDefaultTypes();
         }
         #endregion
 
-
-        private void ResetTypesPrivate()
+        #region Public API
+        public RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>()
+       where RegisterImplementation : class
         {
-            _RegisteredTypes.Clear();
+            return Register<RegisterImplementation, RegisterImplementation>();
         }
 
-        private RegisterOptions<RegisterImplementation, RegisterImplementation> RegisterPrivate<RegisterImplementation>()
-            where RegisterImplementation : class
-        {
-            return RegisterPrivate<RegisterImplementation, RegisterImplementation>();
-        }
-
-        private RegisterOptions<RegisterType, RegisterImplementation> RegisterPrivate<RegisterType, RegisterImplementation>()
+        public RegisterOptions<RegisterType, RegisterImplementation> Register<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            // TODO : Do something if type already exists
             _RegisteredTypes[typeof(RegisterType)] = GetDefaultObjectFactory<RegisterType, RegisterImplementation>();
             return new RegisterOptions<RegisterType, RegisterImplementation>();
         }
 
-        private void RegisterPrivate<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
+        public RegisterOptions<RegisterType, RegisterImplementation> Register<RegisterType, RegisterImplementation>(RegisterImplementation instance)
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
         {
-            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory);
+            _RegisteredTypes[typeof(RegisterType)] = new InstanceFactory<RegisterType, RegisterImplementation>(instance);
+            return new RegisterOptions<RegisterType, RegisterImplementation>();
         }
 
-        private RegisterType ResolvePrivate<RegisterType>()
+        public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(RegisterType instance)
+           where RegisterType : class
+        {
+            _RegisteredTypes[typeof(RegisterType)] = new InstanceFactory<RegisterType, RegisterType>(instance);
+            return new RegisterOptions<RegisterType, RegisterType>();
+        }
+
+        public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
             where RegisterType : class
         {
-            return ResolvePrivate<RegisterType>(new NamedParameterOverloads());
+            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory);
+            return new RegisterOptions<RegisterType, RegisterType>();
         }
 
-        private RegisterType ResolvePrivate<RegisterType>(NamedParameterOverloads parameters)
+        public RegisterType Resolve<RegisterType>()
+            where RegisterType : class
+        {
+            return Resolve<RegisterType>(new NamedParameterOverloads());
+        }
+
+        public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters)
             where RegisterType : class
         {
             ObjectFactoryBase factory;
@@ -303,7 +331,7 @@ namespace TinyIoC
                 {
                     try
                     {
-                        return ConstructPrivate(typeof(RegisterType), parameters) as RegisterType;
+                        return ConstructType(typeof(RegisterType), parameters) as RegisterType;
                     }
                     catch (TinyIoCResolutionException ex)
                     {
@@ -314,12 +342,12 @@ namespace TinyIoC
             }
         }
 
-        private bool CanResolvePrivate(Type type)
+        public bool CanResolve(Type type)
         {
-            return CanResolvePrivate(type, new NamedParameterOverloads());
+            return CanResolve(type, new NamedParameterOverloads());
         }
 
-        private bool CanResolvePrivate(Type type, NamedParameterOverloads parameters)
+        public bool CanResolve(Type type, NamedParameterOverloads parameters)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -335,17 +363,23 @@ namespace TinyIoC
                 checkType = factory.CreatesType;
             }
 
-            var ctors = from ctor in checkType.GetConstructors()
-                        orderby ctor.GetParameters().Count()
-                        select ctor;
+            return (GetBestConstructor(checkType, parameters) != null) ? true : false;
+        }
+        #endregion
 
-            foreach (var ctor in ctors)
-            {
-                if (CanConstruct(ctor, parameters))
-                    return true;
-            }
 
-            return false;
+        #region Utility Methods
+        private static ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
+        {
+            // TODO : Add logic
+            return new NewInstanceFactory<RegisterType, RegisterImplementation>();
+        }
+
+        private void RegisterDefaultTypes()
+        {
+            this.Register<TinyIoC>(this);
         }
 
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters)
@@ -355,17 +389,83 @@ namespace TinyIoC
 
             foreach (var parameter in ctor.GetParameters())
             {
-                if (!parameters.ContainsKey(parameter.Name) && !CanResolvePrivate(parameter.ParameterType))
+                if (!parameters.ContainsKey(parameter.Name) && !CanResolve(parameter.ParameterType))
                     return false;
             }
 
             return true;
         }
 
-        public object ConstructPrivate(Type type, NamedParameterOverloads parameters)
+        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters)
         {
-            throw new NotImplementedException();
+            if (parameters == null)
+                throw new ArgumentNullException("parameters");
+
+            var ctors = from ctor in type.GetConstructors()
+                        orderby ctor.GetParameters().Count()
+                        select ctor;
+
+            foreach (var ctor in ctors)
+            {
+                if (CanConstruct(ctor, parameters))
+                    return ctor;
+            }
+
+            return null;
         }
 
+        private object ConstructType(Type type)
+        {
+            return ConstructType(type, new NamedParameterOverloads());
+        }
+
+        private object ConstructType(Type type, NamedParameterOverloads parameters)
+        {
+            if (parameters == null)
+                throw new ArgumentNullException("parameters");
+
+            var ctor = GetBestConstructor(type, parameters);
+            if (ctor == null)
+                throw new TinyIoCResolutionException(type);
+
+            var ctorParams = ctor.GetParameters();
+            object[] args = new object[ctorParams.Count()];
+
+            for (int parameterIndex = 0; parameterIndex < ctorParams.Count() - 1; parameterIndex++)
+            {
+                var currentParam = ctorParams[parameterIndex];
+
+                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : ConstructType(currentParam.ParameterType);
+            }
+
+            try
+            {
+                return Activator.CreateInstance(type, args);
+            }
+            catch (Exception ex)
+            {
+                throw new TinyIoCResolutionException(type, ex);
+            }
+        }
+
+        #endregion
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            var disposableFactories = from factory in _RegisteredTypes.Values
+                                      where factory is IDisposable
+                                      select factory as IDisposable;
+
+            foreach (var factory in disposableFactories)
+            {
+                factory.Dispose();
+            }
+
+            _RegisteredTypes.Clear();
+        }
+
+        #endregion
     }
 }
