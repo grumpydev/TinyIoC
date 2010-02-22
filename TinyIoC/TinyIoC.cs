@@ -376,7 +376,6 @@ namespace TinyIoC
         #endregion
 
         #region Public API
-
         public RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>()
             where RegisterImplementation : class
         {
