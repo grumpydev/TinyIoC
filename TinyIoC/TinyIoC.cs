@@ -21,12 +21,27 @@ namespace TinyIoC
         {
         }
     }
+
+    public class TinyIoCInstantiationTypeException : Exception
+    {
+        private const string ERROR_TEXT = "Unable to make {0} {1}";
+
+        public TinyIoCInstantiationTypeException(Type type, string method)
+            : base(String.Format(ERROR_TEXT, type.FullName, method))
+        {
+        }
+
+        public TinyIoCInstantiationTypeException(Type type, string method, Exception innerException)
+            : base(String.Format(ERROR_TEXT, type.FullName, method), innerException)
+        {
+        }
+    }
     #endregion
 
     public sealed class TinyIoC
     {
         #region Object Factories
-        public interface IObjectFactory
+        private abstract class ObjectFactoryBase
         {
             /// <summary>
             /// Whether to assume this factory sucessfully constructs its objects
@@ -34,12 +49,12 @@ namespace TinyIoC
             /// Generally set to true for delegate style factories as CanResolve cannot delve
             /// into the delegates they contain.
             /// </summary>
-            bool AssumeConstruction { get; }
+            public virtual bool AssumeConstruction { get { return false; } }
 
             /// <summary>
             /// The type the factory instantiates
             /// </summary>
-            Type CreatesType { get; }
+            public abstract Type CreatesType { get; }
 
             /// <summary>
             /// Create the type
@@ -47,7 +62,27 @@ namespace TinyIoC
             /// <param name="container">Container that requested the creation</param>
             /// <param name="parameters">Any user parameters passed</param>
             /// <returns></returns>
-            object GetObject(TinyIoC container, NamedParameterOverloads parameters);
+            public abstract object GetObject(TinyIoC container, NamedParameterOverloads parameters);
+
+            public virtual ObjectFactoryBase SingletonVariant()
+            {
+                throw new TinyIoCInstantiationTypeException(this.GetType(), "singleton");
+            }
+
+            public virtual ObjectFactoryBase MultiInstanceVariant()
+            {
+                throw new TinyIoCInstantiationTypeException(this.GetType(), "multi-instance");
+            }
+
+            public virtual ObjectFactoryBase StrongReferenceVariant()
+            {
+                throw new TinyIoCInstantiationTypeException(this.GetType(), "strong reference");
+            }
+
+            public virtual ObjectFactoryBase WeakReferenceVariant()
+            {
+                throw new TinyIoCInstantiationTypeException(this.GetType(), "weak reference");
+            }
         }
 
         /// <summary>
@@ -55,53 +90,50 @@ namespace TinyIoC
         /// </summary>
         /// <typeparam name="RegisterType">Registered type</typeparam>
         /// <typeparam name="RegisterImplementation">Type to construct to fullful request for RegisteredType</typeparam>
-        private class NewInstanceFactory<RegisterType, RegisterImplementation> : IObjectFactory
+        private class NewInstanceFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            public bool AssumeConstruction { get { return false; } }
+            public override Type CreatesType { get { return typeof(RegisterImplementation); } }
 
-            public Type CreatesType { get { return typeof(RegisterImplementation); } }
-
-            public object GetObject(NamedParameterOverloads parameters)
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
             {
                 try
                 {
-                    return TinyIoC.Current.ConstructPrivate(typeof(RegisterImplementation), parameters);
+                    return container.ConstructPrivate(typeof(RegisterImplementation), parameters);
                 }
                 catch (TinyIoCResolutionException ex)
                 {
                     throw new TinyIoCResolutionException(typeof(RegisterImplementation), ex);
                 }
             }
+
         }
 
         /// <summary>
         /// IObjectFactory that invokes a specified delegate to construct the object
         /// </summary>
         /// <typeparam name="RegisterType">Registered type to be constructed</typeparam>
-        private class DelegateFactory<RegisterType> : IObjectFactory
+        private class DelegateFactory<RegisterType> : ObjectFactoryBase
         {
             // TODO : Weak reference?
             private Func<TinyIoC, NamedParameterOverloads, RegisterType> _Factory;
-            private TinyIoC _Container;
 
-            public DelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory, TinyIoC container)
+            public DelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
 
                 _Factory = factory;
-                _Container = container;
             }
 
-            public bool AssumeConstruction { get { return true; } }
+            public override bool AssumeConstruction { get { return true; } }
 
-            public Type CreatesType { get { return typeof(RegisterType); } }
+            public override Type CreatesType { get { return typeof(RegisterType); } }
 
-            public object GetObject(NamedParameterOverloads parameters)
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
             {
-                return _Factory.Invoke(_Container, parameters);
+                return _Factory.Invoke(container, parameters);
             }
         }
 
@@ -187,7 +219,7 @@ namespace TinyIoC
 
         public TinyIoC()
         {
-            _RegisteredTypes = new Dictionary<Type, IObjectFactory>();
+            _RegisteredTypes = new Dictionary<Type, ObjectFactoryBase>();
 
             RegisterDefaultTypes();
         }
@@ -204,10 +236,10 @@ namespace TinyIoC
         }
 
         // TODO - Replace Type with custom class to allow for named resolution?
-        private readonly Dictionary<Type, IObjectFactory> _RegisteredTypes;
+        private readonly Dictionary<Type, ObjectFactoryBase> _RegisteredTypes;
 
         #region Utility Methods
-        private static IObjectFactory GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
+        private static ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
@@ -242,9 +274,9 @@ namespace TinyIoC
             return new RegisterOptions<RegisterType, RegisterImplementation>();
         }
 
-        private void RegisterPrivate<RegisterType>(Func<NamedParameterOverloads, RegisterType> factory)
+        private void RegisterPrivate<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
         {
-            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory, this);
+            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory);
         }
 
         private RegisterType ResolvePrivate<RegisterType>()
@@ -256,11 +288,11 @@ namespace TinyIoC
         private RegisterType ResolvePrivate<RegisterType>(NamedParameterOverloads parameters)
             where RegisterType : class
         {
-            IObjectFactory factory;
+            ObjectFactoryBase factory;
 
             if (_RegisteredTypes.TryGetValue(typeof(RegisterType), out factory))
             {
-                return factory.GetObject(parameters) as RegisterType;
+                return factory.GetObject(this, parameters) as RegisterType;
             }
             else
             {
@@ -294,7 +326,7 @@ namespace TinyIoC
 
             Type checkType = type;
 
-            IObjectFactory factory;
+            ObjectFactoryBase factory;
             if (_RegisteredTypes.TryGetValue(checkType, out factory))
             {
                 if (factory.AssumeConstruction)
