@@ -34,6 +34,16 @@ namespace TinyIoC.Tests
         {
         }
 
+        internal class TestClassWithContainerDependency
+        {
+            public TinyIoC _Container { get; private set; }
+
+            public TestClassWithContainerDependency(TinyIoC container)
+            {
+                _Container = container;
+            }
+        }
+
         internal class TestClassWithInterfaceDependency : ITestInterace2
         {
             public ITestInterface Dependency { get; set; }
@@ -307,6 +317,38 @@ namespace TinyIoC.Tests
             var result = TinyIoC.CanResolve(typeof(TestClassWithDependencyAndParameters), new TinyIoC.NamedParameterOverloads { { "wrongparam1", 12 }, { "wrongparam2", "Testing" } });
 
             Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void CanResolveType_FactoryRegisteredType_ReturnsTrue()
+        {
+            TinyIoC.ClearTypes();
+            TinyIoC.Register<ITestInterface>((c) => TestClassDefaultCtor.CreateNew(c));
+
+            var result = TinyIoC.CanResolve(typeof(ITestInterface));
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Resolve_TinyIoC_ReturnsContainer()
+        {
+            TinyIoC.ClearTypes();
+
+            var result = TinyIoC.Resolve<TinyIoC>();
+
+            Assert.IsInstanceOfType(result, typeof(TinyIoC));
+        }
+
+        [TestMethod]
+        public void Resolve_ClassWithTinyIoCDependency_Resolves()
+        {
+            TinyIoC.ClearTypes();
+            TinyIoC.Register<TestClassWithContainerDependency>();
+
+            var result = TinyIoC.Resolve<TestClassWithContainerDependency>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassWithContainerDependency));
         }
     }
 }

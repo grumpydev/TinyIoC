@@ -23,37 +23,70 @@ namespace TinyIoC
     }
     #endregion
 
-    public class TinyIoC
+    public sealed class TinyIoC
     {
         #region Object Factories
-        private interface IObjectFactory
+        public interface IObjectFactory
         {
-            object GetObject();
+            /// <summary>
+            /// Whether to assume this factory sucessfully constructs its objects
+            /// 
+            /// Generally set to true for delegate style factories as CanResolve cannot delve
+            /// into the delegates they contain.
+            /// </summary>
+            bool AssumeConstruction { get; }
+
+            /// <summary>
+            /// The type the factory instantiates
+            /// </summary>
+            Type CreatesType { get; }
+
+            /// <summary>
+            /// Create the type
+            /// </summary>
+            /// <param name="container">Container that requested the creation</param>
+            /// <param name="parameters">Any user parameters passed</param>
+            /// <returns></returns>
+            object GetObject(TinyIoC container, NamedParameterOverloads parameters);
         }
 
+        /// <summary>
+        /// IObjectFactory that creates new instances of types for each resolution
+        /// </summary>
+        /// <typeparam name="RegisterType">Registered type</typeparam>
+        /// <typeparam name="RegisterImplementation">Type to construct to fullful request for RegisteredType</typeparam>
         private class NewInstanceFactory<RegisterType, RegisterImplementation> : IObjectFactory
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            public object GetObject()
+            public bool AssumeConstruction { get { return false; } }
+
+            public Type CreatesType { get { return typeof(RegisterImplementation); } }
+
+            public object GetObject(NamedParameterOverloads parameters)
             {
                 try
                 {
-                    return Activator.CreateInstance(typeof(RegisterImplementation));
+                    return TinyIoC.Current.ConstructPrivate(typeof(RegisterImplementation), parameters);
                 }
-                catch (System.MissingMemberException ex)
+                catch (TinyIoCResolutionException ex)
                 {
                     throw new TinyIoCResolutionException(typeof(RegisterImplementation), ex);
                 }
             }
         }
 
+        /// <summary>
+        /// IObjectFactory that invokes a specified delegate to construct the object
+        /// </summary>
+        /// <typeparam name="RegisterType">Registered type to be constructed</typeparam>
         private class DelegateFactory<RegisterType> : IObjectFactory
         {
-            private Func<TinyIoC, RegisterType> _Factory;
+            // TODO : Weak reference?
+            private Func<TinyIoC, NamedParameterOverloads, RegisterType> _Factory;
             private TinyIoC _Container;
 
-            public DelegateFactory(Func<TinyIoC, RegisterType> factory, TinyIoC container)
+            public DelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory, TinyIoC container)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
@@ -62,48 +95,106 @@ namespace TinyIoC
                 _Container = container;
             }
 
-            public object GetObject()
+            public bool AssumeConstruction { get { return true; } }
+
+            public Type CreatesType { get { return typeof(RegisterType); } }
+
+            public object GetObject(NamedParameterOverloads parameters)
             {
-                return _Factory.Invoke(_Container);
+                return _Factory.Invoke(_Container, parameters);
             }
         }
 
-        private class SingletonFactory<RegisterType, RegisterImplementation> : IObjectFactory
-        {
-            private static readonly RegisterType _Current;
+        //private class SingletonFactory<RegisterType, RegisterImplementation> : IObjectFactory
+        //{
+        //    private static readonly RegisterType _Current;
 
-            static SingletonFactory()
-            {
-                // TODO - Instantiate _Current
-            }
+        //    static SingletonFactory()
+        //    {
+        //        // TODO - Instantiate _Current
+        //    }
 
-            public object GetObject()
-            {
-                throw new NotImplementedException();
-            }
-        }
+        //    public bool AssumeConstruction
+        //    {
+        //        get
+        //        {
+        //            return false;
+        //        }
+        //    }
+
+        //    public Type CreatesType
+        //    {
+        //        get { return typeof(RegisterImplementation); }
+        //    }
+
+        //    public object GetObject(NamedParameterOverloads parameters)
+        //    {
+        //        throw new NotImplementedException();
+        //    }
+        //}
         #endregion
+        #region Setup / Settings Classes
+        /// <summary>
+        /// Name/Value pairs for specifying "user" parameters when resolving
+        /// </summary>
         public sealed class NamedParameterOverloads : Dictionary<string, object>
         {
         }
 
+        /// <summary>
+        /// Resolution settings
+        /// </summary>
+        public sealed class ResolutionOptions
+        {
+            /// <summary>
+            /// Whether to attempt to resolve unregistered types
+            /// </summary>
+            public bool IncludeUnregistered { get; set; }
+
+            public ResolutionOptions()
+                : this(true)
+            {
+            }
+
+            public ResolutionOptions(bool includeUnregistered)
+            {
+                IncludeUnregistered = includeUnregistered;
+            }
+
+            public static ResolutionOptions GetDefault()
+            {
+                return new ResolutionOptions();
+            }
+        }
+
+        /// <summary>
+        /// Registration options for "fluent" API
+        /// </summary>
+        /// <typeparam name="RegisterType">Registered type</typeparam>
+        /// <typeparam name="RegisterImplementation">Implementation type for construction of RegisteredType</typeparam>
         public sealed class RegisterOptions<RegisterType, RegisterImplementation>
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
+            // TODO - Implement
         }
-
+        #endregion
         private static readonly TinyIoC _Current = new TinyIoC();
 
         static TinyIoC()
         {
         }
 
-        private TinyIoC()
+        public TinyIoC()
         {
             _RegisteredTypes = new Dictionary<Type, IObjectFactory>();
+
+            RegisterDefaultTypes();
         }
 
+        /// <summary>
+        /// Lazy created Singleton instance of the container for simple scenarios
+        /// </summary>
         public static TinyIoC Current
         {
             get
@@ -115,46 +206,7 @@ namespace TinyIoC
         // TODO - Replace Type with custom class to allow for named resolution?
         private readonly Dictionary<Type, IObjectFactory> _RegisteredTypes;
 
-        #region Static Methods
-        public static void ClearTypes()
-        {
-            _Current.ClearTypesPrivate();
-        }
-
-        public static RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>()
-            where RegisterImplementation : class
-        {
-            return _Current.RegisterPrivate<RegisterImplementation>();
-        }
-
-        public static RegisterOptions<RegisterType, RegisterImplementation> Register<RegisterType, RegisterImplementation>()
-            where RegisterType : class
-            where RegisterImplementation : class, RegisterType
-        {
-            return _Current.RegisterPrivate<RegisterType, RegisterImplementation>();
-        }
-
-        public static void Register<RegisterType>(Func<TinyIoC, RegisterType> factory)
-        {
-            _Current.RegisterPrivate<RegisterType>(factory);
-        }
-
-        public static RegisterType Resolve<RegisterType>()
-            where RegisterType : class
-        {
-            return _Current.ResolvePrivate<RegisterType>();
-        }
-
-        public static bool CanResolve(Type type)
-        {
-            return _Current.CanResolvePrivate(type);
-        }
-
-        public static bool CanResolve(Type type, NamedParameterOverloads parameters)
-        {
-            return _Current.CanResolvePrivate(type, parameters);
-        }
-
+        #region Utility Methods
         private static IObjectFactory GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
@@ -162,10 +214,15 @@ namespace TinyIoC
             // TODO : Add logic
             return new NewInstanceFactory<RegisterType, RegisterImplementation>();
         }
+
+        private void RegisterDefaultTypes()
+        {
+            // TODO - register the container and other classes if required
+        }
         #endregion
 
-        #region Private Instance Methods
-        private void ClearTypesPrivate()
+
+        private void ResetTypesPrivate()
         {
             _RegisteredTypes.Clear();
         }
@@ -185,7 +242,7 @@ namespace TinyIoC
             return new RegisterOptions<RegisterType, RegisterImplementation>();
         }
 
-        private void RegisterPrivate<RegisterType>(Func<TinyIoC, RegisterType> factory)
+        private void RegisterPrivate<RegisterType>(Func<NamedParameterOverloads, RegisterType> factory)
         {
             _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory, this);
         }
@@ -193,11 +250,17 @@ namespace TinyIoC
         private RegisterType ResolvePrivate<RegisterType>()
             where RegisterType : class
         {
+            return ResolvePrivate<RegisterType>(new NamedParameterOverloads());
+        }
+
+        private RegisterType ResolvePrivate<RegisterType>(NamedParameterOverloads parameters)
+            where RegisterType : class
+        {
             IObjectFactory factory;
 
             if (_RegisteredTypes.TryGetValue(typeof(RegisterType), out factory))
             {
-                return factory.GetObject() as RegisterType;
+                return factory.GetObject(parameters) as RegisterType;
             }
             else
             {
@@ -208,9 +271,9 @@ namespace TinyIoC
                 {
                     try
                     {
-                        return Activator.CreateInstance(typeof(RegisterType)) as RegisterType;
+                        return ConstructPrivate(typeof(RegisterType), parameters) as RegisterType;
                     }
-                    catch (System.MissingMemberException ex)
+                    catch (TinyIoCResolutionException ex)
                     {
                         throw new TinyIoCResolutionException(typeof(RegisterType), ex);
                     }
@@ -229,9 +292,18 @@ namespace TinyIoC
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
 
-            // TODO - change to different type if registered
+            Type checkType = type;
 
-            var ctors = from ctor in type.GetConstructors()
+            IObjectFactory factory;
+            if (_RegisteredTypes.TryGetValue(checkType, out factory))
+            {
+                if (factory.AssumeConstruction)
+                    return true;
+
+                checkType = factory.CreatesType;
+            }
+
+            var ctors = from ctor in checkType.GetConstructors()
                         orderby ctor.GetParameters().Count()
                         select ctor;
 
@@ -257,7 +329,11 @@ namespace TinyIoC
 
             return true;
         }
-        #endregion
+
+        public object ConstructPrivate(Type type, NamedParameterOverloads parameters)
+        {
+            throw new NotImplementedException();
+        }
 
     }
 }
