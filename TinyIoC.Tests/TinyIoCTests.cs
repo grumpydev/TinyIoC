@@ -461,5 +461,28 @@ namespace TinyIoC.Tests
             Assert.IsTrue(hasDisposed);
         }
 
+        [TestMethod]
+        public void Resolve_RegisteredTypeWithFluentSingletonCall_ReturnsSingleton()
+        {
+            var container = GetContainer();
+            container.Register<TestClassNoInterfaceDefaultCtor>().AsSingleton();
+
+            var result = container.Resolve<TestClassNoInterfaceDefaultCtor>();
+            var result2 = container.Resolve<TestClassNoInterfaceDefaultCtor>();
+
+            Assert.ReferenceEquals(result, result2);
+        }
+
+        [TestMethod]
+        public void Resolve_RegisteredTypeWithInterfaceWithFluentSingletonCall_ReturnsSingleton()
+        {
+            var container = GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>().AsMultiInstance();
+
+            var result = container.Resolve<TestClassNoInterfaceDefaultCtor>();
+            var result2 = container.Resolve<TestClassNoInterfaceDefaultCtor>();
+
+            Assert.IsFalse(object.ReferenceEquals(result, result2));
+        }
     }
 }
