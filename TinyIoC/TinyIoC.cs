@@ -137,6 +137,11 @@ namespace TinyIoC
             }
         }
 
+        /// <summary>
+        /// Stores an particular instance to return for a type
+        /// </summary>
+        /// <typeparam name="RegisterType">Registered type</typeparam>
+        /// <typeparam name="RegisterImplementation">Type of the instance</typeparam>
         private class InstanceFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase, IDisposable
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
@@ -167,6 +172,11 @@ namespace TinyIoC
             }
         }
 
+        /// <summary>
+        /// A factory that lazy instantiates a type and always returns the same instance
+        /// </summary>
+        /// <typeparam name="RegisterType">Registered type</typeparam>
+        /// <typeparam name="RegisterImplementation">Type to instantiate</typeparam>
         private class SingletonFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase, IDisposable
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
@@ -306,7 +316,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            _RegisteredTypes[typeof(RegisterType)] = GetDefaultObjectFactory<RegisterType, RegisterImplementation>();
+            AddUpdateRegistration<RegisterType, RegisterImplementation>(GetDefaultObjectFactory<RegisterType, RegisterImplementation>());
             return new RegisterOptions<RegisterType, RegisterImplementation>();
         }
 
@@ -314,21 +324,21 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            _RegisteredTypes[typeof(RegisterType)] = new InstanceFactory<RegisterType, RegisterImplementation>(instance);
+            AddUpdateRegistration<RegisterType, RegisterImplementation>(new InstanceFactory<RegisterType, RegisterImplementation>(instance));
             return new RegisterOptions<RegisterType, RegisterImplementation>();
         }
 
         public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(RegisterType instance)
            where RegisterType : class
         {
-            _RegisteredTypes[typeof(RegisterType)] = new InstanceFactory<RegisterType, RegisterType>(instance);
+            AddUpdateRegistration<RegisterType, RegisterType>(new InstanceFactory<RegisterType, RegisterType>(instance));
             return new RegisterOptions<RegisterType, RegisterType>();
         }
 
         public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
             where RegisterType : class
         {
-            _RegisteredTypes[typeof(RegisterType)] = new DelegateFactory<RegisterType>(factory);
+            AddUpdateRegistration<RegisterType, RegisterType>(new DelegateFactory<RegisterType>(factory));
             return new RegisterOptions<RegisterType, RegisterType>();
         }
 
@@ -392,6 +402,23 @@ namespace TinyIoC
         #endregion
 
         #region Utility Methods
+        private void AddUpdateRegistration<RegisterType, RegisterImplementation>(ObjectFactoryBase factory)
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
+        {
+            ObjectFactoryBase current;
+
+            if (_RegisteredTypes.TryGetValue(typeof(RegisterType), out current))
+            {
+                var disposable = current as IDisposable;
+
+                if (disposable != null)
+                    disposable.Dispose();
+            }
+
+            _RegisteredTypes[typeof(RegisterType)] = factory;
+        }
+
         private static ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
