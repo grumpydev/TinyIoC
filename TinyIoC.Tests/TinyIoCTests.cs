@@ -315,7 +315,7 @@ namespace TinyIoC.Tests
         public void Register_InstanceUsingInterface_CanRegister()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<ITestInterface, DisposableTestClassWithInterface>(new DisposableTestClassWithInterface());
+            container.Register<ITestInterface>(new DisposableTestClassWithInterface());
 
             Assert.IsTrue(true);
         }
@@ -337,7 +337,7 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             var item = new DisposableTestClassWithInterface();
-            container.Register<ITestInterface, DisposableTestClassWithInterface>(item);
+            container.Register<ITestInterface>(item);
 
             var result = container.Resolve<ITestInterface>();
 
@@ -363,7 +363,7 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             var item = new DisposableTestClassWithInterface();
-            container.Register<ITestInterface, DisposableTestClassWithInterface>(item);
+            container.Register<ITestInterface>(item);
 
             container.Dispose();
 
@@ -436,6 +436,45 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result, typeof(GenericClassWithInterface<int, string>));
         }
 
+        [TestMethod]
+        public void Register_NamedRegistration_CanRegister()
+        {
+            var container = UtilityMethods.GetContainer();
 
+            container.Register<TestClassDefaultCtor>("TestName");
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_NamedInterfaceRegistration_CanRegister()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_NamedInstanceRegistration_CanRegister()
+        {
+            var container = UtilityMethods.GetContainer();
+            var item = new TestClassDefaultCtor();
+
+            container.Register<TestClassDefaultCtor>(item, "TestName");
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_NamedFactoryRegistration_CanRegister()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<TestClassDefaultCtor>((c, p) => TestClassDefaultCtor.CreateNew(c) as TestClassDefaultCtor, "TestName");
+
+            Assert.IsTrue(true);
+        }
     }
 }
