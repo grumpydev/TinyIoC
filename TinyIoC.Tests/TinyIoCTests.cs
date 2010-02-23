@@ -345,6 +345,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        [Ignore]
         public void Dispose_RegisteredDisposableInstance_CallsDispose()
         {
             var container = UtilityMethods.GetContainer();
@@ -357,6 +358,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        [Ignore]
         public void Dispose_RegisteredDisposableInstanceWithInterface_CallsDispose()
         {
             var container = UtilityMethods.GetContainer();
