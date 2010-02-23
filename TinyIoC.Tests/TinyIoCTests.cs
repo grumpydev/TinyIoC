@@ -7,6 +7,8 @@ using System.Text.RegularExpressions;
 using TinyIoC.Tests.TestData;
 using TinyIoC.Tests.TestData.BasicClasses;
 using Moq;
+using NestedInterfaceDependencies = TinyIoC.Tests.TestData.NestedInterfaceDependencies;
+using NestedClassDependencies = TinyIoC.Tests.TestData.NestedClassDependencies;
 
 namespace TinyIoC.Tests
 {
@@ -610,6 +612,61 @@ namespace TinyIoC.Tests
             var result = container.Resolve<TestClassDefaultCtor>();
 
             Assert.ReferenceEquals(instance1, result);
+        }
+
+        [TestMethod]
+        public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<NestedInterfaceDependencies.IService1, NestedInterfaceDependencies.Service1>();
+            container.Register<NestedInterfaceDependencies.IService2, NestedInterfaceDependencies.Service2>();
+            container.Register<NestedInterfaceDependencies.IService3, NestedInterfaceDependencies.Service3>();
+            container.Register<NestedInterfaceDependencies.RootClass>();
+
+            var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
+
+            Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void NestedInterfaceDependencies_MissingIService3Registration_ThrowsExceptionWithDefaultSettings()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<NestedInterfaceDependencies.IService1, NestedInterfaceDependencies.Service1>();
+            container.Register<NestedInterfaceDependencies.IService2, NestedInterfaceDependencies.Service2>();
+            container.Register<NestedInterfaceDependencies.RootClass>();
+
+            var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
+
+            Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
+        }
+
+        [TestMethod]
+        public void NestedClassDependencies_CorrectlyRegistered_ResolvesRoot()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<NestedClassDependencies.Service1>();
+            container.Register<NestedClassDependencies.Service2>();
+            container.Register<NestedClassDependencies.Service3>();
+            container.Register<NestedClassDependencies.RootClass>();
+
+            var result = container.Resolve<NestedClassDependencies.RootClass>();
+
+            Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
+        }
+
+        [TestMethod]
+        public void NestedClassDependencies_MissingService3Registration_ResolvesRootWithDefaultSettings()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<NestedClassDependencies.Service1>();
+            container.Register<NestedClassDependencies.Service2>();
+            container.Register<NestedClassDependencies.RootClass>();
+
+            var result = container.Resolve<NestedClassDependencies.RootClass>();
+
+            Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
     }
 }
