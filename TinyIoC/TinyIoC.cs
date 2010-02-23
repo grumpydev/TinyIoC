@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace TinyIoC
 {
-    #region Exceptions
+    #region TinyIoC Exception Types
     public class TinyIoCResolutionException : Exception
     {
         private const string ERROR_TEXT = "Unable to resolve type: {0}";
