@@ -144,7 +144,14 @@ namespace TinyIoC
 
             public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
             {
-                return _Factory.Invoke(container, parameters);
+                try
+                {
+                    return _Factory.Invoke(container, parameters);
+                }
+                catch (Exception ex)
+                {
+                    throw new TinyIoCResolutionException(typeof(RegisterType), ex);
+                }
             }
 
             public DelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
@@ -541,7 +548,7 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>(string name)
             where RegisterType : class
         {
-            return Resolve<RegisterType>(new NamedParameterOverloads(), name);
+            return (Resolve(typeof(RegisterType), name) as RegisterType);
         }
 
         /// <summary>
@@ -557,7 +564,7 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters)
             where RegisterType : class
         {
-            return Resolve<RegisterType>(parameters, string.Empty);
+            return (Resolve(typeof(RegisterType), parameters) as RegisterType);
         }
 
         /// <summary>
@@ -574,30 +581,7 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters, string name)
             where RegisterType : class
         {
-            ObjectFactoryBase factory;
-
-            if (_RegisteredTypes.TryGetValue(new TypeRegistration(typeof(RegisterType), name), out factory))
-            {
-                return factory.GetObject(this, parameters) as RegisterType;
-            }
-            else
-            {
-                // TODO - check options
-                if (typeof(RegisterType).IsAbstract || typeof(RegisterType).IsInterface)
-                    throw new TinyIoCResolutionException(typeof(RegisterType));
-                else
-                {
-                    try
-                    {
-                        return ConstructType(typeof(RegisterType), parameters) as RegisterType;
-                    }
-                    catch (TinyIoCResolutionException ex)
-                    {
-                        throw new TinyIoCResolutionException(typeof(RegisterType), ex);
-                    }
-                }
-
-            }
+            return (Resolve(typeof(RegisterType), parameters, name) as RegisterType);
         }
 
         /// <summary>
@@ -706,6 +690,49 @@ namespace TinyIoC
             return (GetBestConstructor(checkType, parameters) != null) ? true : false;
         }
 
+        private object Resolve(Type type)
+        {
+            return Resolve(type, new NamedParameterOverloads(), string.Empty);
+        }
+
+        private object Resolve(Type type, NamedParameterOverloads parameters)
+        {
+            return Resolve(type, parameters, string.Empty);
+        }
+
+        private object Resolve(Type type, string name)
+        {
+            return Resolve(type, new NamedParameterOverloads(), name);
+        }
+
+        private object Resolve(Type type, NamedParameterOverloads parameters, string name)
+        {
+            ObjectFactoryBase factory;
+
+            if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, name), out factory))
+            {
+                return factory.GetObject(this, parameters);
+            }
+            else
+            {
+                // TODO - check options
+                if (type.IsAbstract || type.IsInterface)
+                    throw new TinyIoCResolutionException(type);
+                else
+                {
+                    try
+                    {
+                        return ConstructType(type, parameters);
+                    }
+                    catch (TinyIoCResolutionException ex)
+                    {
+                        throw new TinyIoCResolutionException(type, ex);
+                    }
+                }
+
+            }
+        }
+
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters)
         {
             if (parameters == null)
@@ -759,9 +786,9 @@ namespace TinyIoC
             {
                 var currentParam = ctorParams[parameterIndex];
 
-                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : ConstructType(currentParam.ParameterType);
+                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : Resolve(currentParam.ParameterType);
             }
-
+            
             try
             {
                 return Activator.CreateInstance(type, args);
@@ -775,7 +802,6 @@ namespace TinyIoC
         #endregion
 
         #region IDisposable Members
-
         public void Dispose()
         {
             var disposableFactories = from factory in _RegisteredTypes.Values

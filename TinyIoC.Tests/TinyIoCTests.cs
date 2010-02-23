@@ -283,6 +283,29 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void CanResolveType_FactoryRegisteredTypeThatThrows_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface>((c, p) => { throw new NotImplementedException(); });
+
+            var result = container.CanResolve<ITestInterface>();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_FactoryRegisteredTypeThatThrows_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface>((c, p) => { throw new NotImplementedException(); });
+
+            var result = container.Resolve<ITestInterface>();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
         public void Resolve_TinyIoC_ReturnsCurrentContainer()
         {
             var container = UtilityMethods.GetContainer();
