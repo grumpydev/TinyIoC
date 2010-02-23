@@ -413,18 +413,36 @@ namespace TinyIoC
         #endregion
 
         #region Public API
+        #region Registration
+        /// <summary>
+        /// Creates/replaces a container class registration with default options.
+        /// </summary>
+        /// <typeparam name="RegisterImplementation">Type to register</typeparam>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>()
             where RegisterImplementation : class
         {
             return Register<RegisterImplementation, RegisterImplementation>();
         }
 
+        /// <summary>
+        /// Creates/replaces a named container class registration with default options.
+        /// </summary>
+        /// <typeparam name="RegisterImplementation">Type to register</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterImplementation, RegisterImplementation> Register<RegisterImplementation>(string name)
             where RegisterImplementation : class
         {
-            throw new NotImplementedException();
+            return Register<RegisterImplementation, RegisterImplementation>(name);
         }
 
+        /// <summary>
+        /// Creates/replaces a container class registration with a given implementation and default options.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to register</typeparam>
+        /// <typeparam name="RegisterImplementation">Type to instantiate that implements RegisterType</typeparam>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterType, RegisterImplementation> Register<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
@@ -432,43 +450,94 @@ namespace TinyIoC
             return AddUpdateRegistration<RegisterType, RegisterImplementation>(GetDefaultObjectFactory<RegisterType, RegisterImplementation>());
         }
 
+        /// <summary>
+        /// Creates/replaces a named container class registration with a given implementation and default options.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to register</typeparam>
+        /// <typeparam name="RegisterImplementation">Type to instantiate that implements RegisterType</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterType, RegisterImplementation> Register<RegisterType, RegisterImplementation>(string name)
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            throw new NotImplementedException();
+            return AddUpdateRegistration<RegisterType, RegisterImplementation>(GetDefaultObjectFactory<RegisterType, RegisterImplementation>(), name);
         }
 
+        /// <summary>
+        /// Creates/replaces a container class registration with a specific, strong referenced, instance.
+        /// </summary>
+        /// <typeparam name="RegisterImplementation">Type to register</typeparam>
+        /// <param name="instance">Instance of RegisterType to register</param>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(RegisterType instance)
            where RegisterType : class
         {
             return AddUpdateRegistration<RegisterType, RegisterType>(new InstanceFactory<RegisterType, RegisterType>(instance));
         }
 
+        /// <summary>
+        /// Creates/replaces a named container class registration with a specific, strong referenced, instance.
+        /// </summary>
+        /// <typeparam name="RegisterImplementation">Type to register</typeparam>
+        /// <param name="instance">Instance of RegisterType to register</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(RegisterType instance, string name)
             where RegisterType : class
         {
-            throw new NotImplementedException();
+            return AddUpdateRegistration<RegisterType, RegisterType>(new InstanceFactory<RegisterType, RegisterType>(instance), name);
         }
 
+        /// <summary>
+        /// Creates/replaces a container class registration with a user specified factory
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to register</typeparam>
+        /// <param name="factory">Factory/lambda that returns an instance of RegisterType</param>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
             where RegisterType : class
         {
             return AddUpdateRegistration<RegisterType, RegisterType>(new DelegateFactory<RegisterType>(factory));
         }
 
+        /// <summary>
+        /// Creates/replaces a named container class registration with a user specified factory
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to register</typeparam>
+        /// <param name="factory">Factory/lambda that returns an instance of RegisterType</param>
+        /// <param name="name">Name of registation</param>
+        /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions<RegisterType, RegisterType> Register<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory, string name)
             where RegisterType : class
         {
-            throw new NotImplementedException();
+            return AddUpdateRegistration<RegisterType, RegisterType>(new DelegateFactory<RegisterType>(factory), name);
         }
+        #endregion
 
+        #region Resolution
+        /// <summary>
+        /// Attempts to resolve a type using default options.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <returns>Instance of type</returns>
+        /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public RegisterType Resolve<RegisterType>()
             where RegisterType : class
         {
             return Resolve<RegisterType>(new NamedParameterOverloads());
         }
 
+        /// <summary>
+        /// Attempts to resolve a type using default options and the supplied constructor parameters.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <returns>Instance of type</returns>
+        /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters)
             where RegisterType : class
         {
@@ -497,32 +566,41 @@ namespace TinyIoC
             }
         }
 
-        public bool CanResolve(Type type)
+        /// <summary>
+        /// Attempts to predict whether a given type can be resolved.
+        ///
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <returns>Instance of ResolveType</returns>
+        public bool CanResolve<ResolveType>()
         {
-            return CanResolve(type, new NamedParameterOverloads());
+            return CanResolve(typeof(ResolveType));
         }
 
-        public bool CanResolve(Type type, NamedParameterOverloads parameters)
+        /// <summary>
+        /// Attempts to predict whether a given type can be resolved with the supplied constructor parameters.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// 
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <returns>Instance of ResolveType</returns>
+        public bool CanResolve<ResolveType>(NamedParameterOverloads parameters)
         {
-            if (parameters == null)
-                throw new ArgumentNullException("parameters");
-
-            Type checkType = type;
-
-            ObjectFactoryBase factory;
-            if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType), out factory))
-            {
-                if (factory.AssumeConstruction)
-                    return true;
-
-                checkType = factory.CreatesType;
-            }
-
-            return (GetBestConstructor(checkType, parameters) != null) ? true : false;
+            return CanResolve(typeof(ResolveType), parameters);
         }
+        #endregion
         #endregion
 
         #region Utility Methods
+        private void RegisterDefaultTypes()
+        {
+            this.Register<TinyIoC>(this);
+        }
+
         private ObjectFactoryBase GetCurrentFactory<RegisterType>()
         {
             ObjectFactoryBase current = null;
@@ -536,9 +614,16 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
+            return AddUpdateRegistration<RegisterType, RegisterImplementation>(factory, string.Empty);
+        }
+
+        private RegisterOptions<RegisterType, RegisterImplementation> AddUpdateRegistration<RegisterType, RegisterImplementation>(ObjectFactoryBase factory, string name)
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
+        {
             ObjectFactoryBase current;
 
-            var typeRegistration = new TypeRegistration(typeof(RegisterType));
+            var typeRegistration = new TypeRegistration(typeof(RegisterType), name);
 
             if (_RegisteredTypes.TryGetValue(typeRegistration, out current))
             {
@@ -563,9 +648,28 @@ namespace TinyIoC
             return new NewInstanceFactory<RegisterType, RegisterImplementation>();
         }
 
-        private void RegisterDefaultTypes()
+        private bool CanResolve(Type type)
         {
-            this.Register<TinyIoC>(this);
+            return CanResolve(type, new NamedParameterOverloads());
+        }
+
+        private bool CanResolve(Type type, NamedParameterOverloads parameters)
+        {
+            if (parameters == null)
+                throw new ArgumentNullException("parameters");
+
+            Type checkType = type;
+
+            ObjectFactoryBase factory;
+            if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType), out factory))
+            {
+                if (factory.AssumeConstruction)
+                    return true;
+
+                checkType = factory.CreatesType;
+            }
+
+            return (GetBestConstructor(checkType, parameters) != null) ? true : false;
         }
 
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters)

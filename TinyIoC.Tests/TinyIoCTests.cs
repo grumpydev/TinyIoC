@@ -200,7 +200,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
 
-            var result = container.CanResolve(typeof(TestClassDefaultCtor));
+            var result = container.CanResolve<TestClassDefaultCtor>();
 
             Assert.IsTrue(result);
         }
@@ -209,7 +209,7 @@ namespace TinyIoC.Tests
         public void CanResolveType_UnregisteredTypeDefaultCtor_ReturnsTrue()
         {
             var container = UtilityMethods.GetContainer();
-            var result = container.CanResolve(typeof(TestClassDefaultCtor));
+            var result = container.CanResolve<TestClassDefaultCtor>();
 
             Assert.IsTrue(result);
         }
@@ -218,7 +218,7 @@ namespace TinyIoC.Tests
         public void CanResolveType_UnregisteredInterface_ReturnsFalse()
         {
             var container = UtilityMethods.GetContainer();
-            var result = container.CanResolve(typeof(ITestInterface));
+            var result = container.CanResolve<ITestInterface>();
 
             Assert.IsFalse(result);
         }
@@ -229,7 +229,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>();
 
-            var result = container.CanResolve(typeof(ITestInterface));
+            var result = container.CanResolve<ITestInterface>();
 
             Assert.IsTrue(result);
         }
@@ -241,7 +241,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassDefaultCtor>();
             container.Register<TestClassWithDependency>();
 
-            var result = container.CanResolve(typeof(TestClassWithDependency));
+            var result = container.CanResolve<TestClassWithDependency>();
 
             Assert.IsTrue(result);
         }
@@ -253,7 +253,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassDefaultCtor>();
             container.Register<TestClassWithDependencyAndParameters>();
 
-            var result = container.CanResolve(typeof(TestClassWithDependencyAndParameters), new TinyIoC.NamedParameterOverloads { { "param1", 12 }, { "param2", "Testing" } });
+            var result = container.CanResolve<TestClassWithDependencyAndParameters>(new TinyIoC.NamedParameterOverloads { { "param1", 12 }, { "param2", "Testing" } });
 
             Assert.IsTrue(result);
         }
@@ -265,7 +265,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassDefaultCtor>();
             container.Register<TestClassWithDependencyAndParameters>();
 
-            var result = container.CanResolve(typeof(TestClassWithDependencyAndParameters), new TinyIoC.NamedParameterOverloads { { "wrongparam1", 12 }, { "wrongparam2", "Testing" } });
+            var result = container.CanResolve<TestClassWithDependencyAndParameters>(new TinyIoC.NamedParameterOverloads { { "wrongparam1", 12 }, { "wrongparam2", "Testing" } });
 
             Assert.IsFalse(result);
         }
@@ -276,7 +276,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface>((c, p) => TestClassDefaultCtor.CreateNew(c));
 
-            var result = container.CanResolve(typeof(ITestInterface));
+            var result = container.CanResolve<ITestInterface>();
 
             Assert.IsTrue(true);
         }
