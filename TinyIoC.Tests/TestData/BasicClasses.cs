@@ -90,6 +90,18 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
+        internal class TestClassWithParameters
+        {
+            public string StringProperty { get; set; }
+            public int IntProperty { get; set; }
+
+            public TestClassWithParameters(string stringProperty, int intProperty)
+            {
+                StringProperty = stringProperty;
+                IntProperty = intProperty;
+            }
+        }
+
         internal class TestClassWithDependencyAndParameters
         {
             TestClassDefaultCtor Dependency { get; set; }

@@ -286,6 +286,19 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_RegisteredTypeWithRegisteredDependenciesAndParameters_ResolvesWithCorrectConstructor()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassWithDependencyAndParameters>();
+
+            var result = container.Resolve<TestClassWithDependencyAndParameters>(new TinyIoC.NamedParameterOverloads { { "param1", 12 }, { "param2", "Testing" } });
+
+            Assert.AreEqual(result.Param1, 12);
+            Assert.AreEqual(result.Param2, "Testing");
+        }
+
+        [TestMethod]
         public void CanResolveType_RegisteredTypeWithRegisteredDependenciesAndIncorrectParameters_ReturnsFalse()
         {
             var container = UtilityMethods.GetContainer();
@@ -652,6 +665,94 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_NoNameButOnlyNamedRegistered_ResolvesWithAttemptResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>("Testing");
+
+            var output = container.Resolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.AttemptResolve });
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_NoNameButOnlyNamedRegistered_ThrowsExceptionWithNoAttemptResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>("Testing");
+
+            var output = container.Resolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail });
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_NamedButOnlyUnnamedRegistered_ThrowsExceptionWithNoFallback()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+
+            var output = container.Resolve<TestClassDefaultCtor>("Testing", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction =  TinyIoC.ResolveOptions.NamedResolutionFailureActions.Fail });
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void Resolve_NamedButOnlyUnnamedRegistered_ResolvesWithFallbackEnabled()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+
+            var output = container.Resolve<TestClassDefaultCtor>("Testing", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution });
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_CorrectlyRegisteredSpecifyingMistypedParameters_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            var output = container.Resolve<TestClassWithParameters>(
+                    new TinyIoC.NamedParameterOverloads { { "StringProperty", "Testing" }, { "IntProperty", 12 } }
+                );
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        public void Resolve_CorrectlyRegisteredSpecifyingParameters_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            var output = container.Resolve<TestClassWithParameters>(
+                    new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } }
+                );
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        public void Resolve_CorrectlyRegisteredSpecifyingParametersAndOptions_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            var output = container.Resolve<TestClassWithParameters>(
+                    new TinyIoC.NamedParameterOverloads {{ "stringProperty", "Testing" }, { "intProperty", 12 }},
+                    TinyIoC.ResolveOptions.GetDefault()
+                );
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        #region Scenario Tests
+        [TestMethod]
         public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()
         {
             var container = UtilityMethods.GetContainer();
@@ -715,10 +816,11 @@ namespace TinyIoC.Tests
             container.Register<NestedClassDependencies.Service2>();
             container.Register<NestedClassDependencies.RootClass>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>( new TinyIoC.ResolveOptions() {UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail} );
+            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail });
 
             Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
+        #endregion
 
     }
 }
