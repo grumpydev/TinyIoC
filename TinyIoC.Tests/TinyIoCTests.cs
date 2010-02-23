@@ -250,6 +250,18 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_RegisteredTypeWithRegisteredDependencies_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassWithDependency>();
+
+            var result = container.Resolve<TestClassWithDependency>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassWithDependency));
+        }
+
+        [TestMethod]
         public void CanResolveType_RegisteredTypeWithRegisteredDependenciesAndParameters_ReturnsTrue()
         {
             var container = UtilityMethods.GetContainer();
@@ -262,6 +274,18 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_RegisteredTypeWithRegisteredDependenciesAndParameters_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassWithDependencyAndParameters>();
+
+            var result = container.Resolve<TestClassWithDependencyAndParameters>(new TinyIoC.NamedParameterOverloads { { "param1", 12 }, { "param2", "Testing" } });
+
+            Assert.IsInstanceOfType(result, typeof(TestClassWithDependencyAndParameters));
+        }
+
+        [TestMethod]
         public void CanResolveType_RegisteredTypeWithRegisteredDependenciesAndIncorrectParameters_ReturnsFalse()
         {
             var container = UtilityMethods.GetContainer();
@@ -271,6 +295,19 @@ namespace TinyIoC.Tests
             var result = container.CanResolve<TestClassWithDependencyAndParameters>(new TinyIoC.NamedParameterOverloads { { "wrongparam1", 12 }, { "wrongparam2", "Testing" } });
 
             Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_RegisteredTypeWithRegisteredDependenciesAndIncorrectParameters_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassWithDependencyAndParameters>();
+
+            var result = container.Resolve<TestClassWithDependencyAndParameters>(new TinyIoC.NamedParameterOverloads { { "wrongparam1", 12 }, { "wrongparam2", "Testing" } });
+
+            Assert.IsInstanceOfType(result, typeof(TestClassWithDependencyAndParameters));
         }
 
         [TestMethod]
