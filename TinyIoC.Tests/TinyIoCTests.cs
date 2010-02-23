@@ -705,5 +705,20 @@ namespace TinyIoC.Tests
 
             Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void NestedClassDependencies_MissingService3RegistrationAndUnRegisteredResolutionOff_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<NestedClassDependencies.Service1>();
+            container.Register<NestedClassDependencies.Service2>();
+            container.Register<NestedClassDependencies.RootClass>();
+
+            var result = container.Resolve<NestedClassDependencies.RootClass>( new TinyIoC.ResolveOptions() {UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail} );
+
+            Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
+        }
+
     }
 }

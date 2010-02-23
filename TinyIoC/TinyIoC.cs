@@ -46,31 +46,55 @@ namespace TinyIoC
         /// </summary>
         public sealed class NamedParameterOverloads : Dictionary<string, object>
         {
+            public static NamedParameterOverloads GetDefault()
+            {
+                return new NamedParameterOverloads();
+            }
         }
 
         /// <summary>
         /// Resolution settings
         /// </summary>
-        public sealed class ResolutionOptions
+        public sealed class ResolveOptions
         {
+            public enum UnregisteredResolutionActions
+            {
+                AttemptResolve,
+                Fail
+            }
+
+            public enum NamedResolutionFailureActions
+            {
+                AttemptUnnamedResolution,
+                Fail
+            }
+
+            private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
+            public UnregisteredResolutionActions UnregisteredResolutionAction
+            {
+                get { return _UnregisteredResolutionAction; }
+                set { _UnregisteredResolutionAction = value; }
+            }
+
+            private NamedResolutionFailureActions _NamedResolutionFailureAction = NamedResolutionFailureActions.Fail;
+            public NamedResolutionFailureActions NamedResolutionFailureAction
+            {
+                get { return _NamedResolutionFailureAction; }
+                set { _NamedResolutionFailureAction = value; }
+            }
+
+            public ResolveOptions()
+            {
+
+            }
+
             /// <summary>
-            /// Whether to attempt to resolve unregistered types
+            /// Get default settings
             /// </summary>
-            public bool IncludeUnregistered { get; set; }
-
-            public ResolutionOptions()
-                : this(true)
+            /// <returns>ResolveOptions instance with default settings</returns>
+            public static ResolveOptions GetDefault()
             {
-            }
-
-            public ResolutionOptions(bool includeUnregistered)
-            {
-                IncludeUnregistered = includeUnregistered;
-            }
-
-            public static ResolutionOptions GetDefault()
-            {
-                return new ResolutionOptions();
+                return new ResolveOptions();
             }
         }
 
@@ -245,7 +269,13 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>()
             where RegisterType : class
         {
-            return Resolve<RegisterType>(new NamedParameterOverloads(), string.Empty);
+            return (Resolve(typeof(RegisterType)) as RegisterType);
+        }
+
+        public RegisterType Resolve<RegisterType>(ResolveOptions resolveOptions)
+            where RegisterType : class
+        {
+            return (Resolve(typeof(RegisterType), resolveOptions) as RegisterType);
         }
 
         /// <summary>
@@ -348,7 +378,7 @@ namespace TinyIoC
             /// <param name="container">Container that requested the creation</param>
             /// <param name="parameters">Any user parameters passed</param>
             /// <returns></returns>
-            public abstract object GetObject(TinyIoC container, NamedParameterOverloads parameters);
+            public abstract object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options);
 
             public virtual ObjectFactoryBase SingletonVariant
             {
@@ -394,11 +424,11 @@ namespace TinyIoC
         {
             public override Type CreatesType { get { return typeof(RegisterImplementation); } }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 try
                 {
-                    return container.ConstructType(typeof(RegisterImplementation), parameters);
+                    return container.ConstructType(typeof(RegisterImplementation), parameters, options);
                 }
                 catch (TinyIoCResolutionException ex)
                 {
@@ -428,7 +458,7 @@ namespace TinyIoC
 
             public override Type CreatesType { get { return typeof(RegisterType); } }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 try
                 {
@@ -465,7 +495,7 @@ namespace TinyIoC
                 get { return typeof(RegisterImplementation); }
             }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 return instance;
             }
@@ -501,16 +531,14 @@ namespace TinyIoC
                 get { return typeof(RegisterImplementation); }
             }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters)
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 if (parameters.Count != 0)
                     throw new ArgumentException("Cannot specify parameters for singleton types");
 
-                // TODO - Better singleton implementation? Maybe ditch lazy instantiation or always lock rather than double if
-                if (_Current == null)
-                    lock (SingletonLock)
-                        if (_Current == null)
-                            _Current = container.ConstructType(typeof(RegisterImplementation)) as RegisterImplementation;
+                lock (SingletonLock)
+                    if (_Current == null)
+                        _Current = container.ConstructType(typeof(RegisterImplementation), options) as RegisterImplementation;
 
                 return _Current;
             }
@@ -670,7 +698,7 @@ namespace TinyIoC
 
         private bool CanResolve(Type type)
         {
-            return CanResolve(type, new NamedParameterOverloads());
+            return CanResolve(type, NamedParameterOverloads.GetDefault());
         }
 
         private bool CanResolve(Type type, NamedParameterOverloads parameters)
@@ -694,45 +722,57 @@ namespace TinyIoC
 
         private object Resolve(Type type)
         {
-            return Resolve(type, new NamedParameterOverloads(), string.Empty);
+            return Resolve(type, NamedParameterOverloads.GetDefault(), string.Empty, ResolveOptions.GetDefault());
+        }
+
+        private object Resolve(Type type, ResolveOptions resolveOptions)
+        {
+            return Resolve(type, NamedParameterOverloads.GetDefault(), string.Empty, resolveOptions);
         }
 
         private object Resolve(Type type, NamedParameterOverloads parameters)
         {
-            return Resolve(type, parameters, string.Empty);
+            return Resolve(type, parameters, string.Empty, ResolveOptions.GetDefault());
         }
 
         private object Resolve(Type type, string name)
         {
-            return Resolve(type, new NamedParameterOverloads(), name);
+            return Resolve(type, NamedParameterOverloads.GetDefault(), name, ResolveOptions.GetDefault());
         }
 
         private object Resolve(Type type, NamedParameterOverloads parameters, string name)
         {
+            return Resolve(type, parameters, name, ResolveOptions.GetDefault());
+        }
+
+        private object Resolve(Type type, NamedParameterOverloads parameters, string name, ResolveOptions options)
+        {
             ObjectFactoryBase factory;
 
+            // Attempt container resolution
             if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, name), out factory))
             {
-                return factory.GetObject(this, parameters);
+                return factory.GetObject(this, parameters, options);
             }
-            else
-            {
-                // TODO - check options
-                if (type.IsAbstract || type.IsInterface)
-                    throw new TinyIoCResolutionException(type);
-                else
-                {
-                    try
-                    {
-                        return ConstructType(type, parameters);
-                    }
-                    catch (TinyIoCResolutionException ex)
-                    {
-                        throw new TinyIoCResolutionException(type, ex);
-                    }
-                }
 
+            // Attemped unnamed fallback container resolution if relevant and requested
+            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution)
+            {
+                if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, string.Empty), out factory))
+                {
+                    return factory.GetObject(this, parameters, options);
+                }
             }
+
+            // Attempt unregistered construction if possible and requested
+            if (options.UnregisteredResolutionAction == ResolveOptions.UnregisteredResolutionActions.AttemptResolve)
+            {
+                if (!type.IsAbstract && !type.IsInterface)
+                    return ConstructType(type, parameters, options);
+            }
+
+            // Unable to resolve - throw
+            throw new TinyIoCResolutionException(type);
         }
 
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters)
@@ -767,12 +807,12 @@ namespace TinyIoC
             return null;
         }
 
-        private object ConstructType(Type type)
+        private object ConstructType(Type type, ResolveOptions options)
         {
-            return ConstructType(type, new NamedParameterOverloads());
+            return ConstructType(type, NamedParameterOverloads.GetDefault(), options);
         }
 
-        private object ConstructType(Type type, NamedParameterOverloads parameters)
+        private object ConstructType(Type type, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -784,13 +824,13 @@ namespace TinyIoC
             var ctorParams = ctor.GetParameters();
             object[] args = new object[ctorParams.Count()];
 
-            for (int parameterIndex = 0; parameterIndex < ctorParams.Count() - 1; parameterIndex++)
+            for (int parameterIndex = 0; parameterIndex < ctorParams.Count(); parameterIndex++)
             {
                 var currentParam = ctorParams[parameterIndex];
 
-                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : Resolve(currentParam.ParameterType);
+                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : Resolve(currentParam.ParameterType, options);
             }
-            
+
             try
             {
                 return Activator.CreateInstance(type, args);
