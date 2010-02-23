@@ -114,61 +114,11 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
-        internal class DisposableBase : IDisposable
+        public class DisposableTestClassWithInterface : IDisposable, ITestInterface
         {
             public void Dispose()
             {
-            }
-
-            protected virtual void Dispose(bool disposing)
-            {
-                if (disposing)
-                {
-                    // dispose-only, i.e. non-finalizable logic
-                }
-            }
-        }
-
-        internal class DisposableTestClassWithInterface : DisposableBase, ITestInterface
-        {
-            private bool _Disposed = false;
-            public bool Disposed
-            {
-                get
-                {
-                    return _Disposed;
-                }
-                set
-                {
-                    _Disposed = value;
-                }
-            }
-            
-            ~DisposableTestClassWithInterface()
-            {
-                Dispose(false);
-            }
-
-            public void Dispose()
-            {
-                Dispose(true);
-                GC.SuppressFinalize(this);
-            }
-
-            protected override void Dispose(bool disposing)
-            {
-                if (!Disposed)
-                {
-                    if (disposing)
-                    {
-                        // dispose-only, i.e. non-finalizable logic
-                    }
-
-                    // new shared cleanup logic
-                    Disposed = true;
-                }
-
-                base.Dispose(disposing);
+                
             }
         }
 

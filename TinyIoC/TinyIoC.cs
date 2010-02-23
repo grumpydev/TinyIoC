@@ -525,7 +525,23 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>()
             where RegisterType : class
         {
-            return Resolve<RegisterType>(new NamedParameterOverloads());
+            return Resolve<RegisterType>(new NamedParameterOverloads(), string.Empty);
+        }
+
+        /// <summary>
+        /// Attempts to resolve a type using default options and the supplied name.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <returns>Instance of type</returns>
+        /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
+        public RegisterType Resolve<RegisterType>(string name)
+            where RegisterType : class
+        {
+            return Resolve<RegisterType>(new NamedParameterOverloads(), name);
         }
 
         /// <summary>
@@ -541,14 +557,32 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters)
             where RegisterType : class
         {
+            return Resolve<RegisterType>(parameters, string.Empty);
+        }
+
+        /// <summary>
+        /// Attempts to resolve a type using default options and the supplied constructor parameters and name.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>Instance of type</returns>
+        /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
+        public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters, string name)
+            where RegisterType : class
+        {
             ObjectFactoryBase factory;
 
-            if (_RegisteredTypes.TryGetValue(new TypeRegistration(typeof(RegisterType)), out factory))
+            if (_RegisteredTypes.TryGetValue(new TypeRegistration(typeof(RegisterType), name), out factory))
             {
                 return factory.GetObject(this, parameters) as RegisterType;
             }
             else
             {
+                // TODO - check options
                 if (typeof(RegisterType).IsAbstract || typeof(RegisterType).IsInterface)
                     throw new TinyIoCResolutionException(typeof(RegisterType));
                 else

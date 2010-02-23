@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text.RegularExpressions;
 using TinyIoC.Tests.TestData;
 using TinyIoC.Tests.TestData.BasicClasses;
+using Moq;
 
 namespace TinyIoC.Tests
 {
@@ -348,26 +349,32 @@ namespace TinyIoC.Tests
         [Ignore]
         public void Dispose_RegisteredDisposableInstance_CallsDispose()
         {
+            var item = new Mock<DisposableTestClassWithInterface>();
+            var disposableItem = item.As<IDisposable>();
+            disposableItem.Setup(i => i.Dispose());
+
             var container = UtilityMethods.GetContainer();
-            var item = new DisposableTestClassWithInterface();
-            container.Register<DisposableTestClassWithInterface>(item);
+            container.Register<DisposableTestClassWithInterface>(item.Object);
 
             container.Dispose();
 
-            Assert.IsTrue(item.Disposed);
+            item.VerifyAll();
         }
 
         [TestMethod]
         [Ignore]
         public void Dispose_RegisteredDisposableInstanceWithInterface_CallsDispose()
         {
+            var item = new Mock<DisposableTestClassWithInterface>();
+            var disposableItem = item.As<IDisposable>();
+            disposableItem.Setup(i => i.Dispose());
+
             var container = UtilityMethods.GetContainer();
-            var item = new DisposableTestClassWithInterface();
-            container.Register<ITestInterface>(item);
+            container.Register<ITestInterface>(item.Object);
 
             container.Dispose();
 
-            Assert.IsTrue(item.Disposed);
+            item.VerifyAll();
         }
 
         [TestMethod]
@@ -475,6 +482,111 @@ namespace TinyIoC.Tests
             container.Register<TestClassDefaultCtor>((c, p) => TestClassDefaultCtor.CreateNew(c) as TestClassDefaultCtor, "TestName");
 
             Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Resolve_NamedRegistrationFollowedByNormal_CanResolveNamed()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>("TestName");
+            container.Register<TestClassDefaultCtor>();
+
+            var result = container.Resolve<TestClassDefaultCtor>("TestName");
+
+            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void Resolve_NormalRegistrationFollowedByNamed_CanResolveNormal()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassDefaultCtor>("TestName");
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void Resolve_NamedInterfaceRegistrationFollowedByNormal_CanResolveNamed()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            var result = container.Resolve<TestClassDefaultCtor>("TestName");
+
+            Assert.IsInstanceOfType(result, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void Resolve_NormalInterfaceRegistrationFollowedByNamed_CanResolveNormal()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+
+            Assert.IsInstanceOfType(result, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void Resolve_NamedInstanceRegistrationFollowedByNormal_CanResolveNamed()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance1 = new TestClassDefaultCtor();
+            var instance2 = new TestClassDefaultCtor();
+            container.Register<TestClassDefaultCtor>(instance1, "TestName");
+            container.Register<TestClassDefaultCtor>(instance2);
+
+            var result = container.Resolve<TestClassDefaultCtor>("TestName");
+
+            Assert.ReferenceEquals(instance1, result);
+        }
+
+        [TestMethod]
+        public void Resolve_NormalInstanceRegistrationFollowedByNamed_CanResolveNormal()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance1 = new TestClassDefaultCtor();
+            var instance2 = new TestClassDefaultCtor();
+            container.Register<TestClassDefaultCtor>(instance1);
+            container.Register<TestClassDefaultCtor>(instance2, "TestName");
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+
+            Assert.ReferenceEquals(instance1, result);
+        }
+
+
+        [TestMethod]
+        public void Resolve_NamedFactoryRegistrationFollowedByNormal_CanResolveNamed()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance1 = new TestClassDefaultCtor();
+            var instance2 = new TestClassDefaultCtor();
+            container.Register<TestClassDefaultCtor>((c,p) => instance1, "TestName");
+            container.Register<TestClassDefaultCtor>((c,p) => instance2);
+
+            var result = container.Resolve<TestClassDefaultCtor>("TestName");
+
+            Assert.ReferenceEquals(instance1, result);
+        }
+
+        [TestMethod]
+        public void Resolve_FactoryInstanceRegistrationFollowedByNamed_CanResolveNormal()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance1 = new TestClassDefaultCtor();
+            var instance2 = new TestClassDefaultCtor();
+            container.Register<TestClassDefaultCtor>((c, p) => instance1);
+            container.Register<TestClassDefaultCtor>((c, p) => instance2, "TestName");
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+
+            Assert.ReferenceEquals(instance1, result);
         }
     }
 }
