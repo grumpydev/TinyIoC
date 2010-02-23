@@ -837,6 +837,10 @@ namespace TinyIoC
 
             foreach (var parameter in ctor.GetParameters())
             {
+                // TODO - Find a better way of fixing - shouldn't really get this far with ctors with nameless params?
+                if (string.IsNullOrEmpty(parameter.Name))
+                    return false;
+
                 if (!parameters.ContainsKey(parameter.Name) && !CanResolve(parameter.ParameterType))
                     return false;
             }
@@ -848,6 +852,9 @@ namespace TinyIoC
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
+
+            if (type.IsValueType)
+                return null;
 
             var ctors = from ctor in type.GetConstructors()
                         orderby ctor.GetParameters().Count()

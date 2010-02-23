@@ -590,7 +590,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
             container.Register<ITestInterface, TestClassDefaultCtor>();
 
-            var result = container.Resolve<TestClassDefaultCtor>("TestName");
+            var result = container.Resolve<ITestInterface>("TestName");
 
             Assert.IsInstanceOfType(result, typeof(ITestInterface));
         }
