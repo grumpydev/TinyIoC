@@ -13,11 +13,14 @@ namespace TinyIoC.Tests.TestData
 
         internal class Service2
         {
-            Service3 service3;
+            Service3 Service3;
 
             public Service2(Service3 service3)
             {
-                this.service3 = service3;
+                if (service3 == null)
+                    throw new ArgumentNullException("service3");
+
+                this.Service3 = service3;
             }
         }
 
@@ -40,6 +43,12 @@ namespace TinyIoC.Tests.TestData
 
             public RootClass(Service1 service1, Service2 service2, string stringProperty, int intProperty)
             {
+                if (service1 == null)
+                    throw new ArgumentNullException("service1");
+
+                if (service2 == null)
+                    throw new ArgumentNullException("service2");
+
                 this.service1 = service1;
                 this.service2 = service2;
                 StringProperty = stringProperty;

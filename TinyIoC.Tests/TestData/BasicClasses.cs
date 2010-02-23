@@ -36,6 +36,9 @@ namespace TinyIoC.Tests.TestData
 
             public TestClassWithContainerDependency(TinyIoC container)
             {
+                if (container == null)
+                    throw new ArgumentNullException("container");
+
                 _Container = container;
             }
         }
@@ -50,6 +53,9 @@ namespace TinyIoC.Tests.TestData
 
             public TestClassWithInterfaceDependency(ITestInterface dependency)
             {
+                if (dependency == null)
+                    throw new ArgumentNullException("dependency");
+
                 Dependency = dependency;
             }
 
@@ -71,7 +77,10 @@ namespace TinyIoC.Tests.TestData
 
             public TestClassWithDependency(TestClassDefaultCtor dependency)
             {
+                if (dependency == null)
+                    throw new ArgumentNullException("dependency");
 
+                Dependency = dependency;
             }
 
             public TestClassWithDependency(TestClassDefaultCtor dependency, int param1, string param2)
@@ -91,6 +100,10 @@ namespace TinyIoC.Tests.TestData
 
             public TestClassWithDependencyAndParameters(TestClassDefaultCtor dependency, int param1, string param2)
             {
+                if (dependency == null)
+                    throw new ArgumentNullException("dependency");
+
+                Dependency = dependency;
                 Param1 = param1;
                 Param2 = param2;
             }
@@ -110,6 +123,9 @@ namespace TinyIoC.Tests.TestData
 
             public TestClassNoInterfaceDependency(ITestInterface dependency)
             {
+                if (dependency == null)
+                    throw new ArgumentNullException("dependency");
+
                 Dependency = dependency;
             }
         }
