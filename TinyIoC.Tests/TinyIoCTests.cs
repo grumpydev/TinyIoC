@@ -969,8 +969,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
-        public void Register_MultiInstanceToMultiInstance_ThrowsException()
+        public void Register_MultiInstanceToMultiInstance_Registers()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>().AsMultiInstance();
@@ -979,8 +978,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
-        public void Register_SingletonToSingletonFluent_ThrowsException()
+        public void Register_SingletonToSingletonFluent_Registers()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>().AsSingleton();
@@ -1013,6 +1011,25 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsMultiInstance();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        public void Register_InstanceToSingletonFluent_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).AsSingleton();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_InstanceToMultiInstance_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).AsMultiInstance();
 
             Assert.IsTrue(true);
         }

@@ -549,7 +549,7 @@ namespace TinyIoC
         /// </summary>
         /// <typeparam name="RegisterType">Registered type</typeparam>
         /// <typeparam name="RegisterImplementation">Type to construct to fullful request for RegisteredType</typeparam>
-        private class NewInstanceFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase
+        private class MultiInstanceFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
@@ -572,6 +572,14 @@ namespace TinyIoC
                 get
                 {
                     return new SingletonFactory<RegisterType, RegisterImplementation>();
+                }
+            }
+
+            public override ObjectFactoryBase MultiInstanceVariant
+            {
+                get
+                {
+                    return this;
                 }
             }
         }
@@ -640,7 +648,7 @@ namespace TinyIoC
             {
                 get
                 {
-                    return new NewInstanceFactory<RegisterType, RegisterImplementation>();
+                    return new MultiInstanceFactory<RegisterType, RegisterImplementation>();
                 }
             }
 
@@ -687,11 +695,19 @@ namespace TinyIoC
 
             }
 
+            public override ObjectFactoryBase SingletonVariant
+            {
+                get
+                {
+                    return this;
+                }
+            }
+
             public override ObjectFactoryBase MultiInstanceVariant
             {
                 get
                 {
-                    return new NewInstanceFactory<RegisterType, RegisterImplementation>();
+                    return new MultiInstanceFactory<RegisterType, RegisterImplementation>();
                 }
             }
 
@@ -827,7 +843,7 @@ namespace TinyIoC
             if (typeof(RegisterType).IsInterface)
                 return new SingletonFactory<RegisterType, RegisterImplementation>();
 
-            return new NewInstanceFactory<RegisterType, RegisterImplementation>();
+            return new MultiInstanceFactory<RegisterType, RegisterImplementation>();
         }
 
         private bool CanResolve(Type type)
