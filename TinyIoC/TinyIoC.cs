@@ -22,16 +22,16 @@ namespace TinyIoC
         }
     }
 
-    public class TinyIoCInstantiationTypeException : Exception
+    public class TinyIoCRegistrationException : Exception
     {
-        private const string ERROR_TEXT = "Unable to make {0} {1}";
+        private const string ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
 
-        public TinyIoCInstantiationTypeException(Type type, string method)
+        public TinyIoCRegistrationException(Type type, string method)
             : base(String.Format(ERROR_TEXT, type.FullName, method))
         {
         }
 
-        public TinyIoCInstantiationTypeException(Type type, string method, Exception innerException)
+        public TinyIoCRegistrationException(Type type, string method, Exception innerException)
             : base(String.Format(ERROR_TEXT, type.FullName, method), innerException)
         {
         }
@@ -124,7 +124,7 @@ namespace TinyIoC
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
-                    throw new TinyIoCInstantiationTypeException(typeof(RegisterType), "singleton");
+                    throw new TinyIoCRegistrationException(typeof(RegisterType), "singleton");
 
                 return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.SingletonVariant);
             }
@@ -139,7 +139,7 @@ namespace TinyIoC
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
-                    throw new TinyIoCInstantiationTypeException(typeof(RegisterType), "multi-instance");
+                    throw new TinyIoCRegistrationException(typeof(RegisterType), "multi-instance");
 
                 return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.MultiInstanceVariant);
             }
@@ -156,7 +156,7 @@ namespace TinyIoC
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
-                    throw new TinyIoCInstantiationTypeException(typeof(RegisterType), "weak reference");
+                    throw new TinyIoCRegistrationException(typeof(RegisterType), "weak reference");
 
                 return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.WeakReferenceVariant);
             }
@@ -173,7 +173,7 @@ namespace TinyIoC
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
-                    throw new TinyIoCInstantiationTypeException(typeof(RegisterType), "strong reference");
+                    throw new TinyIoCRegistrationException(typeof(RegisterType), "strong reference");
 
                 return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.StrongReferenceVariant);
             }
@@ -515,7 +515,7 @@ namespace TinyIoC
             {
                 get
                 {
-                    throw new TinyIoCInstantiationTypeException(this.GetType(), "singleton");
+                    throw new TinyIoCRegistrationException(this.GetType(), "singleton");
                 }
             }
 
@@ -523,7 +523,7 @@ namespace TinyIoC
             {
                 get
                 {
-                    throw new TinyIoCInstantiationTypeException(this.GetType(), "multi-instance");
+                    throw new TinyIoCRegistrationException(this.GetType(), "multi-instance");
                 }
             }
 
@@ -531,7 +531,7 @@ namespace TinyIoC
             {
                 get
                 {
-                    throw new TinyIoCInstantiationTypeException(this.GetType(), "strong reference");
+                    throw new TinyIoCRegistrationException(this.GetType(), "strong reference");
                 }
             }
 
@@ -539,7 +539,7 @@ namespace TinyIoC
             {
                 get
                 {
-                    throw new TinyIoCInstantiationTypeException(this.GetType(), "weak reference");
+                    throw new TinyIoCRegistrationException(this.GetType(), "weak reference");
                 }
             }
         }
@@ -777,7 +777,7 @@ namespace TinyIoC
         }
         #endregion
 
-        #region Utility Methods
+        #region Internal Methods
         private void RegisterDefaultTypes()
         {
             this.Register<TinyIoC>(this);

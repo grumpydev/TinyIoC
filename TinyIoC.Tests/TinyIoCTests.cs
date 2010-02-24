@@ -969,7 +969,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_MultiInstanceToMultiInstance_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
@@ -979,7 +979,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_SingletonToSingletonFluent_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
@@ -998,7 +998,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_FactoryToSingletonFluent_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
@@ -1008,7 +1008,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_FactoryToMultiInstanceFluent_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
