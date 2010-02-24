@@ -358,6 +358,17 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void Register_NullFactory_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            Func<TinyIoC, TinyIoC.NamedParameterOverloads, ITestInterface> factory = null;
+            container.Register<ITestInterface>(factory);
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
         public void Resolve_TinyIoC_ReturnsCurrentContainer()
         {
             var container = UtilityMethods.GetContainer();
@@ -884,6 +895,57 @@ namespace TinyIoC.Tests
 
             Assert.IsInstanceOfType(result, typeof(TestClassWithParameters));
         }
+
+        [TestMethod]
+        public void Resolve_RegisteredTypeWithNameAndParameters_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>("TestName");
+
+            var result = container.Resolve<TestClassWithParameters>("TestName",
+                    new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } }
+                );
+
+            Assert.IsInstanceOfType(result, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_ClassWithNoPublicConstructor_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassPrivateCtor>();
+
+            var result = container.Resolve<TestClassPrivateCtor>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassPrivateCtor));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_RegisteredSingletonWithParameters_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            var output = container.Resolve<ITestInterface>(new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } });
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_WithNullParameters_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            TinyIoC.NamedParameterOverloads parameters = null;
+
+            var output = container.Resolve<TestClassDefaultCtor>(parameters);
+
+            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
         #region Scenario Tests
         [TestMethod]
         public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()

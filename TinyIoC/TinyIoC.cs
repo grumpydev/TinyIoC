@@ -382,7 +382,7 @@ namespace TinyIoC
         /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>()
-            where ResolveType: class
+            where ResolveType : class
         {
             return CanResolve(typeof(ResolveType));
         }
@@ -650,11 +650,6 @@ namespace TinyIoC
                 return _Current;
             }
 
-            public SingletonFactory(RegisterImplementation instance)
-            {
-                _Current = instance;
-            }
-
             public SingletonFactory()
             {
 
@@ -880,7 +875,14 @@ namespace TinyIoC
             // Attempt container resolution
             if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, name), out factory))
             {
-                return factory.GetObject(this, parameters, options);
+                try
+                {
+                    return factory.GetObject(this, parameters, options);
+                }
+                catch (Exception ex)
+                {
+                    throw new TinyIoCResolutionException(type, ex);
+                }
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
@@ -892,7 +894,14 @@ namespace TinyIoC
             {
                 if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, string.Empty), out factory))
                 {
-                    return factory.GetObject(this, parameters, options);
+                    try
+                    {
+                        return factory.GetObject(this, parameters, options);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new TinyIoCResolutionException(type, ex);
+                    }
                 }
             }
 

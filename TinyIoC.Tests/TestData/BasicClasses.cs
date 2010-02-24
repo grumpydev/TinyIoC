@@ -90,6 +90,13 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
+        internal class TestClassPrivateCtor
+        {
+            private TestClassPrivateCtor()
+            {
+            }
+        }
+
         internal class TestClassWithParameters
         {
             public string StringProperty { get; set; }
