@@ -781,6 +781,7 @@ namespace TinyIoC
                 return String.Format("{0}|{1}", this.Type.FullName, this.Name).GetHashCode();
             }
         }
+        private readonly object RegistrationLock = new object();
         private readonly Dictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
         #endregion
 
@@ -823,15 +824,18 @@ namespace TinyIoC
 
             var typeRegistration = new TypeRegistration(typeof(RegisterType), name);
 
-            if (_RegisteredTypes.TryGetValue(typeRegistration, out current))
+            lock (RegistrationLock)
             {
-                var disposable = current as IDisposable;
+                if (_RegisteredTypes.TryGetValue(typeRegistration, out current))
+                {
+                    var disposable = current as IDisposable;
 
-                if (disposable != null)
-                    disposable.Dispose();
+                    if (disposable != null)
+                        disposable.Dispose();
+                }
+
+                _RegisteredTypes[typeRegistration] = factory;
             }
-
-            _RegisteredTypes[typeRegistration] = factory;
 
             return new RegisterOptions<RegisterType, RegisterImplementation>(this);
         }
