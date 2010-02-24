@@ -36,6 +36,21 @@ namespace TinyIoC
         {
         }
     }
+
+    public class TinyIoCWeakReferenceException : Exception
+    {
+        private const string ERROR_TEXT = "Unable to instantiate {0} - referenced object has been reclaimed";
+         
+        public TinyIoCWeakReferenceException(Type type)
+            : base(String.Format(ERROR_TEXT, type.FullName))
+        {
+        }
+
+        public TinyIoCWeakReferenceException(Type type, Exception innerException)
+            : base(String.Format(ERROR_TEXT, type.FullName), innerException)
+        {
+        }
+    }
     #endregion
 
     public sealed class TinyIoC : IDisposable
@@ -146,8 +161,6 @@ namespace TinyIoC
             /// <exception cref="TinyIoCInstantiationTypeException"></exception>
             public RegisterOptions<RegisterType, RegisterImplementation> WithWeakReference()
             {
-                throw new NotImplementedException();
-
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
@@ -163,8 +176,6 @@ namespace TinyIoC
             /// <exception cref="TinyIoCInstantiationTypeException"></exception>
             public RegisterOptions<RegisterType, RegisterImplementation> WithStrongReference()
             {
-                throw new NotImplementedException();
-
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
@@ -640,7 +651,7 @@ namespace TinyIoC
         private class DelegateFactory<RegisterType> : ObjectFactoryBase
             where RegisterType : class
         {
-            private Func<TinyIoC, NamedParameterOverloads, RegisterType> _Factory;
+            private Func<TinyIoC, NamedParameterOverloads, RegisterType> _factory;
 
             public override bool AssumeConstruction { get { return true; } }
 
@@ -650,7 +661,7 @@ namespace TinyIoC
             {
                 try
                 {
-                    return _Factory.Invoke(container, parameters);
+                    return _factory.Invoke(container, parameters);
                 }
                 catch (Exception ex)
                 {
@@ -663,7 +674,85 @@ namespace TinyIoC
                 if (factory == null)
                     throw new ArgumentNullException("factory");
 
-                _Factory = factory;
+                _factory = factory;
+            }
+
+            public override ObjectFactoryBase WeakReferenceVariant
+            {
+                get
+                {
+                    return new WeakDelegateFactory<RegisterType>(_factory);
+                }
+            }
+
+            public override ObjectFactoryBase StrongReferenceVariant
+            {
+                get
+                {
+                    return this;
+                }
+            }
+        }
+
+        /// <summary>
+        /// IObjectFactory that invokes a specified delegate to construct the object
+        /// 
+        /// Holds the delegate using a weak reference
+        /// </summary>
+        /// <typeparam name="RegisterType">Registered type to be constructed</typeparam>
+        private class WeakDelegateFactory<RegisterType> : ObjectFactoryBase
+            where RegisterType : class
+        {
+            private WeakReference _factory;
+
+            public override bool AssumeConstruction { get { return true; } }
+
+            public override Type CreatesType { get { return typeof(RegisterType); } }
+
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            {
+                var factory = _factory.Target as Func<TinyIoC, NamedParameterOverloads, RegisterType>;
+
+                if (factory == null)
+                    throw new TinyIoCWeakReferenceException(typeof(RegisterType));
+
+                try
+                {
+                    return factory.Invoke(container, parameters);
+                }
+                catch (Exception ex)
+                {
+                    throw new TinyIoCResolutionException(typeof(RegisterType), ex);
+                }
+            }
+
+            public WeakDelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
+            {
+                if (factory == null)
+                    throw new ArgumentNullException("factory");
+
+                _factory = new WeakReference(factory);
+            }
+
+            public override ObjectFactoryBase StrongReferenceVariant
+            {
+                get
+                {
+                    var factory = _factory.Target as Func<TinyIoC, NamedParameterOverloads, RegisterType>;
+
+                    if (factory == null)
+                        throw new TinyIoCWeakReferenceException(typeof(RegisterType));
+
+                    return new DelegateFactory<RegisterType>(factory);
+                }
+            }
+
+            public override ObjectFactoryBase WeakReferenceVariant
+            {
+                get
+                {
+                    return this;
+                }
             }
         }
 
@@ -676,7 +765,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            private RegisterImplementation instance;
+            private RegisterImplementation _instance;
 
             public override Type CreatesType
             {
@@ -685,12 +774,12 @@ namespace TinyIoC
 
             public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
             {
-                return instance;
+                return _instance;
             }
 
             public InstanceFactory(RegisterImplementation instance)
             {
-                this.instance = instance;
+                this._instance = instance;
             }
 
             public override ObjectFactoryBase MultiInstanceVariant
@@ -701,9 +790,96 @@ namespace TinyIoC
                 }
             }
 
+            public override ObjectFactoryBase WeakReferenceVariant
+            {
+                get
+                {
+                    return new WeakInstanceFactory<RegisterType, RegisterImplementation>(_instance);
+                }
+            }
+
+            public override ObjectFactoryBase StrongReferenceVariant
+            {
+                get
+                {
+                    return this;
+                }
+            }
+
             public void Dispose()
             {
-                var disposable = instance as IDisposable;
+                var disposable = _instance as IDisposable;
+
+                if (disposable != null)
+                    disposable.Dispose();
+            }
+        }
+
+                /// <summary>
+        /// Stores an particular instance to return for a type
+        /// 
+        /// Stores the instance with a weak reference
+        /// </summary>
+        /// <typeparam name="RegisterType">Registered type</typeparam>
+        /// <typeparam name="RegisterImplementation">Type of the instance</typeparam>
+        private class WeakInstanceFactory<RegisterType, RegisterImplementation> : ObjectFactoryBase, IDisposable
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
+        {
+            private WeakReference _instance;
+
+            public override Type CreatesType
+            {
+                get { return typeof(RegisterImplementation); }
+            }
+
+            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            {
+                var instance = _instance.Target as RegisterImplementation;
+
+                if (instance == null)
+                    throw new TinyIoCWeakReferenceException(typeof(RegisterType));
+
+                return instance;
+            }
+
+            public WeakInstanceFactory(RegisterImplementation instance)
+            {
+                this._instance = new WeakReference(instance);
+            }
+
+            public override ObjectFactoryBase MultiInstanceVariant
+            {
+                get
+                {
+                    return new MultiInstanceFactory<RegisterType, RegisterImplementation>();
+                }
+            }
+
+            public override ObjectFactoryBase WeakReferenceVariant
+            {
+                get
+                {
+                    return this;
+                }
+            }
+
+            public override ObjectFactoryBase StrongReferenceVariant
+            {
+                get
+                {
+                    var instance = _instance.Target as RegisterImplementation;
+
+                    if (instance == null)
+                        throw new TinyIoCWeakReferenceException(typeof(RegisterType));
+
+                    return new InstanceFactory<RegisterType, RegisterImplementation>(instance);
+                }
+            }
+
+            public void Dispose()
+            {
+                var disposable = _instance.Target as IDisposable;
 
                 if (disposable != null)
                     disposable.Dispose();
@@ -887,6 +1063,21 @@ namespace TinyIoC
             }
 
             return new RegisterOptions<RegisterType, RegisterImplementation>(this);
+        }
+
+        private void RemoveRegistration<RegisterType>()
+        {
+            RemoveRegistration<RegisterType>(string.Empty);
+        }
+
+        private void RemoveRegistration<RegisterType>(string name)
+        {
+            var typeRegistration = new TypeRegistration(typeof(RegisterType), name);
+
+            lock (RegistrationLock)
+            {
+                _RegisteredTypes.Remove(typeRegistration);
+            }
         }
 
         private static ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()

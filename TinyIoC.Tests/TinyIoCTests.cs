@@ -978,6 +978,26 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        public void Register_MultiInstanceWithStrongReference_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>().WithStrongReference();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        public void Register_MultiInstanceWithWeakReference_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>().WithWeakReference();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
         public void Register_SingletonToSingletonFluent_Registers()
         {
             var container = UtilityMethods.GetContainer();
@@ -991,6 +1011,26 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>().AsMultiInstance();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        public void Register_SingletonWithStrongReference_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>().WithStrongReference();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        public void Register_SingletonWithWeakReference_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>().WithWeakReference();
 
             Assert.IsTrue(true);
         }
@@ -1016,6 +1056,24 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Register_FactoryWithStrongReference_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithStrongReference();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_FactoryWithWeakReference_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithWeakReference();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_InstanceToSingletonFluent_ThrowsException()
         {
@@ -1032,6 +1090,80 @@ namespace TinyIoC.Tests
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).AsMultiInstance();
 
             Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_InstanceWithStrongReference_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithStrongReference();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_InstanceWithWeakReference_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithWeakReference();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Resolve_OutOfScopeStrongReferencedInstance_ResolvesCorrectly()
+        {
+            var container = UtilityMethods.GetContainer();
+            UtilityMethods.RegisterInstanceStrongRef(container);
+
+            GC.Collect();
+            GC.WaitForFullGCComplete(4000);
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+            Assert.AreEqual("Testing", result.Prop1);
+        }
+
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_OutOfScopeWeakReferencedInstance_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            UtilityMethods.RegisterInstanceWeakRef(container);
+
+            GC.Collect();
+            GC.WaitForFullGCComplete(4000);
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+            Assert.AreEqual("Testing", result.Prop1);
+        }
+
+        [TestMethod]
+        public void Resolve_OutOfScopeStrongReferencedFactory_ResolvesCorrectly()
+        {
+            var container = UtilityMethods.GetContainer();
+            UtilityMethods.RegisterFactoryStrongRef(container);
+
+            GC.Collect();
+            GC.WaitForFullGCComplete(4000);
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+            Assert.AreEqual("Testing", result.Prop1);
+        }
+
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_OutOfScopeWeakReferencedFactory_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            UtilityMethods.RegisterFactoryWeakRef(container);
+
+            GC.Collect();
+            GC.WaitForFullGCComplete(4000);
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+            Assert.AreEqual("Testing", result.Prop1);
         }
 
         #region Scenario Tests
