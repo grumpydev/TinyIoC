@@ -52,23 +52,23 @@ namespace TinyIoC
             }
         }
 
+        public enum UnregisteredResolutionActions
+        {
+            AttemptResolve,
+            Fail
+        }
+
+        public enum NamedResolutionFailureActions
+        {
+            AttemptUnnamedResolution,
+            Fail
+        }
+
         /// <summary>
         /// Resolution settings
         /// </summary>
         public sealed class ResolveOptions
         {
-            public enum UnregisteredResolutionActions
-            {
-                AttemptResolve,
-                Fail
-            }
-
-            public enum NamedResolutionFailureActions
-            {
-                AttemptUnnamedResolution,
-                Fail
-            }
-
             private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
             public UnregisteredResolutionActions UnregisteredResolutionAction
             {
@@ -81,11 +81,6 @@ namespace TinyIoC
             {
                 get { return _NamedResolutionFailureAction; }
                 set { _NamedResolutionFailureAction = value; }
-            }
-
-            public ResolveOptions()
-            {
-
             }
 
             /// <summary>
@@ -375,6 +370,18 @@ namespace TinyIoC
             return (Resolve(typeof(RegisterType), parameters, options) as RegisterType);
         }
 
+        /// <summary>
+        /// Attempts to resolve a named type using specified options and the supplied constructor parameters.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Instance of type</returns>
+        /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public RegisterType Resolve<RegisterType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where RegisterType : class
         {
@@ -404,6 +411,7 @@ namespace TinyIoC
         /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
         /// </summary>
         /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>()
             where ResolveType : class
@@ -411,6 +419,13 @@ namespace TinyIoC
             return CanResolve(typeof(ResolveType));
         }
 
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with default options.
+        ///
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>(string name)
             where ResolveType : class
         {
@@ -423,6 +438,7 @@ namespace TinyIoC
         /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
         /// </summary>
         /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
         /// <param name="options">Resolution options</param>
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>(ResolveOptions options)
@@ -431,6 +447,15 @@ namespace TinyIoC
             return CanResolve(typeof(ResolveType), options);
         }
 
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with the specified options.
+        ///
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>(string name, ResolveOptions options)
             where ResolveType : class
         {
@@ -454,13 +479,24 @@ namespace TinyIoC
             return CanResolve(typeof(ResolveType), parameters);
         }
 
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with the supplied constructor parameters and default options.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// 
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User supplied named parameter overloads</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters)
             where ResolveType : class
         {
             return CanResolve(typeof(ResolveType), name, parameters);
         }
 
-        /// <summary>
         /// <summary>
         /// Attempts to predict whether a given type can be resolved with the supplied constructor parameters options.
         ///
@@ -479,6 +515,19 @@ namespace TinyIoC
             return CanResolve(typeof(ResolveType), parameters, options);
         }
 
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with the supplied constructor parameters options.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// 
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User supplied named parameter overloads</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
@@ -902,11 +951,11 @@ namespace TinyIoC
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == ResolveOptions.NamedResolutionFailureActions.Fail)
+            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
                 return false;
 
             // Attemped unnamed fallback container resolution if relevant and requested
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution)
+            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
             {
                 if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType), out factory))
                 {
@@ -918,7 +967,7 @@ namespace TinyIoC
             }
 
             // Attempt unregistered construction if possible and requested
-            if (options.UnregisteredResolutionAction == ResolveOptions.UnregisteredResolutionActions.AttemptResolve)
+            if (options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve)
                 return (GetBestConstructor(checkType, parameters, options) != null) ? true : false;
 
             return false;
@@ -977,11 +1026,11 @@ namespace TinyIoC
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == ResolveOptions.NamedResolutionFailureActions.Fail)
+            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
                 throw new TinyIoCResolutionException(type);
 
             // Attemped unnamed fallback container resolution if relevant and requested
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution)
+            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
             {
                 if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, string.Empty), out factory))
                 {
@@ -997,7 +1046,7 @@ namespace TinyIoC
             }
 
             // Attempt unregistered construction if possible and requested
-            if (options.UnregisteredResolutionAction == ResolveOptions.UnregisteredResolutionActions.AttemptResolve)
+            if (options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve)
             {
                 if (!type.IsAbstract && !type.IsInterface)
                     return ConstructType(type, parameters, options);

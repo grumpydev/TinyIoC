@@ -693,7 +693,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>("Testing");
 
-            var output = container.Resolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.AttemptResolve });
+            var output = container.Resolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.AttemptResolve });
 
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
@@ -705,7 +705,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>("Testing");
 
-            var output = container.Resolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail });
+            var output = container.Resolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail });
 
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
@@ -717,7 +717,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
 
-            var output = container.Resolve<TestClassDefaultCtor>("Testing", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction =  TinyIoC.ResolveOptions.NamedResolutionFailureActions.Fail });
+            var output = container.Resolve<TestClassDefaultCtor>("Testing", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction =  TinyIoC.NamedResolutionFailureActions.Fail });
 
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
@@ -728,7 +728,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
 
-            var output = container.Resolve<TestClassDefaultCtor>("Testing", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution });
+            var output = container.Resolve<TestClassDefaultCtor>("Testing", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.NamedResolutionFailureActions.AttemptUnnamedResolution });
 
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
@@ -779,7 +779,7 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            var result = container.CanResolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.AttemptResolve });
+            var result = container.CanResolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.AttemptResolve });
 
             Assert.IsTrue(result);
         }
@@ -789,7 +789,7 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            var result = container.CanResolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail });
+            var result = container.CanResolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail });
 
             Assert.IsFalse(result);
         }
@@ -801,7 +801,7 @@ namespace TinyIoC.Tests
 
             var result = container.CanResolve<TestClassWithParameters>(
                     new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } },
-                    new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.AttemptResolve }
+                    new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.AttemptResolve }
                 );
 
             Assert.IsTrue(result);
@@ -814,7 +814,7 @@ namespace TinyIoC.Tests
 
             var result = container.CanResolve<TestClassWithParameters>(
                     new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } },
-                    new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail }
+                    new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail }
                 );
 
             Assert.IsFalse(result);
@@ -837,7 +837,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
 
-            var result = container.CanResolve<TestClassDefaultCtor>("TestName", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution });
+            var result = container.CanResolve<TestClassDefaultCtor>("TestName", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.NamedResolutionFailureActions.AttemptUnnamedResolution });
 
             Assert.IsTrue(result);
         }
@@ -848,7 +848,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
 
-            var result = container.CanResolve<TestClassDefaultCtor>("TestName", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.ResolveOptions.NamedResolutionFailureActions.Fail });
+            var result = container.CanResolve<TestClassDefaultCtor>("TestName", new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.NamedResolutionFailureActions.Fail });
 
             Assert.IsFalse(result);
         }
@@ -874,7 +874,7 @@ namespace TinyIoC.Tests
 
             var result = container.CanResolve<TestClassWithParameters>("TestName",
                     new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } },
-                    new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution }
+                    new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.NamedResolutionFailureActions.AttemptUnnamedResolution }
                 );
 
             Assert.IsTrue(result);
@@ -888,7 +888,7 @@ namespace TinyIoC.Tests
 
             var result = container.CanResolve<TestClassWithParameters>("TestName",
                     new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } },
-                    new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.ResolveOptions.NamedResolutionFailureActions.Fail }
+                    new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.NamedResolutionFailureActions.Fail }
                 );
 
             Assert.IsFalse(result);
@@ -902,7 +902,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassWithParameters>("TestName",
                     new TinyIoC.NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } },
-                    new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.ResolveOptions.NamedResolutionFailureActions.Fail }
+                    new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.NamedResolutionFailureActions.Fail }
                 );
 
             Assert.IsInstanceOfType(result, typeof(TestClassWithParameters));
@@ -1085,7 +1085,7 @@ namespace TinyIoC.Tests
             container.Register<NestedClassDependencies.Service2>();
             container.Register<NestedClassDependencies.RootClass>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.AttemptResolve });
+            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.AttemptResolve });
 
             Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
@@ -1099,7 +1099,7 @@ namespace TinyIoC.Tests
             container.Register<NestedClassDependencies.Service2>();
             container.Register<NestedClassDependencies.RootClass>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.ResolveOptions.UnregisteredResolutionActions.Fail });
+            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail });
 
             Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
