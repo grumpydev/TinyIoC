@@ -114,6 +114,11 @@ namespace TinyIoC
                 _Container = container;
             }
 
+            /// <summary>
+            /// Make registration a singleton (single instance) if possible
+            /// </summary>
+            /// <returns>RegisterOptions</returns>
+            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
             public RegisterOptions<RegisterType, RegisterImplementation> AsSingleton()
             {
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
@@ -124,6 +129,11 @@ namespace TinyIoC
                 return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.SingletonVariant);
             }
 
+            /// <summary>
+            /// Make registration multi-instance if possible
+            /// </summary>
+            /// <returns>RegisterOptions</returns>
+            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
             public RegisterOptions<RegisterType, RegisterImplementation> AsMultiInstance()
             {
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
@@ -134,8 +144,15 @@ namespace TinyIoC
                 return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.MultiInstanceVariant);
             }
 
+            /// <summary>
+            /// Make registration hold a weak reference if possible
+            /// </summary>
+            /// <returns>RegisterOptions</returns>
+            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
             public RegisterOptions<RegisterType, RegisterImplementation> WithWeakReference()
             {
+                throw new NotImplementedException();
+
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
@@ -144,8 +161,15 @@ namespace TinyIoC
                 return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.WeakReferenceVariant);
             }
 
+            /// <summary>
+            /// Make registration hold a strong reference if possible
+            /// </summary>
+            /// <returns>RegisterOptions</returns>
+            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
             public RegisterOptions<RegisterType, RegisterImplementation> WithStrongReference()
             {
+                throw new NotImplementedException();
+
                 var currentFactory = _Container.GetCurrentFactory<RegisterType>();
 
                 if (currentFactory == null)
@@ -354,7 +378,7 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where RegisterType : class
         {
-            throw new NotImplementedException();
+            return (Resolve(typeof(RegisterType), name, parameters, options) as RegisterType);
         }
 
         /// <summary>
@@ -390,7 +414,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name)
             where ResolveType : class
         {
-            throw new NotImplementedException();
+            return CanResolve(typeof(ResolveType), name);
         }
 
         /// <summary>
@@ -410,7 +434,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, ResolveOptions options)
             where ResolveType : class
         {
-            throw new NotImplementedException();
+            return CanResolve(typeof(ResolveType), name, options);
         }
 
         /// <summary>
@@ -433,7 +457,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters)
             where ResolveType : class
         {
-            throw new NotImplementedException();
+            return CanResolve(typeof(ResolveType), name, parameters);
         }
 
         /// <summary>
@@ -458,7 +482,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
-            throw new NotImplementedException();
+            return CanResolve(typeof(ResolveType), name, parameters, options);
         }
         #endregion
         #endregion
@@ -610,6 +634,14 @@ namespace TinyIoC
             public InstanceFactory(RegisterImplementation instance)
             {
                 this.instance = instance;
+            }
+
+            public override ObjectFactoryBase MultiInstanceVariant
+            {
+                get
+                {
+                    return new NewInstanceFactory<RegisterType, RegisterImplementation>();
+                }
             }
 
             public void Dispose()
@@ -800,37 +832,76 @@ namespace TinyIoC
 
         private bool CanResolve(Type type)
         {
-            return CanResolve(type, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
+            return CanResolve(type, String.Empty, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
+        }
+
+        private bool CanResolve(Type type, string name)
+        {
+            return CanResolve(type, name, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
         }
 
         private bool CanResolve(Type type, ResolveOptions options)
         {
-            return CanResolve(type, NamedParameterOverloads.GetDefault(), options);
+            return CanResolve(type, String.Empty, NamedParameterOverloads.GetDefault(), options);
+        }
+
+        private bool CanResolve(Type type, string name, ResolveOptions options)
+        {
+            return CanResolve(type, name, NamedParameterOverloads.GetDefault(), options);
         }
 
         private bool CanResolve(Type type, NamedParameterOverloads parameters)
         {
-            return CanResolve(type, parameters, ResolveOptions.GetDefault());
+            return CanResolve(type, String.Empty, parameters, ResolveOptions.GetDefault());
+        }
+
+        private bool CanResolve(Type type, string name, NamedParameterOverloads parameters)
+        {
+            return CanResolve(type, name, parameters, ResolveOptions.GetDefault());
         }
 
         private bool CanResolve(Type type, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            return CanResolve(type, String.Empty, parameters, options);
+        }
+
+        private bool CanResolve(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
 
             Type checkType = type;
 
-            // TODO - Work with options and name
             ObjectFactoryBase factory;
-            if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType), out factory))
+            if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType, name), out factory))
             {
                 if (factory.AssumeConstruction)
                     return true;
 
-                checkType = factory.CreatesType;
+                return (GetBestConstructor(factory.CreatesType, parameters, options) != null) ? true : false;
             }
 
-            return (GetBestConstructor(checkType, parameters) != null) ? true : false;
+            // Fail if requesting named resolution and settings set to fail if unresolved
+            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == ResolveOptions.NamedResolutionFailureActions.Fail)
+                return false;
+
+            // Attemped unnamed fallback container resolution if relevant and requested
+            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == ResolveOptions.NamedResolutionFailureActions.AttemptUnnamedResolution)
+            {
+                if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType), out factory))
+                {
+                    if (factory.AssumeConstruction)
+                        return true;
+
+                    return (GetBestConstructor(factory.CreatesType, parameters, options) != null) ? true : false;
+                }
+            }
+
+            // Attempt unregistered construction if possible and requested
+            if (options.UnregisteredResolutionAction == ResolveOptions.UnregisteredResolutionActions.AttemptResolve)
+                return (GetBestConstructor(checkType, parameters, options) != null) ? true : false;
+
+            return false;
         }
 
         private object Resolve(Type type)
@@ -916,7 +987,7 @@ namespace TinyIoC
             throw new TinyIoCResolutionException(type);
         }
 
-        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters)
+        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -927,14 +998,14 @@ namespace TinyIoC
                 if (string.IsNullOrEmpty(parameter.Name))
                     return false;
 
-                if (!parameters.ContainsKey(parameter.Name) && !CanResolve(parameter.ParameterType))
+                if (!parameters.ContainsKey(parameter.Name) && !CanResolve(parameter.ParameterType, options))
                     return false;
             }
 
             return true;
         }
 
-        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters)
+        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -948,7 +1019,7 @@ namespace TinyIoC
 
             foreach (var ctor in ctors)
             {
-                if (CanConstruct(ctor, parameters))
+                if (CanConstruct(ctor, parameters, options))
                     return ctor;
             }
 
@@ -965,7 +1036,7 @@ namespace TinyIoC
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
 
-            var ctor = GetBestConstructor(type, parameters);
+            var ctor = GetBestConstructor(type, parameters, options);
             if (ctor == null)
                 throw new TinyIoCResolutionException(type);
 

@@ -476,7 +476,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void Resolve_RegisteredTypeWithInterfaceWithFluentSingletonCall_ReturnsSingleton()
+        public void Resolve_RegisteredTypeWithInterfaceWithFluentMultiInstanceCall_ReturnsMultipleInstances()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>().AsMultiInstance();
@@ -485,6 +485,18 @@ namespace TinyIoC.Tests
             var result2 = container.Resolve<TestClassNoInterfaceDefaultCtor>();
 
             Assert.IsFalse(object.ReferenceEquals(result, result2));
+        }
+
+        [TestMethod]
+        public void Resolve_RegisteredInstanceWithFluentMultiInstanceCall_ReturnsMultipleInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+            var input = new TestClassDefaultCtor();
+            container.Register<TestClassDefaultCtor>(input).AsMultiInstance();
+
+            var result = container.Resolve<TestClassDefaultCtor>();
+
+            Assert.IsFalse(object.ReferenceEquals(result, input));
         }
 
         [TestMethod]
@@ -944,6 +956,65 @@ namespace TinyIoC.Tests
             var output = container.Resolve<TestClassDefaultCtor>(parameters);
 
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+        }
+
+
+        [TestMethod]
+        public void Register_MultiInstanceToSingletonFluent_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>().AsSingleton();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        public void Register_MultiInstanceToMultiInstance_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>().AsMultiInstance();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        public void Register_SingletonToSingletonFluent_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>().AsSingleton();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_SingletonToMultiInstanceFluent_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>().AsMultiInstance();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        public void Register_FactoryToSingletonFluent_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>((c,p)=>new TestClassDefaultCtor()).AsSingleton();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCInstantiationTypeException))]
+        public void Register_FactoryToMultiInstanceFluent_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsMultiInstance();
+
+            Assert.IsTrue(true);
         }
 
         #region Scenario Tests
