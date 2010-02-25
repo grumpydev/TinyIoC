@@ -40,7 +40,7 @@ namespace TinyIoC
     public class TinyIoCWeakReferenceException : Exception
     {
         private const string ERROR_TEXT = "Unable to instantiate {0} - referenced object has been reclaimed";
-         
+
         public TinyIoCWeakReferenceException(Type type)
             : base(String.Format(ERROR_TEXT, type.FullName))
         {
@@ -113,15 +113,15 @@ namespace TinyIoC
         /// </summary>
         /// <typeparam name="RegisterType">Registered type</typeparam>
         /// <typeparam name="RegisterImplementation">Implementation type for construction of RegisteredType</typeparam>
-        public sealed class RegisterOptions<RegisterType, RegisterImplementation>
-            where RegisterType : class
-            where RegisterImplementation : class, RegisterType
+        public sealed class RegisterOptions
         {
             private TinyIoC _Container;
+            private TypeRegistration _Registration;
 
-            public RegisterOptions(TinyIoC container)
+            public RegisterOptions(TinyIoC container, TypeRegistration registration)
             {
                 _Container = container;
+                _Registration = registration;
             }
 
             /// <summary>
@@ -129,14 +129,14 @@ namespace TinyIoC
             /// </summary>
             /// <returns>RegisterOptions</returns>
             /// <exception cref="TinyIoCInstantiationTypeException"></exception>
-            public RegisterOptions<RegisterType, RegisterImplementation> AsSingleton()
+            public RegisterOptions AsSingleton()
             {
-                var currentFactory = _Container.GetCurrentFactory<RegisterType>();
+                var currentFactory = _Container.GetCurrentFactory(_Registration);
 
                 if (currentFactory == null)
-                    throw new TinyIoCRegistrationException(typeof(RegisterType), "singleton");
+                    throw new TinyIoCRegistrationException(_Registration.Type, "singleton");
 
-                return _Container.AddUpdateRegistration<RegisterType, RegisterImplementation>(currentFactory.SingletonVariant);
+                return _Container.AddUpdateRegistration(_Registration, currentFactory.SingletonVariant);
             }
 
             /// <summary>
@@ -144,9 +144,9 @@ namespace TinyIoC
             /// </summary>
             /// <returns>RegisterOptions</returns>
             /// <exception cref="TinyIoCInstantiationTypeException"></exception>
-            public RegisterOptions<RegisterType, RegisterImplementation> AsMultiInstance()
+            public RegisterOptions AsMultiInstance()
             {
-                var currentFactory = _Container.GetCurrentFactory<RegisterType>();
+                var currentFactory = _Container.GetCurrentFactory<RegisterType>(_Name);
 
                 if (currentFactory == null)
                     throw new TinyIoCRegistrationException(typeof(RegisterType), "multi-instance");
@@ -396,7 +396,7 @@ namespace TinyIoC
         public RegisterType Resolve<RegisterType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where RegisterType : class
         {
-            return (Resolve(typeof(RegisterType), name, parameters, options) as RegisterType);
+            return (ResolveInternal(typeof(RegisterType), name, parameters, options) as RegisterType);
         }
 
         /// <summary>
@@ -414,6 +414,46 @@ namespace TinyIoC
             where RegisterType : class
         {
             return (Resolve(typeof(RegisterType), name, parameters) as RegisterType);
+        }
+
+        public object Resolve(Type type)
+        {
+            return ResolveInternal(type, string.Empty, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
+        }
+
+        public object Resolve(Type type, ResolveOptions resolveOptions)
+        {
+            return ResolveInternal(type, string.Empty, NamedParameterOverloads.GetDefault(), resolveOptions);
+        }
+
+        public object Resolve(Type type, string name)
+        {
+            return ResolveInternal(type, name, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
+        }
+
+        public object Resolve(Type type, string name, ResolveOptions options)
+        {
+            return ResolveInternal(type, name, NamedParameterOverloads.GetDefault(), options);
+        }
+
+        public object Resolve(Type type, NamedParameterOverloads parameters)
+        {
+            return ResolveInternal(type, string.Empty, parameters, ResolveOptions.GetDefault());
+        }
+
+        public object Resolve(Type type, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            return ResolveInternal(type, string.Empty, parameters, options);
+        }
+
+        public object Resolve(Type type, string name, NamedParameterOverloads parameters)
+        {
+            return ResolveInternal(type, name, parameters, ResolveOptions.GetDefault());
+        }
+
+        public object Resolve(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            return ResolveInternal(type, name, parameters, options);
         }
 
         /// <summary>
@@ -543,6 +583,46 @@ namespace TinyIoC
             where ResolveType : class
         {
             return CanResolve(typeof(ResolveType), name, parameters, options);
+        }
+
+        public bool CanResolve(Type type)
+        {
+            return CanResolveInternal(type, String.Empty, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
+        }
+
+        public bool CanResolve(Type type, string name)
+        {
+            return CanResolveInternal(type, name, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
+        }
+
+        public bool CanResolve(Type type, ResolveOptions options)
+        {
+            return CanResolveInternal(type, String.Empty, NamedParameterOverloads.GetDefault(), options);
+        }
+
+        public bool CanResolve(Type type, string name, ResolveOptions options)
+        {
+            return CanResolveInternal(type, name, NamedParameterOverloads.GetDefault(), options);
+        }
+
+        public bool CanResolve(Type type, NamedParameterOverloads parameters)
+        {
+            return CanResolveInternal(type, String.Empty, parameters, ResolveOptions.GetDefault());
+        }
+
+        public bool CanResolve(Type type, string name, NamedParameterOverloads parameters)
+        {
+            return CanResolveInternal(type, name, parameters, ResolveOptions.GetDefault());
+        }
+
+        public bool CanResolve(Type type, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            return CanResolveInternal(type, String.Empty, parameters, options);
+        }
+
+        public bool CanResolve(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            return CanResolveInternal(type, name, parameters, options);
         }
         #endregion
         #endregion
@@ -815,7 +895,7 @@ namespace TinyIoC
             }
         }
 
-                /// <summary>
+        /// <summary>
         /// Stores an particular instance to return for a type
         /// 
         /// Stores the instance with a weak reference
@@ -969,7 +1049,7 @@ namespace TinyIoC
         #endregion
 
         #region Type Registrations
-        private sealed class TypeRegistration
+        public sealed class TypeRegistration
         {
             public Type Type { get; private set; }
             public string Name { get; private set; }
@@ -1025,11 +1105,11 @@ namespace TinyIoC
             this.Register<TinyIoC>(this);
         }
 
-        private ObjectFactoryBase GetCurrentFactory<RegisterType>()
+        private ObjectFactoryBase GetCurrentFactory(Type registerType, string name)
         {
             ObjectFactoryBase current = null;
 
-            _RegisteredTypes.TryGetValue(new TypeRegistration(typeof(RegisterType)), out current);
+            _RegisteredTypes.TryGetValue(new TypeRegistration(registerType), out current);
 
             return current;
         }
@@ -1090,42 +1170,7 @@ namespace TinyIoC
             return new MultiInstanceFactory<RegisterType, RegisterImplementation>();
         }
 
-        private bool CanResolve(Type type)
-        {
-            return CanResolve(type, String.Empty, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        private bool CanResolve(Type type, string name)
-        {
-            return CanResolve(type, name, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        private bool CanResolve(Type type, ResolveOptions options)
-        {
-            return CanResolve(type, String.Empty, NamedParameterOverloads.GetDefault(), options);
-        }
-
-        private bool CanResolve(Type type, string name, ResolveOptions options)
-        {
-            return CanResolve(type, name, NamedParameterOverloads.GetDefault(), options);
-        }
-
-        private bool CanResolve(Type type, NamedParameterOverloads parameters)
-        {
-            return CanResolve(type, String.Empty, parameters, ResolveOptions.GetDefault());
-        }
-
-        private bool CanResolve(Type type, string name, NamedParameterOverloads parameters)
-        {
-            return CanResolve(type, name, parameters, ResolveOptions.GetDefault());
-        }
-
-        private bool CanResolve(Type type, NamedParameterOverloads parameters, ResolveOptions options)
-        {
-            return CanResolve(type, String.Empty, parameters, options);
-        }
-
-        private bool CanResolve(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        private bool CanResolveInternal(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -1164,42 +1209,7 @@ namespace TinyIoC
             return false;
         }
 
-        private object Resolve(Type type)
-        {
-            return Resolve(type, string.Empty, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        private object Resolve(Type type, ResolveOptions resolveOptions)
-        {
-            return Resolve(type, string.Empty, NamedParameterOverloads.GetDefault(), resolveOptions);
-        }
-
-        private object Resolve(Type type, string name)
-        {
-            return Resolve(type, name, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        private object Resolve(Type type, string name, ResolveOptions options)
-        {
-            return Resolve(type, name, NamedParameterOverloads.GetDefault(), options);
-        }
-
-        private object Resolve(Type type, NamedParameterOverloads parameters)
-        {
-            return Resolve(type, string.Empty, parameters, ResolveOptions.GetDefault());
-        }
-
-        private object Resolve(Type type, NamedParameterOverloads parameters, ResolveOptions options)
-        {
-            return Resolve(type, string.Empty, parameters, options);
-        }
-
-        private object Resolve(Type type, string name, NamedParameterOverloads parameters)
-        {
-            return Resolve(type, name, parameters, ResolveOptions.GetDefault());
-        }
-
-        private object Resolve(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        private object ResolveInternal(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
         {
             ObjectFactoryBase factory;
 
