@@ -1166,6 +1166,54 @@ namespace TinyIoC.Tests
             Assert.AreEqual("Testing", result.Prop1);
         }
 
+        [TestMethod]
+        public void Register_InterfaceAndImplementationWithInstance_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            var item = new TestClassDefaultCtor();
+            container.Register<ITestInterface, TestClassDefaultCtor>(item);
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_InterfaceAndImplementationNamedWithInstance_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            var item = new TestClassDefaultCtor();
+            var item2 = new TestClassDefaultCtor();
+            container.Register<ITestInterface, TestClassDefaultCtor>(item, "TestName");
+            container.Register<ITestInterface, TestClassDefaultCtor>(item2);
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Resolved_InterfaceAndImplementationWithInstance_ReturnsCorrectInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+            var item = new TestClassDefaultCtor();
+            container.Register<ITestInterface, TestClassDefaultCtor>(item);
+
+            var result = container.Resolve<ITestInterface>();
+
+            Assert.ReferenceEquals(item, result);
+        }
+
+        [TestMethod]
+        public void Resolve_InterfaceAndImplementationNamedWithInstance_ReturnsCorrectInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+            var item = new TestClassDefaultCtor();
+            var item2 = new TestClassDefaultCtor();
+            container.Register<ITestInterface, TestClassDefaultCtor>(item, "TestName");
+            container.Register<ITestInterface, TestClassDefaultCtor>(item2);
+
+            var result = container.Resolve<ITestInterface>("TestName");
+
+            Assert.ReferenceEquals(item, result);
+        }
+
         #region Scenario Tests
         [TestMethod]
         public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()
