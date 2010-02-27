@@ -1289,6 +1289,28 @@ namespace TinyIoC.Tests
 
             Assert.IsTrue(testing);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_UnRegisteredNonGenericType_FailsWithOptionsSetToGenericOnly()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.Resolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() {UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.GenericsOnly});
+        
+            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void TryResolve_UnRegisteredNonGenericType_ReturnsFalseWithOptionsSetToGenericOnly()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.CanResolve<TestClassDefaultCtor>(new TinyIoC.ResolveOptions() {UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.GenericsOnly});
+        
+            Assert.IsFalse(result);
+        }
+
         #region Scenario Tests
         [TestMethod]
         public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()

@@ -1239,7 +1239,7 @@ namespace TinyIoC
             }
 
             // Attempt unregistered construction if possible and requested
-            if (options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve)
+            if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
                 return (GetBestConstructor(checkType, parameters, options) != null) ? true : false;
 
             return false;
@@ -1283,7 +1283,7 @@ namespace TinyIoC
             }
 
             // Attempt unregistered construction if possible and requested
-            if (options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve)
+            if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
             {
                 if (!type.IsAbstract && !type.IsInterface)
                     return ConstructType(type, parameters, options);
