@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.Linq.Expressions;
 
 namespace TinyIoC
 {
@@ -1238,9 +1239,31 @@ namespace TinyIoC
                 }
             }
 
+            // Check if type is an automatic lazy factory request
+            if (IsAutomaticLazyFactoryRequest(type))
+                return true;
+
             // Attempt unregistered construction if possible and requested
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
                 return (GetBestConstructor(checkType, parameters, options) != null) ? true : false;
+
+            return false;
+        }
+
+        private bool IsAutomaticLazyFactoryRequest(Type type)
+        {
+            if (!type.IsGenericType)
+                return false;
+
+            Type genericType = type.GetGenericTypeDefinition();
+
+            // Just a func
+            if (genericType == typeof(Func<>))
+                return true;
+
+            // 2 parameter func with string as first parameter (name)
+            if ((genericType == typeof(Func<,>) && type.GetGenericArguments()[0] == typeof(string)))
+                return true;
 
             return false;
         }
@@ -1282,6 +1305,10 @@ namespace TinyIoC
                 }
             }
 
+            // Attempt to construct an automatic lazy factory if possible
+            if (IsAutomaticLazyFactoryRequest(type))
+                return GetLazyAutomaticFactoryRequest(type);
+
             // Attempt unregistered construction if possible and requested
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
             {
@@ -1291,6 +1318,31 @@ namespace TinyIoC
 
             // Unable to resolve - throw
             throw new TinyIoCResolutionException(type);
+        }
+
+        private object GetLazyAutomaticFactoryRequest(Type type)
+        {
+            if (!type.IsGenericType)
+                return null;
+
+            Type genericType = type.GetGenericTypeDefinition();
+
+            // Just a func
+            if (genericType == typeof(Func<>))
+            {
+                Type returnType = type.GetGenericArguments()[0];
+
+                MethodInfo resolveMethod = typeof(TinyIoC).GetMethod("Resolve", new Type[]{});
+                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+
+                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);
+
+                var resolveLambda = Expression.Lambda(resolveCall).Compile();
+
+                return resolveLambda;
+            }
+
+            return null;
         }
 
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)

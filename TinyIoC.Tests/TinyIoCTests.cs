@@ -1360,6 +1360,26 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_ClassWithLazyFactoryDependency_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.Resolve<TestClassWithLazyFactory>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassWithLazyFactory));
+        }
+
+        [TestMethod]
+        public void CanResolve_ClassWithLazyFactoryDependency_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.CanResolve<TestClassWithLazyFactory>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
         public void LazyFactory_CalledByDependantClass_ReturnsInstanceOfType()
         {
             var container = UtilityMethods.GetContainer();
