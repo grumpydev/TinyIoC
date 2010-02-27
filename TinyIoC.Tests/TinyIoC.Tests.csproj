@@ -46,6 +46,7 @@
     <Compile Include="TestData\NestedClassDependencies.cs" />
     <Compile Include="TestData\NestedInterfaceDependencies.cs" />
     <Compile Include="TestData\UtilityMethods.cs" />
+    <Compile Include="TinyIoCFunctionalTests.cs" />
     <Compile Include="TinyIoCTests.cs" />
   </ItemGroup>
   <ItemGroup>

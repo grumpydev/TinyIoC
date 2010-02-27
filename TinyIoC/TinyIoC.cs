@@ -1319,8 +1319,10 @@ namespace TinyIoC
             if (type.IsValueType)
                 return null;
 
+            // Get constructors in reverse order based on the number of parameters
+            // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
             var ctors = from ctor in type.GetConstructors()
-                        orderby ctor.GetParameters().Count()
+                        orderby ctor.GetParameters().Count() descending
                         select ctor;
 
             foreach (var ctor in ctors)

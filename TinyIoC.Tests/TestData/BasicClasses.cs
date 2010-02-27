@@ -30,6 +30,10 @@ namespace TinyIoC.Tests.TestData
         {
         }
 
+        internal class TestClass2 : ITestInterface2
+        {
+        }
+
         internal class TestClassWithContainerDependency
         {
             public TinyIoC _Container { get; private set; }
@@ -167,11 +171,58 @@ namespace TinyIoC.Tests.TestData
                 
             }
 
-            private GenericClassWithInterface(I prop1, S prop2)
+            public GenericClassWithInterface(I prop1, S prop2)
             {
                 Prop1 = prop1;
                 Prop2 = prop2;
             }
+        }
+
+
+        internal class GenericClassWithParametersAndDependencies<I, S>
+        {
+            public ITestInterface2 Dependency { get; private set; }
+            public I Prop1 { get; set; }
+            public S Prop2 { get; set; }
+
+            public GenericClassWithParametersAndDependencies(ITestInterface2 dependency)
+            {
+                Dependency = dependency;
+            }
+
+            public GenericClassWithParametersAndDependencies(ITestInterface2 dependency, I prop1, S prop2)
+            {
+                Dependency = dependency;
+                Prop1 = prop1;
+                Prop2 = prop2;
+            }
+        }
+
+        internal class TestClassWithLazyFactory
+        {
+            private Func<TestClassDefaultCtor> _Factory;
+            public TestClassDefaultCtor Prop1 { get; private set; }
+            public TestClassDefaultCtor Prop2 { get; private set; }
+            
+            /// <summary>
+            /// Initializes a new instance of the TestClassWithLazyFactory class.
+            /// </summary>
+            /// <param name="factory"></param>
+            public TestClassWithLazyFactory(Func<TestClassDefaultCtor> factory)
+            {
+                _Factory = factory;
+            }
+
+            public void Method1()
+            {
+                Prop1 = _Factory.Invoke();
+            }
+
+            public void Method2()
+            {
+                Prop2 = _Factory.Invoke();
+            }
+
         }
     }
 }

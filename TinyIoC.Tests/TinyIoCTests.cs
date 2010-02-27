@@ -1215,16 +1215,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void Register_UnboundGenericType_Registers()
-        {
-            var container = UtilityMethods.GetContainer();
-            container.Register(typeof(GenericClassWithInterface<,>));
-
-            Assert.IsTrue(true);
-        }
-
-        [TestMethod]
-        public void Resolve_BoundGenericTypeWithUnboundRegistered_ResolvesWithDefaultOptions()
+        public void Resolve_BoundGenericTypeWithoutRegistered_ResolvesWithDefaultOptions()
         {
             var container = UtilityMethods.GetContainer();
             container.Register(typeof(GenericClassWithInterface<,>));
@@ -1236,7 +1227,7 @@ namespace TinyIoC.Tests
 
         [TestMethod]
         [ExpectedException(typeof(TinyIoCResolutionException))]
-        public void Resolve_BoundGenericTypeWithUnboundRegistered_FailsWithUnRegisteredFallbackOff()
+        public void Resolve_BoundGenericTypeWithoutRegistered_FailsWithUnRegisteredFallbackOff()
         {
             var container = UtilityMethods.GetContainer();
             container.Register(typeof(GenericClassWithInterface<,>));
@@ -1247,7 +1238,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void Resolve_BoundGenericTypeWithUnboundRegistered_ResolvesWithUnRegisteredFallbackSetToGenericsOnly()
+        public void Resolve_BoundGenericTypeWithoutRegistered_ResolvesWithUnRegisteredFallbackSetToGenericsOnly()
         {
             var container = UtilityMethods.GetContainer();
             container.Register(typeof(GenericClassWithInterface<,>));
@@ -1258,7 +1249,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void CanResolve_BoundGenericTypeWithUnboundRegistered_ReturnsTrueWithDefaultOptions()
+        public void CanResolve_BoundGenericTypeWithoutRegistered_ReturnsTrueWithDefaultOptions()
         {
             var container = UtilityMethods.GetContainer();
             container.Register(typeof(GenericClassWithInterface<,>));
@@ -1269,7 +1260,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void CanResolve_BoundGenericTypeWithUnboundRegistered_ReturnsFalseWithUnRegisteredFallbackOff()
+        public void CanResolve_BoundGenericTypeWithoutRegistered_ReturnsFalseWithUnRegisteredFallbackOff()
         {
             var container = UtilityMethods.GetContainer();
             container.Register(typeof(GenericClassWithInterface<,>));
@@ -1280,7 +1271,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void CanResolve_BoundGenericTypeWithUnboundRegistered_ReturnsTrueWithUnRegisteredFallbackSetToGenericsOnly()
+        public void CanResolve_BoundGenericTypeWithoutRegistered_ReturnsTrueWithUnRegisteredFallbackSetToGenericsOnly()
         {
             var container = UtilityMethods.GetContainer();
             container.Register(typeof(GenericClassWithInterface<,>));
@@ -1311,75 +1302,72 @@ namespace TinyIoC.Tests
             Assert.IsFalse(result);
         }
 
-        #region Scenario Tests
         [TestMethod]
-        public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()
+        public void Resolve_BoundGenericTypeWithParametersWithoutRegistered_ResolvesUsingCorrectCtor()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<NestedInterfaceDependencies.IService1, NestedInterfaceDependencies.Service1>();
-            container.Register<NestedInterfaceDependencies.IService2, NestedInterfaceDependencies.Service2>();
-            container.Register<NestedInterfaceDependencies.IService3, NestedInterfaceDependencies.Service3>();
-            container.Register<NestedInterfaceDependencies.RootClass>();
 
-            var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
+            var testing = container.Resolve<GenericClassWithInterface<int, string>>(new TinyIoC.NamedParameterOverloads() { { "prop1", 27 }, { "prop2", "Testing" } });
 
-            Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
+            Assert.AreEqual(27, testing.Prop1);
+            Assert.AreEqual("Testing", testing.Prop2);
         }
 
         [TestMethod]
         [ExpectedException(typeof(TinyIoCResolutionException))]
-        public void NestedInterfaceDependencies_MissingIService3Registration_ThrowsExceptionWithDefaultSettings()
+        public void Resolve_BoundGenericTypeWithFailedDependenciesWithoutRegistered_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<NestedInterfaceDependencies.IService1, NestedInterfaceDependencies.Service1>();
-            container.Register<NestedInterfaceDependencies.IService2, NestedInterfaceDependencies.Service2>();
-            container.Register<NestedInterfaceDependencies.RootClass>();
 
-            var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
+            var testing = container.Resolve<GenericClassWithParametersAndDependencies<int, string>>();
 
-            Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
+            Assert.IsInstanceOfType(testing, typeof(GenericClassWithParametersAndDependencies<int, string>));
         }
 
         [TestMethod]
-        public void NestedClassDependencies_CorrectlyRegistered_ResolvesRoot()
+        public void Resolve_BoundGenericTypeWithDependenciesWithoutRegistered_ResolvesUsingCorrectCtor()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<NestedClassDependencies.Service1>();
-            container.Register<NestedClassDependencies.Service2>();
-            container.Register<NestedClassDependencies.Service3>();
-            container.Register<NestedClassDependencies.RootClass>();
+            container.Register<ITestInterface2, TestClass2>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>();
+            var testing = container.Resolve<GenericClassWithParametersAndDependencies<int, string>>();
 
-            Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
+            Assert.IsInstanceOfType(testing, typeof(GenericClassWithParametersAndDependencies<int, string>));
         }
 
         [TestMethod]
-        public void NestedClassDependencies_MissingService3Registration_ResolvesRootResolutionOn()
+        public void Resolve_BoundGenericTypeWithDependenciesAndParametersWithoutRegistered_ResolvesUsingCorrectCtor()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<NestedClassDependencies.Service1>();
-            container.Register<NestedClassDependencies.Service2>();
-            container.Register<NestedClassDependencies.RootClass>();
+            container.Register<ITestInterface2, TestClass2>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.AttemptResolve });
+            var testing = container.Resolve<GenericClassWithParametersAndDependencies<int, string>>(new TinyIoC.NamedParameterOverloads() { { "prop1", 27 }, { "prop2", "Testing" } });
 
-            Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
+            Assert.AreEqual(27, testing.Prop1);
+            Assert.AreEqual("Testing", testing.Prop2);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
-        public void NestedClassDependencies_MissingService3RegistrationAndUnRegisteredResolutionOff_ThrowsException()
+        public void Resolve_NamedRegistrationButOnlyUnnamedRegistered_ResolvesCorrectUnnamedRegistrationWithUnnamedFallback()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<NestedClassDependencies.Service1>();
-            container.Register<NestedClassDependencies.Service2>();
-            container.Register<NestedClassDependencies.RootClass>();
+            var item = new TestClassDefaultCtor() { Prop1 = "Testing" };
+            container.Register<TestClassDefaultCtor>(item);
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail });
+            var result = container.Resolve<TestClassDefaultCtor>("Testing",new TinyIoC.ResolveOptions() { NamedResolutionFailureAction = TinyIoC.NamedResolutionFailureActions.AttemptUnnamedResolution });
 
-            Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
+            Assert.ReferenceEquals(item, result);
         }
-        #endregion
+
+        [TestMethod]
+        public void LazyFactory_CalledByDependantClass_ReturnsInstanceOfType()
+        {
+            var container = UtilityMethods.GetContainer();
+            var item = container.Resolve<TestClassWithLazyFactory>();
+
+            item.Method1();
+
+            Assert.IsInstanceOfType(item.Prop1, typeof(TestClassDefaultCtor));
+        }
     }
 }
