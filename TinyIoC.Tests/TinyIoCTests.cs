@@ -1214,6 +1214,81 @@ namespace TinyIoC.Tests
             Assert.ReferenceEquals(item, result);
         }
 
+        [TestMethod]
+        public void Register_UnboundGenericType_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(GenericClassWithInterface<,>));
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Resolve_BoundGenericTypeWithUnboundRegistered_ResolvesWithDefaultOptions()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(GenericClassWithInterface<,>));
+
+            var testing = container.Resolve<GenericClassWithInterface<int, string>>();
+
+            Assert.IsInstanceOfType(testing, typeof(GenericClassWithInterface<int, string>));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_BoundGenericTypeWithUnboundRegistered_FailsWithUnRegisteredFallbackOff()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(GenericClassWithInterface<,>));
+
+            var testing = container.Resolve<GenericClassWithInterface<int, string>>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail });
+
+            Assert.IsInstanceOfType(testing, typeof(GenericClassWithInterface<int, string>));
+        }
+
+        [TestMethod]
+        public void Resolve_BoundGenericTypeWithUnboundRegistered_ResolvesWithUnRegisteredFallbackSetToGenericsOnly()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(GenericClassWithInterface<,>));
+
+            var testing = container.Resolve<GenericClassWithInterface<int, string>>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.GenericsOnly });
+
+            Assert.IsInstanceOfType(testing, typeof(GenericClassWithInterface<int, string>));
+        }
+
+        [TestMethod]
+        public void CanResolve_BoundGenericTypeWithUnboundRegistered_ReturnsTrueWithDefaultOptions()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(GenericClassWithInterface<,>));
+
+            var testing = container.CanResolve<GenericClassWithInterface<int, string>>();
+
+            Assert.IsTrue(testing);
+        }
+
+        [TestMethod]
+        public void CanResolve_BoundGenericTypeWithUnboundRegistered_ReturnsFalseWithUnRegisteredFallbackOff()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(GenericClassWithInterface<,>));
+
+            var testing = container.CanResolve<GenericClassWithInterface<int, string>>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail });
+
+            Assert.IsFalse(testing);
+        }
+
+        [TestMethod]
+        public void CanResolve_BoundGenericTypeWithUnboundRegistered_ReturnsTrueWithUnRegisteredFallbackSetToGenericsOnly()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(GenericClassWithInterface<,>));
+
+            var testing = container.CanResolve<GenericClassWithInterface<int, string>>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.GenericsOnly });
+
+            Assert.IsTrue(testing);
+        }
         #region Scenario Tests
         [TestMethod]
         public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()
