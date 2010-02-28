@@ -82,5 +82,16 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
 
+        [TestMethod]
+        public void NestedInterfaceDependencies_JustAutoRegisterCalled_ResolvesRoot()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(this.GetType().Assembly);
+
+            var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
+
+            Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
+        }
+
     }
 }

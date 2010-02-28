@@ -1389,5 +1389,48 @@ namespace TinyIoC.Tests
 
             Assert.IsInstanceOfType(item.Prop1, typeof(TestClassDefaultCtor));
         }
+
+        [TestMethod]
+        public void AutoRegister_NoParameters_ReturnsNoErrors()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.AutoRegister();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void AutoRegister_AssemblySpecified_ReturnsNoErrors()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.AutoRegister(this.GetType().Assembly);
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void AutoRegister_TestAssembly_CanResolveInterface()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(this.GetType().Assembly);
+
+            var result = container.Resolve<ITestInterface>();
+
+            Assert.IsInstanceOfType(result, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void AutoRegister_TinyIoCAssembly_CannotResolveInternalTinyIoCClass()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(container.GetType().Assembly);
+
+            var output = container.Resolve<TinyIoC.TypeRegistration>(new NamedParameterOverloads() { { "type", this.GetType() } }, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+
+            Assert.IsInstanceOfType(output, typeof(TinyIoC.TypeRegistration));
+        }
     }
 }

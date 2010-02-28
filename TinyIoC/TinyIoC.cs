@@ -7,6 +7,63 @@ using System.Linq.Expressions;
 
 namespace TinyIoC
 {
+    #region SafeDictionary
+    public class SafeDictionary<TKey, TValue>
+    {
+        private readonly object _Padlock = new object();
+        private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
+
+        /// <summary>
+        /// Do not use unless for disposal!
+        /// </summary>
+        public Dictionary<TKey, TValue>.ValueCollection Values { get { return _Dictionary.Values; } }
+
+        public TValue this[TKey key]
+        {
+            set
+            {
+                lock (_Padlock)
+                {
+                    TValue current;
+                    if (_Dictionary.TryGetValue(key, out current))
+                    {
+                        var disposable = current as IDisposable;
+
+                        if (disposable != null)
+                            disposable.Dispose();
+                    }
+
+                    _Dictionary[key] = value;
+                }
+            }
+        }
+
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            lock (_Padlock)
+            {
+                return _Dictionary.TryGetValue(key, out value);
+            }
+        }
+
+        public bool Remove(TKey key)
+        {
+            lock (_Padlock)
+            {
+                return _Dictionary.Remove(key);
+            }
+        }
+
+        public void Clear()
+        {
+            lock (_Padlock)
+            {
+                _Dictionary.Clear();
+            }
+        }
+    }
+    #endregion
+
     #region TinyIoC Exception Types
     public class TinyIoCResolutionException : Exception
     {
@@ -215,6 +272,62 @@ namespace TinyIoC
 
         #region Public API
         #region Registration
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the assembly containing TinyIoC.
+        /// 
+        /// If more than one class implements an interface then only one implementation will be registered
+        /// although no error will be thrown.
+        /// </summary>
+        public void AutoRegister()
+        {
+            AutoRegister(this.GetType().Assembly);
+        }
+
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the specified assembly
+        /// 
+        /// If more than one class implements an interface then only one implementation will be registered
+        /// although no error will be thrown.
+        /// </summary>
+        /// <param name="assembly">Assembly to process</param>
+        public void AutoRegister(Assembly assembly)
+        {
+            var interfaceImplementations = new Dictionary<Type, Type>();
+
+            var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            var concreteTypes = from type in assembly.GetTypes()
+                                where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+                                select type;
+
+            foreach (var type in concreteTypes)
+            {
+                foreach (var interfaceType in type.GetInterfaces())
+                {
+                    interfaceImplementations[interfaceType] = type;
+                }
+
+                Type[] genericTypes = { type, type };
+                var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
+                this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+            }
+
+            var interfaceTypes = from type in assembly.GetTypes()
+                                 where ((type.IsInterface == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+                                 select type;
+
+            Type implementationType;
+            foreach (var type in interfaceTypes)
+            {
+                if (interfaceImplementations.TryGetValue(type, out implementationType))
+                {
+                    Type[] genericTypes = { type, implementationType };
+                    var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
+                    this.RegisterInternal(type, implementationType, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                }
+            }
+        }
+
         /// <summary>
         /// Creates/replaces a container class registration with default options.
         /// </summary>
@@ -1063,14 +1176,13 @@ namespace TinyIoC
                 return String.Format("{0}|{1}", this.Type.FullName, this.Name).GetHashCode();
             }
         }
-        private readonly object RegistrationLock = new object();
-        private readonly Dictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
+        private readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
         #endregion
 
         #region Constructors
         public TinyIoC()
         {
-            _RegisteredTypes = new Dictionary<TypeRegistration, ObjectFactoryBase>();
+            _RegisteredTypes = new SafeDictionary<TypeRegistration, ObjectFactoryBase>();
 
             RegisterDefaultTypes();
         }
@@ -1100,33 +1212,17 @@ namespace TinyIoC
 
         private RegisterOptions AddUpdateRegistration(TypeRegistration typeRegistration, ObjectFactoryBase factory)
         {
-            ObjectFactoryBase current;
-
-            lock (RegistrationLock)
-            {
-                if (_RegisteredTypes.TryGetValue(typeRegistration, out current))
-                {
-                    var disposable = current as IDisposable;
-
-                    if (disposable != null)
-                        disposable.Dispose();
-                }
-
-                _RegisteredTypes[typeRegistration] = factory;
-            }
+            _RegisteredTypes[typeRegistration] = factory;
 
             return new RegisterOptions(this, typeRegistration);
         }
 
         private void RemoveRegistration(TypeRegistration typeRegistration)
         {
-            lock (RegistrationLock)
-            {
-                _RegisteredTypes.Remove(typeRegistration);
-            }
+            _RegisteredTypes.Remove(typeRegistration);
         }
 
-        private static ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
+        private ObjectFactoryBase GetDefaultObjectFactory<RegisterType, RegisterImplementation>()
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
