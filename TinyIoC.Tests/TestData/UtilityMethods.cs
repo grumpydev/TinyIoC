@@ -32,7 +32,7 @@ namespace TinyIoC.Tests.TestData
             var source = new TestClassDefaultCtor();
             source.Prop1 = "Testing";
 
-            var item = new Func<TinyIoC, TinyIoC.NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
+            var item = new Func<TinyIoC, NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
             container.Register<TestClassDefaultCtor>(item).WithStrongReference();
         }
 
@@ -41,7 +41,7 @@ namespace TinyIoC.Tests.TestData
             var source = new TestClassDefaultCtor();
             source.Prop1 = "Testing";
 
-            var item = new Func<TinyIoC, TinyIoC.NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
+            var item = new Func<TinyIoC, NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
             container.Register<TestClassDefaultCtor>(item).WithWeakReference();
         }
 

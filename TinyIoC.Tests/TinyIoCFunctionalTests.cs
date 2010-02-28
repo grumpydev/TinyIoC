@@ -63,7 +63,7 @@ namespace TinyIoC.Tests
             container.Register<NestedClassDependencies.Service2>();
             container.Register<NestedClassDependencies.RootClass>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.AttemptResolve });
+            var result = container.Resolve<NestedClassDependencies.RootClass>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve });
 
             Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
@@ -77,7 +77,7 @@ namespace TinyIoC.Tests
             container.Register<NestedClassDependencies.Service2>();
             container.Register<NestedClassDependencies.RootClass>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>(new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = TinyIoC.UnregisteredResolutionActions.Fail });
+            var result = container.Resolve<NestedClassDependencies.RootClass>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
 
             Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }

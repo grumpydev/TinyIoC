@@ -54,84 +54,86 @@ namespace TinyIoC
     }
     #endregion
 
+    #region Public Setup / Settings Classes
+    /// <summary>
+    /// Name/Value pairs for specifying "user" parameters when resolving
+    /// </summary>
+    public sealed class NamedParameterOverloads : Dictionary<string, object>
+    {
+        private static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
+
+        public static NamedParameterOverloads Default
+        {
+            get
+            {
+                return _Default;
+            }
+        }
+    }
+
+    public enum UnregisteredResolutionActions
+    {
+        /// <summary>
+        /// Attempt to resolve type, even if the type isn't registered.
+        /// 
+        /// Registered types/options will always take precedence.
+        /// </summary>
+        AttemptResolve,
+
+        /// <summary>
+        /// Fail resolution if type not explicitly registered
+        /// </summary>
+        Fail,
+
+        /// <summary>
+        /// Attempt to resolve unregistered type if requested type is generic
+        /// and no registration exists for the specific generic parameters used.
+        /// 
+        /// Registered types/options will always take precedence.
+        /// </summary>
+        GenericsOnly
+    }
+
+    public enum NamedResolutionFailureActions
+    {
+        AttemptUnnamedResolution,
+        Fail
+    }
+
+    /// <summary>
+    /// Resolution settings
+    /// </summary>
+    public sealed class ResolveOptions
+    {
+        private static readonly ResolveOptions _Default = new ResolveOptions();
+
+        private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
+        public UnregisteredResolutionActions UnregisteredResolutionAction
+        {
+            get { return _UnregisteredResolutionAction; }
+            set { _UnregisteredResolutionAction = value; }
+        }
+
+        private NamedResolutionFailureActions _NamedResolutionFailureAction = NamedResolutionFailureActions.Fail;
+        public NamedResolutionFailureActions NamedResolutionFailureAction
+        {
+            get { return _NamedResolutionFailureAction; }
+            set { _NamedResolutionFailureAction = value; }
+        }
+
+        public static ResolveOptions Default
+        {
+            get
+            {
+                return _Default;
+            }
+        }
+    }
+    #endregion
+
     public sealed class TinyIoC : IDisposable
     {
-        #region Public Setup / Settings Classes
-        /// <summary>
-        /// Name/Value pairs for specifying "user" parameters when resolving
-        /// </summary>
-        public sealed class NamedParameterOverloads : Dictionary<string, object>
-        {
-            private static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
-
-            public static NamedParameterOverloads Default
-            {
-                get
-                {
-                    return _Default;
-                }
-            }
-        }
-
-        public enum UnregisteredResolutionActions
-        {
-            /// <summary>
-            /// Attempt to resolve type, even if the type isn't registered.
-            /// 
-            /// Registered types/options will always take precedence.
-            /// </summary>
-            AttemptResolve,
-
-            /// <summary>
-            /// Fail resolution if type not explicitly registered
-            /// </summary>
-            Fail,
-
-            /// <summary>
-            /// Attempt to resolve unregistered type if requested type is generic
-            /// and no registration exists for the specific generic parameters used.
-            /// 
-            /// Registered types/options will always take precedence.
-            /// </summary>
-            GenericsOnly
-        }
-
-        public enum NamedResolutionFailureActions
-        {
-            AttemptUnnamedResolution,
-            Fail
-        }
-
-        /// <summary>
-        /// Resolution settings
-        /// </summary>
-        public sealed class ResolveOptions
-        {
-            private static readonly ResolveOptions _Default = new ResolveOptions();
-
-            private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
-            public UnregisteredResolutionActions UnregisteredResolutionAction
-            {
-                get { return _UnregisteredResolutionAction; }
-                set { _UnregisteredResolutionAction = value; }
-            }
-
-            private NamedResolutionFailureActions _NamedResolutionFailureAction = NamedResolutionFailureActions.Fail;
-            public NamedResolutionFailureActions NamedResolutionFailureAction
-            {
-                get { return _NamedResolutionFailureAction; }
-                set { _NamedResolutionFailureAction = value; }
-            }
-
-            public static ResolveOptions Default
-            {
-                get
-                {
-                    return _Default;
-                }
-            }
-        }
-
+        #region "Fluent" API
         /// <summary>
         /// Registration options for "fluent" API
         /// </summary>
@@ -209,6 +211,7 @@ namespace TinyIoC
             }
         }
         #endregion
+
 
         #region Public API
         #region Registration
