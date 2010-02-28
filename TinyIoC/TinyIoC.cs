@@ -62,9 +62,14 @@ namespace TinyIoC
         /// </summary>
         public sealed class NamedParameterOverloads : Dictionary<string, object>
         {
-            public static NamedParameterOverloads GetDefault()
+            private static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
+
+            public static NamedParameterOverloads Default
             {
-                return new NamedParameterOverloads();
+                get
+                {
+                    return _Default;
+                }
             }
         }
 
@@ -102,6 +107,8 @@ namespace TinyIoC
         /// </summary>
         public sealed class ResolveOptions
         {
+            private static readonly ResolveOptions _Default = new ResolveOptions();
+
             private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
             public UnregisteredResolutionActions UnregisteredResolutionAction
             {
@@ -116,13 +123,12 @@ namespace TinyIoC
                 set { _NamedResolutionFailureAction = value; }
             }
 
-            /// <summary>
-            /// Get default settings
-            /// </summary>
-            /// <returns>ResolveOptions instance with default settings</returns>
-            public static ResolveOptions GetDefault()
+            public static ResolveOptions Default
             {
-                return new ResolveOptions();
+                get
+                {
+                    return _Default;
+                }
             }
         }
 
@@ -289,8 +295,8 @@ namespace TinyIoC
         /// <param name="instance">Instance of RegisterImplementation to register</param>
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register<RegisterType, RegisterImplementation>(RegisterImplementation instance)
-           where RegisterType : class
-           where RegisterImplementation : class, RegisterType
+            where RegisterType : class
+            where RegisterImplementation : class, RegisterType
         {
             return RegisterInternal(typeof(RegisterType), typeof(RegisterImplementation), string.Empty, new InstanceFactory<RegisterType, RegisterImplementation>(instance));
         }
@@ -341,26 +347,26 @@ namespace TinyIoC
         /// <summary>
         /// Attempts to resolve a type using default options.
         /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <returns>Instance of type</returns>
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>()
-            where RegisterType : class
+        public ResolveType Resolve<ResolveType>()
+            where ResolveType : class
         {
-            return (Resolve(typeof(RegisterType)) as RegisterType);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType)), NamedParameterOverloads.Default, ResolveOptions.Default) as ResolveType;
         }
 
         /// <summary>
         /// Attempts to resolve a type using specified options.
         /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="options">Resolution options</param>
         /// <returns>Instance of type</returns>
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>(ResolveOptions options)
-            where RegisterType : class
+        public ResolveType Resolve<ResolveType>(ResolveOptions options)
+            where ResolveType : class
         {
-            return (Resolve(typeof(RegisterType), options) as RegisterType);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType)), NamedParameterOverloads.Default, options) as ResolveType;
         }
 
         /// <summary>
@@ -369,14 +375,14 @@ namespace TinyIoC
         /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
         /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
         /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="name">Name of registration</param>
         /// <returns>Instance of type</returns>
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>(string name)
-            where RegisterType : class
+        public ResolveType Resolve<ResolveType>(string name)
+            where ResolveType : class
         {
-            return (Resolve(typeof(RegisterType), name) as RegisterType);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType), name), NamedParameterOverloads.Default, ResolveOptions.Default) as ResolveType;
         }
 
         /// <summary>
@@ -385,15 +391,15 @@ namespace TinyIoC
         /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
         /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
         /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="name">Name of registration</param>
         /// <param name="options">Resolution options</param>
         /// <returns>Instance of type</returns>
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>(string name, ResolveOptions options)
-            where RegisterType : class
+        public ResolveType Resolve<ResolveType>(string name, ResolveOptions options)
+            where ResolveType : class
         {
-            return (Resolve(typeof(RegisterType), name, options) as RegisterType);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType), name), NamedParameterOverloads.Default, options) as ResolveType;
         }
 
         /// <summary>
@@ -402,14 +408,14 @@ namespace TinyIoC
         /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
         /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
         /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="parameters">User specified constructor parameters</param>
         /// <returns>Instance of type</returns>
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters)
-            where RegisterType : class
+        public ResolveType Resolve<ResolveType>(NamedParameterOverloads parameters)
+            where ResolveType : class
         {
-            return (Resolve(typeof(RegisterType), parameters) as RegisterType);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType)), parameters, ResolveOptions.Default) as ResolveType;
         }
 
         /// <summary>
@@ -418,33 +424,15 @@ namespace TinyIoC
         /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
         /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
         /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="parameters">User specified constructor parameters</param>
         /// <param name="options">Resolution options</param>
         /// <returns>Instance of type</returns>
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>(NamedParameterOverloads parameters, ResolveOptions options)
-            where RegisterType : class
+        public ResolveType Resolve<ResolveType>(NamedParameterOverloads parameters, ResolveOptions options)
+            where ResolveType : class
         {
-            return (Resolve(typeof(RegisterType), parameters, options) as RegisterType);
-        }
-
-        /// <summary>
-        /// Attempts to resolve a named type using specified options and the supplied constructor parameters.
-        ///
-        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
-        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
-        /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
-        /// <param name="name">Name of registration</param>
-        /// <param name="parameters">User specified constructor parameters</param>
-        /// <param name="options">Resolution options</param>
-        /// <returns>Instance of type</returns>
-        /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
-            where RegisterType : class
-        {
-            return (Resolve(typeof(RegisterType), name, parameters, options) as RegisterType);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType)), parameters, options) as ResolveType;
         }
 
         /// <summary>
@@ -453,55 +441,33 @@ namespace TinyIoC
         /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
         /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
         /// </summary>
-        /// <typeparam name="RegisterType">Type to resolve</typeparam>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="parameters">User specified constructor parameters</param>
         /// <param name="name">Name of registration</param>
         /// <returns>Instance of type</returns>
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
-        public RegisterType Resolve<RegisterType>(string name, NamedParameterOverloads parameters)
-            where RegisterType : class
+        public ResolveType Resolve<ResolveType>(string name, NamedParameterOverloads parameters)
+            where ResolveType : class
         {
-            return (Resolve(typeof(RegisterType), name, parameters) as RegisterType);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, ResolveOptions.Default) as ResolveType;
         }
 
-        public object Resolve(Type type)
+        /// <summary>
+        /// Attempts to resolve a named type using specified options and the supplied constructor parameters.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Instance of type</returns>
+        /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
+        public ResolveType Resolve<ResolveType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
+            where ResolveType : class
         {
-            return ResolveInternal(type, string.Empty, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        public object Resolve(Type type, ResolveOptions resolveOptions)
-        {
-            return ResolveInternal(type, string.Empty, NamedParameterOverloads.GetDefault(), resolveOptions);
-        }
-
-        public object Resolve(Type type, string name)
-        {
-            return ResolveInternal(type, name, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        public object Resolve(Type type, string name, ResolveOptions options)
-        {
-            return ResolveInternal(type, name, NamedParameterOverloads.GetDefault(), options);
-        }
-
-        public object Resolve(Type type, NamedParameterOverloads parameters)
-        {
-            return ResolveInternal(type, string.Empty, parameters, ResolveOptions.GetDefault());
-        }
-
-        public object Resolve(Type type, NamedParameterOverloads parameters, ResolveOptions options)
-        {
-            return ResolveInternal(type, string.Empty, parameters, options);
-        }
-
-        public object Resolve(Type type, string name, NamedParameterOverloads parameters)
-        {
-            return ResolveInternal(type, name, parameters, ResolveOptions.GetDefault());
-        }
-
-        public object Resolve(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
-        {
-            return ResolveInternal(type, name, parameters, options);
+            return ResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, options) as ResolveType;
         }
 
         /// <summary>
@@ -515,7 +481,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>()
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType));
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), NamedParameterOverloads.Default, ResolveOptions.Default);
         }
 
         /// <summary>
@@ -528,7 +494,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name)
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType), name);
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), NamedParameterOverloads.Default, ResolveOptions.Default);
         }
 
         /// <summary>
@@ -543,7 +509,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType), options);
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), NamedParameterOverloads.Default, options);
         }
 
         /// <summary>
@@ -558,7 +524,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType), name, options);
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), NamedParameterOverloads.Default, options);
         }
 
         /// <summary>
@@ -575,7 +541,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(NamedParameterOverloads parameters)
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType), parameters);
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), parameters, ResolveOptions.Default);
         }
 
         /// <summary>
@@ -593,7 +559,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters)
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType), name, parameters);
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, ResolveOptions.Default);
         }
 
         /// <summary>
@@ -611,7 +577,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType), parameters, options);
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), parameters, options);
         }
 
         /// <summary>
@@ -630,47 +596,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolve(typeof(ResolveType), name, parameters, options);
-        }
-
-        public bool CanResolve(Type type)
-        {
-            return CanResolveInternal(type, String.Empty, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        public bool CanResolve(Type type, string name)
-        {
-            return CanResolveInternal(type, name, NamedParameterOverloads.GetDefault(), ResolveOptions.GetDefault());
-        }
-
-        public bool CanResolve(Type type, ResolveOptions options)
-        {
-            return CanResolveInternal(type, String.Empty, NamedParameterOverloads.GetDefault(), options);
-        }
-
-        public bool CanResolve(Type type, string name, ResolveOptions options)
-        {
-            return CanResolveInternal(type, name, NamedParameterOverloads.GetDefault(), options);
-        }
-
-        public bool CanResolve(Type type, NamedParameterOverloads parameters)
-        {
-            return CanResolveInternal(type, String.Empty, parameters, ResolveOptions.GetDefault());
-        }
-
-        public bool CanResolve(Type type, string name, NamedParameterOverloads parameters)
-        {
-            return CanResolveInternal(type, name, parameters, ResolveOptions.GetDefault());
-        }
-
-        public bool CanResolve(Type type, NamedParameterOverloads parameters, ResolveOptions options)
-        {
-            return CanResolveInternal(type, String.Empty, parameters, options);
-        }
-
-        public bool CanResolve(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
-        {
-            return CanResolveInternal(type, name, parameters, options);
+            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, options);
         }
         #endregion
         #endregion
@@ -1207,12 +1133,13 @@ namespace TinyIoC
             return new MultiInstanceFactory<RegisterType, RegisterImplementation>();
         }
 
-        private bool CanResolveInternal(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        private bool CanResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
 
-            Type checkType = type;
+            Type checkType = registration.Type;
+            string name = registration.Name;
 
             ObjectFactoryBase factory;
             if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType, name), out factory))
@@ -1240,11 +1167,11 @@ namespace TinyIoC
             }
 
             // Check if type is an automatic lazy factory request
-            if (IsAutomaticLazyFactoryRequest(type))
+            if (IsAutomaticLazyFactoryRequest(checkType))
                 return true;
 
             // Attempt unregistered construction if possible and requested
-            if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
+            if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (checkType.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
                 return (GetBestConstructor(checkType, parameters, options) != null) ? true : false;
 
             return false;
@@ -1268,12 +1195,12 @@ namespace TinyIoC
             return false;
         }
 
-        private object ResolveInternal(Type type, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        private object ResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
         {
             ObjectFactoryBase factory;
 
             // Attempt container resolution
-            if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, name), out factory))
+            if (_RegisteredTypes.TryGetValue(registration, out factory))
             {
                 try
                 {
@@ -1281,18 +1208,18 @@ namespace TinyIoC
                 }
                 catch (Exception ex)
                 {
-                    throw new TinyIoCResolutionException(type, ex);
+                    throw new TinyIoCResolutionException(registration.Type, ex);
                 }
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
-                throw new TinyIoCResolutionException(type);
+            if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
+                throw new TinyIoCResolutionException(registration.Type);
 
             // Attemped unnamed fallback container resolution if relevant and requested
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
+            if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
             {
-                if (_RegisteredTypes.TryGetValue(new TypeRegistration(type, string.Empty), out factory))
+                if (_RegisteredTypes.TryGetValue(new TypeRegistration(registration.Type, string.Empty), out factory))
                 {
                     try
                     {
@@ -1300,24 +1227,24 @@ namespace TinyIoC
                     }
                     catch (Exception ex)
                     {
-                        throw new TinyIoCResolutionException(type, ex);
+                        throw new TinyIoCResolutionException(registration.Type, ex);
                     }
                 }
             }
 
             // Attempt to construct an automatic lazy factory if possible
-            if (IsAutomaticLazyFactoryRequest(type))
-                return GetLazyAutomaticFactoryRequest(type);
+            if (IsAutomaticLazyFactoryRequest(registration.Type))
+                return GetLazyAutomaticFactoryRequest(registration.Type);
 
             // Attempt unregistered construction if possible and requested
-            if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
+            if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (registration.Type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
             {
-                if (!type.IsAbstract && !type.IsInterface)
-                    return ConstructType(type, parameters, options);
+                if (!registration.Type.IsAbstract && !registration.Type.IsInterface)
+                    return ConstructType(registration.Type, parameters, options);
             }
 
             // Unable to resolve - throw
-            throw new TinyIoCResolutionException(type);
+            throw new TinyIoCResolutionException(registration.Type);
         }
 
         private object GetLazyAutomaticFactoryRequest(Type type)
@@ -1332,7 +1259,7 @@ namespace TinyIoC
             {
                 Type returnType = type.GetGenericArguments()[0];
 
-                MethodInfo resolveMethod = typeof(TinyIoC).GetMethod("Resolve", new Type[]{});
+                MethodInfo resolveMethod = typeof(TinyIoC).GetMethod("Resolve", new Type[] { });
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
                 var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);
@@ -1356,7 +1283,7 @@ namespace TinyIoC
                 if (string.IsNullOrEmpty(parameter.Name))
                     return false;
 
-                if (!parameters.ContainsKey(parameter.Name) && !CanResolve(parameter.ParameterType, options))
+                if (!parameters.ContainsKey(parameter.Name) && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options))
                     return false;
             }
 
@@ -1388,7 +1315,7 @@ namespace TinyIoC
 
         private object ConstructType(Type type, ResolveOptions options)
         {
-            return ConstructType(type, NamedParameterOverloads.GetDefault(), options);
+            return ConstructType(type, NamedParameterOverloads.Default, options);
         }
 
         private object ConstructType(Type type, NamedParameterOverloads parameters, ResolveOptions options)
@@ -1407,12 +1334,12 @@ namespace TinyIoC
             {
                 var currentParam = ctorParams[parameterIndex];
 
-                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : Resolve(currentParam.ParameterType, options);
+                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : ResolveInternal(new TypeRegistration(currentParam.ParameterType), NamedParameterOverloads.Default, options);
             }
 
             try
             {
-                return Activator.CreateInstance(type, args);
+                return ctor.Invoke(args);
             }
             catch (Exception ex)
             {

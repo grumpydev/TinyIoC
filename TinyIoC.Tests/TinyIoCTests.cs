@@ -768,7 +768,7 @@ namespace TinyIoC.Tests
 
             var output = container.Resolve<TestClassWithParameters>(
                     new TinyIoC.NamedParameterOverloads {{ "stringProperty", "Testing" }, { "intProperty", 12 }},
-                    TinyIoC.ResolveOptions.GetDefault()
+                    TinyIoC.ResolveOptions.Default
                 );
 
             Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
