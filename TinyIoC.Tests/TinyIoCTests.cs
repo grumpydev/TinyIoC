@@ -1432,5 +1432,107 @@ namespace TinyIoC.Tests
 
             Assert.IsInstanceOfType(output, typeof(TinyIoC.TypeRegistration));
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        public void Register_ConstructorSpecifiedForDelegateFactory_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor());
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        public void Register_ConstructorSpecifiedForWeakDelegateFactory_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor());
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        public void Register_ConstructorSpecifiedForInstanceFactory_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor());
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        public void Register_ConstructorSpecifiedForWeakInstanceFactory_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor());
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_ConstructorSpecifiedForMultiInstanceFactory_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<TestClassDefaultCtor>().UsingConstructor(() => new TestClassDefaultCtor());
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Register_ConstructorSpecifiedForSingletonFactory_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<ITestInterface, TestClassDefaultCtor>().UsingConstructor(() => new TestClassDefaultCtor());
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorSpecified_UsesCorrectCtor()
+        {
+            throw new NotImplementedException();            
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorSpecified_UsesCorrectCtor()
+        {
+            throw new NotImplementedException();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_ConstructorSpecifiedThatRequiresParametersButNonePassed_FailsToResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<TestClassWithInterfaceDependency>().UsingConstructor(() => new TestClassWithInterfaceDependency(null as ITestInterface, 27, "Testing"));
+
+            var result = container.Resolve<TestClassWithInterfaceDependency>();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void CanResolve_ConstructorSpecifiedThatRequiresParametersButNonePassed_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<TestClassWithInterfaceDependency>().UsingConstructor(() => new TestClassWithInterfaceDependency(null as ITestInterface, 27, "Testing"));
+
+            var result = container.CanResolve<TestClassWithInterfaceDependency>();
+
+            Assert.IsFalse(result);
+        }
+
     }
 }

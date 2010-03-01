@@ -109,6 +109,27 @@ namespace TinyIoC
         {
         }
     }
+
+    public class TinyIoCConstructorResolutionException : Exception
+    {
+        private const string ERROR_TEXT = "Unable to resolve constructor for {0} using provided Expression.";
+
+        public TinyIoCConstructorResolutionException(Type type) : base(String.Format(ERROR_TEXT, type.FullName))
+        {
+        }
+
+        public TinyIoCConstructorResolutionException(Type type, Exception innerException) : base(String.Format(ERROR_TEXT, type.FullName), innerException)
+        {
+        }
+
+        public TinyIoCConstructorResolutionException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        public TinyIoCConstructorResolutionException(string message) : base(message)
+        {
+        }
+    }
     #endregion
 
     #region Public Setup / Settings Classes
@@ -265,6 +286,29 @@ namespace TinyIoC
                     throw new TinyIoCRegistrationException(_Registration.Type, "strong reference");
 
                 return _Container.AddUpdateRegistration(_Registration, currentFactory.StrongReferenceVariant);
+            }
+
+            public RegisterOptions UsingConstructor<RegisterType>(Expression<Func<RegisterType>> constructor)
+            {
+                var lambda = constructor as LambdaExpression;
+                if (lambda == null)
+                    throw new TinyIoCConstructorResolutionException(typeof(RegisterType));
+
+                var newExpression = lambda.Body as NewExpression;
+                if (newExpression == null)
+                    throw new TinyIoCConstructorResolutionException(typeof(RegisterType));
+
+                var constructorInfo = newExpression.Constructor;
+                if (constructorInfo == null)
+                    throw new TinyIoCConstructorResolutionException(typeof(RegisterType));
+
+                var currentFactory = _Container.GetCurrentFactory(_Registration);
+                if (currentFactory == null)
+                    throw new TinyIoCConstructorResolutionException(typeof(RegisterType));
+
+                currentFactory.SetConstructor(constructorInfo);
+
+                return this;
             }
         }
         #endregion
@@ -734,6 +778,11 @@ namespace TinyIoC
             public abstract Type CreatesType { get; }
 
             /// <summary>
+            /// Constructor to use, if specified
+            /// </summary>
+            protected ConstructorInfo _Constructor = null;
+
+            /// <summary>
             /// Create the type
             /// </summary>
             /// <param name="container">Container that requested the creation</param>
@@ -772,6 +821,11 @@ namespace TinyIoC
                     throw new TinyIoCRegistrationException(this.GetType(), "weak reference");
                 }
             }
+
+            public virtual void SetConstructor(ConstructorInfo constructor)
+            {
+                this._Constructor = constructor;
+            }
         }
 
         /// <summary>
@@ -789,7 +843,7 @@ namespace TinyIoC
             {
                 try
                 {
-                    return container.ConstructType(typeof(RegisterImplementation), parameters, options);
+                    return container.ConstructType(typeof(RegisterImplementation), _Constructor, parameters, options);
                 }
                 catch (TinyIoCResolutionException ex)
                 {
@@ -862,6 +916,11 @@ namespace TinyIoC
                     return this;
                 }
             }
+
+            public override void SetConstructor(ConstructorInfo constructor)
+            {
+                throw new TinyIoCConstructorResolutionException("Constructor selection is not possible for delegate factory registrations");
+            }
         }
 
         /// <summary>
@@ -924,6 +983,11 @@ namespace TinyIoC
                     return this;
                 }
             }
+
+            public override void SetConstructor(ConstructorInfo constructor)
+            {
+                throw new TinyIoCConstructorResolutionException("Constructor selection is not possible for delegate factory registrations");
+            }
         }
 
         /// <summary>
@@ -974,6 +1038,11 @@ namespace TinyIoC
                 {
                     return this;
                 }
+            }
+
+            public override void SetConstructor(ConstructorInfo constructor)
+            {
+                throw new TinyIoCConstructorResolutionException("Constructor selection is not possible for instance factory registrations");
             }
 
             public void Dispose()
@@ -1047,6 +1116,11 @@ namespace TinyIoC
                 }
             }
 
+            public override void SetConstructor(ConstructorInfo constructor)
+            {
+                throw new TinyIoCConstructorResolutionException("Constructor selection is not possible for instance factory registrations");
+            }
+
             public void Dispose()
             {
                 var disposable = _instance.Target as IDisposable;
@@ -1080,7 +1154,7 @@ namespace TinyIoC
 
                 lock (SingletonLock)
                     if (_Current == null)
-                        _Current = container.ConstructType(typeof(RegisterImplementation), options) as RegisterImplementation;
+                        _Current = container.ConstructType(typeof(RegisterImplementation), _Constructor, options) as RegisterImplementation;
 
                 return _Current;
             }
@@ -1414,19 +1488,28 @@ namespace TinyIoC
 
         private object ConstructType(Type type, ResolveOptions options)
         {
-            return ConstructType(type, NamedParameterOverloads.Default, options);
+            return ConstructType(type, null, NamedParameterOverloads.Default, options);
+        }
+
+        private object ConstructType(Type type, ConstructorInfo constructor, ResolveOptions options)
+        {
+            return ConstructType(type, constructor, NamedParameterOverloads.Default, options);
         }
 
         private object ConstructType(Type type, NamedParameterOverloads parameters, ResolveOptions options)
         {
-            if (parameters == null)
-                throw new ArgumentNullException("parameters");
+            return ConstructType(type, null, parameters, options);
+        }
 
-            var ctor = GetBestConstructor(type, parameters, options);
-            if (ctor == null)
+        private object ConstructType(Type type, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            if (constructor == null)
+                constructor = GetBestConstructor(type, parameters, options);
+
+            if (constructor == null)
                 throw new TinyIoCResolutionException(type);
 
-            var ctorParams = ctor.GetParameters();
+            var ctorParams = constructor.GetParameters();
             object[] args = new object[ctorParams.Count()];
 
             for (int parameterIndex = 0; parameterIndex < ctorParams.Count(); parameterIndex++)
@@ -1438,7 +1521,7 @@ namespace TinyIoC
 
             try
             {
-                return ctor.Invoke(args);
+                return constructor.Invoke(args);
             }
             catch (Exception ex)
             {
