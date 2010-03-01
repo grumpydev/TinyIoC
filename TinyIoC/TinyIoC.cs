@@ -209,7 +209,7 @@ namespace TinyIoC
     }
     #endregion
 
-    public sealed class TinyIoC : IDisposable
+    public sealed class TinyIoCContainer : IDisposable
     {
         #region "Fluent" API
         /// <summary>
@@ -219,10 +219,10 @@ namespace TinyIoC
         /// <typeparam name="RegisterImplementation">Implementation type for construction of RegisteredType</typeparam>
         public sealed class RegisterOptions
         {
-            private TinyIoC _Container;
+            private TinyIoCContainer _Container;
             private TypeRegistration _Registration;
 
-            public RegisterOptions(TinyIoC container, TypeRegistration registration)
+            public RegisterOptions(TinyIoCContainer container, TypeRegistration registration)
             {
                 _Container = container;
                 _Registration = registration;
@@ -482,7 +482,7 @@ namespace TinyIoC
         /// <typeparam name="RegisterType">Type to register</typeparam>
         /// <param name="factory">Factory/lambda that returns an instance of RegisterType</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
+        public RegisterOptions Register<RegisterType>(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory)
             where RegisterType : class
         {
             return RegisterInternal(typeof(RegisterType), typeof(RegisterType), string.Empty, new DelegateFactory<RegisterType>(factory));
@@ -495,7 +495,7 @@ namespace TinyIoC
         /// <param name="factory">Factory/lambda that returns an instance of RegisterType</param>
         /// <param name="name">Name of registation</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register<RegisterType>(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory, string name)
+        public RegisterOptions Register<RegisterType>(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory, string name)
             where RegisterType : class
         {
             return RegisterInternal(typeof(RegisterType), typeof(RegisterType), name, new DelegateFactory<RegisterType>(factory));
@@ -788,7 +788,7 @@ namespace TinyIoC
             /// <param name="container">Container that requested the creation</param>
             /// <param name="parameters">Any user parameters passed</param>
             /// <returns></returns>
-            public abstract object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options);
+            public abstract object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options);
 
             public virtual ObjectFactoryBase SingletonVariant
             {
@@ -839,7 +839,7 @@ namespace TinyIoC
         {
             public override Type CreatesType { get { return typeof(RegisterImplementation); } }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 try
                 {
@@ -875,13 +875,13 @@ namespace TinyIoC
         private class DelegateFactory<RegisterType> : ObjectFactoryBase
             where RegisterType : class
         {
-            private Func<TinyIoC, NamedParameterOverloads, RegisterType> _factory;
+            private Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> _factory;
 
             public override bool AssumeConstruction { get { return true; } }
 
             public override Type CreatesType { get { return typeof(RegisterType); } }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 try
                 {
@@ -893,7 +893,7 @@ namespace TinyIoC
                 }
             }
 
-            public DelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
+            public DelegateFactory(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
@@ -938,9 +938,9 @@ namespace TinyIoC
 
             public override Type CreatesType { get { return typeof(RegisterType); } }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
-                var factory = _factory.Target as Func<TinyIoC, NamedParameterOverloads, RegisterType>;
+                var factory = _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, RegisterType>;
 
                 if (factory == null)
                     throw new TinyIoCWeakReferenceException(typeof(RegisterType));
@@ -955,7 +955,7 @@ namespace TinyIoC
                 }
             }
 
-            public WeakDelegateFactory(Func<TinyIoC, NamedParameterOverloads, RegisterType> factory)
+            public WeakDelegateFactory(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
@@ -967,7 +967,7 @@ namespace TinyIoC
             {
                 get
                 {
-                    var factory = _factory.Target as Func<TinyIoC, NamedParameterOverloads, RegisterType>;
+                    var factory = _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, RegisterType>;
 
                     if (factory == null)
                         throw new TinyIoCWeakReferenceException(typeof(RegisterType));
@@ -1006,7 +1006,7 @@ namespace TinyIoC
                 get { return typeof(RegisterImplementation); }
             }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 return _instance;
             }
@@ -1072,7 +1072,7 @@ namespace TinyIoC
                 get { return typeof(RegisterImplementation); }
             }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 var instance = _instance.Target as RegisterImplementation;
 
@@ -1147,7 +1147,7 @@ namespace TinyIoC
                 get { return typeof(RegisterImplementation); }
             }
 
-            public override object GetObject(TinyIoC container, NamedParameterOverloads parameters, ResolveOptions options)
+            public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 if (parameters.Count != 0)
                     throw new ArgumentException("Cannot specify parameters for singleton types");
@@ -1194,16 +1194,16 @@ namespace TinyIoC
         #endregion
 
         #region Singleton Container
-        private static readonly TinyIoC _Current = new TinyIoC();
+        private static readonly TinyIoCContainer _Current = new TinyIoCContainer();
 
-        static TinyIoC()
+        static TinyIoCContainer()
         {
         }
 
         /// <summary>
         /// Lazy created Singleton instance of the container for simple scenarios
         /// </summary>
-        public static TinyIoC Current
+        public static TinyIoCContainer Current
         {
             get
             {
@@ -1254,7 +1254,7 @@ namespace TinyIoC
         #endregion
 
         #region Constructors
-        public TinyIoC()
+        public TinyIoCContainer()
         {
             _RegisteredTypes = new SafeDictionary<TypeRegistration, ObjectFactoryBase>();
 
@@ -1265,7 +1265,7 @@ namespace TinyIoC
         #region Internal Methods
         private void RegisterDefaultTypes()
         {
-            this.Register<TinyIoC>(this);
+            this.Register<TinyIoCContainer>(this);
         }
 
         private ObjectFactoryBase GetCurrentFactory(TypeRegistration registration)
@@ -1435,7 +1435,7 @@ namespace TinyIoC
             {
                 Type returnType = type.GetGenericArguments()[0];
 
-                MethodInfo resolveMethod = typeof(TinyIoC).GetMethod("Resolve", new Type[] { });
+                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { });
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
                 var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);

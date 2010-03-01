@@ -20,7 +20,7 @@ namespace TinyIoC.Tests.TestData
 
             }
 
-            public static ITestInterface CreateNew(TinyIoC container)
+            public static ITestInterface CreateNew(TinyIoCContainer container)
             {
                 return new TestClassDefaultCtor() { Prop1 = "Testing" };
             }
@@ -36,9 +36,9 @@ namespace TinyIoC.Tests.TestData
 
         internal class TestClassWithContainerDependency
         {
-            public TinyIoC _Container { get; private set; }
+            public TinyIoCContainer _Container { get; private set; }
 
-            public TestClassWithContainerDependency(TinyIoC container)
+            public TestClassWithContainerDependency(TinyIoCContainer container)
             {
                 if (container == null)
                     throw new ArgumentNullException("container");

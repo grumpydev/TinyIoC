@@ -18,16 +18,16 @@ namespace TinyIoC.Tests
         [TestMethod]
         public void Current_Get_ReturnsInstanceOfTinyIoC()
         {
-            var container = TinyIoC.Current;
+            var container = TinyIoCContainer.Current;
 
-            Assert.IsInstanceOfType(container, typeof(TinyIoC));
+            Assert.IsInstanceOfType(container, typeof(TinyIoCContainer));
         }
 
         [TestMethod]
         public void Current_GetTwice_ReturnsSameInstance()
         {
-            var container1 = TinyIoC.Current;
-            var container2 = TinyIoC.Current;
+            var container1 = TinyIoCContainer.Current;
+            var container2 = TinyIoCContainer.Current;
 
             Assert.ReferenceEquals(container1, container2);
         }
@@ -362,7 +362,7 @@ namespace TinyIoC.Tests
         public void Register_NullFactory_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
-            Func<TinyIoC, NamedParameterOverloads, ITestInterface> factory = null;
+            Func<TinyIoCContainer, NamedParameterOverloads, ITestInterface> factory = null;
             container.Register<ITestInterface>(factory);
 
             Assert.IsTrue(true);
@@ -373,7 +373,7 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            var result = container.Resolve<TinyIoC>();
+            var result = container.Resolve<TinyIoCContainer>();
 
             Assert.ReferenceEquals(result, container);
         }
@@ -1428,9 +1428,9 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.AutoRegister(container.GetType().Assembly);
 
-            var output = container.Resolve<TinyIoC.TypeRegistration>(new NamedParameterOverloads() { { "type", this.GetType() } }, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+            var output = container.Resolve<TinyIoCContainer.TypeRegistration>(new NamedParameterOverloads() { { "type", this.GetType() } }, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
 
-            Assert.IsInstanceOfType(output, typeof(TinyIoC.TypeRegistration));
+            Assert.IsInstanceOfType(output, typeof(TinyIoCContainer.TypeRegistration));
         }
 
         [TestMethod]

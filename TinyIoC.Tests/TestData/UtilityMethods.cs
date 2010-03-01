@@ -8,40 +8,40 @@ namespace TinyIoC.Tests.TestData
 {
     public class UtilityMethods
     {
-        internal static TinyIoC GetContainer()
+        internal static TinyIoCContainer GetContainer()
         {
-            return new TinyIoC();
+            return new TinyIoCContainer();
         }
 
-        internal static void RegisterInstanceStrongRef(TinyIoC container)
+        internal static void RegisterInstanceStrongRef(TinyIoCContainer container)
         {
             var item = new TestClassDefaultCtor();
             item.Prop1 = "Testing";
             container.Register<TestClassDefaultCtor>(item).WithStrongReference();
         }
 
-        internal static void RegisterInstanceWeakRef(TinyIoC container)
+        internal static void RegisterInstanceWeakRef(TinyIoCContainer container)
         {
             var item = new TestClassDefaultCtor();
             item.Prop1 = "Testing";
             container.Register<TestClassDefaultCtor>(item).WithWeakReference();
         }
 
-        internal static void RegisterFactoryStrongRef(TinyIoC container)
+        internal static void RegisterFactoryStrongRef(TinyIoCContainer container)
         {
             var source = new TestClassDefaultCtor();
             source.Prop1 = "Testing";
 
-            var item = new Func<TinyIoC, NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
+            var item = new Func<TinyIoCContainer, NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
             container.Register<TestClassDefaultCtor>(item).WithStrongReference();
         }
 
-        internal static void RegisterFactoryWeakRef(TinyIoC container)
+        internal static void RegisterFactoryWeakRef(TinyIoCContainer container)
         {
             var source = new TestClassDefaultCtor();
             source.Prop1 = "Testing";
 
-            var item = new Func<TinyIoC, NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
+            var item = new Func<TinyIoCContainer, NamedParameterOverloads, TestClassDefaultCtor>((c, p) => source);
             container.Register<TestClassDefaultCtor>(item).WithWeakReference();
         }
 
