@@ -1498,15 +1498,51 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void Resolve_ConstructorSpecified_UsesCorrectCtor()
+        public void Resolve_SingletonFactoryConstructorSpecified_UsesCorrectCtor()
         {
-            throw new NotImplementedException();            
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassMultiDepsMultiCtors>().AsSingleton().UsingConstructor(() => new TestClassMultiDepsMultiCtors(null as TestClassDefaultCtor));
+
+            var result = container.Resolve<TestClassMultiDepsMultiCtors>();
+
+            Assert.AreEqual(1, result.NumberOfDepsResolved);
         }
 
         [TestMethod]
-        public void Resolve_ConstructorSpecified_UsesCorrectCtor()
+        public void Resolve_MultiInstanceFactoryConstructorSpecified_UsesCorrectCtor()
         {
-            throw new NotImplementedException();
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassMultiDepsMultiCtors>().UsingConstructor(() => new TestClassMultiDepsMultiCtors(null as TestClassDefaultCtor));
+
+            var result = container.Resolve<TestClassMultiDepsMultiCtors>();
+
+            Assert.AreEqual(1, result.NumberOfDepsResolved);
+        }
+
+        [TestMethod]
+        public void Resolve_SingletonFactoryNoConstructorSpecified_UsesCorrectCtor()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassMultiDepsMultiCtors>().AsSingleton();
+
+            var result = container.Resolve<TestClassMultiDepsMultiCtors>();
+
+            Assert.AreEqual(2, result.NumberOfDepsResolved);
+        }
+
+        [TestMethod]
+        public void Resolve_MultiInstanceFactoryNoConstructorSpecified_UsesCorrectCtor()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassMultiDepsMultiCtors>();
+
+            var result = container.Resolve<TestClassMultiDepsMultiCtors>();
+
+            Assert.AreEqual(2, result.NumberOfDepsResolved);
         }
 
         [TestMethod]
@@ -1532,6 +1568,30 @@ namespace TinyIoC.Tests
             var result = container.CanResolve<TestClassWithInterfaceDependency>();
 
             Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void CanResolve_SingletonFactoryConstructorSpecified_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassMultiDepsMultiCtors>().AsSingleton().UsingConstructor(() => new TestClassMultiDepsMultiCtors(null as TestClassDefaultCtor));
+
+            var result = container.CanResolve<TestClassMultiDepsMultiCtors>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void CanResolve_MultiInstanceFactoryConstructorSpecified_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+            container.Register<TestClassMultiDepsMultiCtors>().UsingConstructor(() => new TestClassMultiDepsMultiCtors(null as TestClassDefaultCtor));
+
+            var result = container.CanResolve<TestClassMultiDepsMultiCtors>();
+
+            Assert.IsTrue(result);
         }
 
     }

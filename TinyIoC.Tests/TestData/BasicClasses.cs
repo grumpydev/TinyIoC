@@ -224,5 +224,26 @@ namespace TinyIoC.Tests.TestData
             }
 
         }
+
+        internal class TestClassMultiDepsMultiCtors
+        {
+            public TestClassDefaultCtor Prop1 { get; private set; }
+            public TestClassDefaultCtor Prop2 { get; private set; }
+            public int NumberOfDepsResolved { get; private set; }
+
+            public TestClassMultiDepsMultiCtors(TestClassDefaultCtor prop1)
+            {
+                Prop1 = prop1;
+                NumberOfDepsResolved = 1;
+            }
+
+            public TestClassMultiDepsMultiCtors(TestClassDefaultCtor prop1, TestClassDefaultCtor prop2)
+            {
+                Prop1 = prop1;
+                Prop2 = prop2;
+                NumberOfDepsResolved = 2;
+            }
+        }
+
     }
 }

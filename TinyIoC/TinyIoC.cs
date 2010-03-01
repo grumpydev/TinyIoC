@@ -780,7 +780,7 @@ namespace TinyIoC
             /// <summary>
             /// Constructor to use, if specified
             /// </summary>
-            protected ConstructorInfo _Constructor = null;
+            public ConstructorInfo Constructor {get; protected set;}
 
             /// <summary>
             /// Create the type
@@ -824,7 +824,7 @@ namespace TinyIoC
 
             public virtual void SetConstructor(ConstructorInfo constructor)
             {
-                this._Constructor = constructor;
+                this.Constructor = constructor;
             }
         }
 
@@ -843,7 +843,7 @@ namespace TinyIoC
             {
                 try
                 {
-                    return container.ConstructType(typeof(RegisterImplementation), _Constructor, parameters, options);
+                    return container.ConstructType(typeof(RegisterImplementation), Constructor, parameters, options);
                 }
                 catch (TinyIoCResolutionException ex)
                 {
@@ -1154,7 +1154,7 @@ namespace TinyIoC
 
                 lock (SingletonLock)
                     if (_Current == null)
-                        _Current = container.ConstructType(typeof(RegisterImplementation), _Constructor, options) as RegisterImplementation;
+                        _Current = container.ConstructType(typeof(RegisterImplementation), Constructor, options) as RegisterImplementation;
 
                 return _Current;
             }
@@ -1320,7 +1320,10 @@ namespace TinyIoC
                 if (factory.AssumeConstruction)
                     return true;
 
-                return (GetBestConstructor(factory.CreatesType, parameters, options) != null) ? true : false;
+                if (factory.Constructor == null)
+                    return (GetBestConstructor(factory.CreatesType, parameters, options) != null) ? true : false;
+                else
+                    return CanConstruct(factory.Constructor, parameters, options);
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
