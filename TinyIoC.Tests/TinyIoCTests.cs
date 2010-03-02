@@ -448,7 +448,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-       // [Ignore]
+        [Ignore]
         public void Dispose_RegisteredDisposableInstanceWithInterface_CallsDispose()
         {
             var item = new Mock<DisposableTestClassWithInterface>();
@@ -1380,6 +1380,26 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_ClassWithNamedLazyFactoryDependency_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.Resolve<TestClassWithNamedLazyFactory>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassWithNamedLazyFactory));
+        }
+
+        [TestMethod]
+        public void CanResolve_ClassNamedWithLazyFactoryDependency_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.CanResolve<TestClassWithNamedLazyFactory>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
         public void LazyFactory_CalledByDependantClass_ReturnsInstanceOfType()
         {
             var container = UtilityMethods.GetContainer();
@@ -1388,6 +1408,25 @@ namespace TinyIoC.Tests
             item.Method1();
 
             Assert.IsInstanceOfType(item.Prop1, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void NamedLazyFactory_CalledByDependantClass_ReturnsCorrectInstanceOfType()
+        {
+            var container = UtilityMethods.GetContainer();
+            var item1 = new TestClassDefaultCtor();
+            var item2 = new TestClassDefaultCtor();
+            container.Register<TestClassDefaultCtor>(item1, "Testing");
+            container.Register<TestClassDefaultCtor>(item2);
+            container.Register<TestClassWithNamedLazyFactory>();
+
+            var item = container.Resolve<TestClassWithNamedLazyFactory>();
+
+            item.Method1();
+            item.Method2();
+
+            Assert.ReferenceEquals(item.Prop1, item1);
+            Assert.ReferenceEquals(item.Prop2, item2);
         }
 
         [TestMethod]

@@ -225,6 +225,33 @@ namespace TinyIoC.Tests.TestData
 
         }
 
+        internal class TestClassWithNamedLazyFactory
+        {
+            private Func<string, TestClassDefaultCtor> _Factory;
+            public TestClassDefaultCtor Prop1 { get; private set; }
+            public TestClassDefaultCtor Prop2 { get; private set; }
+
+            /// <summary>
+            /// Initializes a new instance of the TestClassWithLazyFactory class.
+            /// </summary>
+            /// <param name="factory"></param>
+            public TestClassWithNamedLazyFactory(Func<string, TestClassDefaultCtor> factory)
+            {
+                _Factory = factory;
+            }
+
+            public void Method1()
+            {
+                Prop1 = _Factory.Invoke("Testing");
+            }
+
+            public void Method2()
+            {
+                Prop2 = _Factory.Invoke(String.Empty);
+            }
+
+        }
+
         internal class TestClassMultiDepsMultiCtors
         {
             public TestClassDefaultCtor Prop1 { get; private set; }

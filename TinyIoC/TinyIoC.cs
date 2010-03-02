@@ -128,19 +128,23 @@ namespace TinyIoC
     {
         private const string ERROR_TEXT = "Unable to resolve constructor for {0} using provided Expression.";
 
-        public TinyIoCConstructorResolutionException(Type type) : base(String.Format(ERROR_TEXT, type.FullName))
+        public TinyIoCConstructorResolutionException(Type type)
+            : base(String.Format(ERROR_TEXT, type.FullName))
         {
         }
 
-        public TinyIoCConstructorResolutionException(Type type, Exception innerException) : base(String.Format(ERROR_TEXT, type.FullName), innerException)
+        public TinyIoCConstructorResolutionException(Type type, Exception innerException)
+            : base(String.Format(ERROR_TEXT, type.FullName), innerException)
         {
         }
 
-        public TinyIoCConstructorResolutionException(string message, Exception innerException) : base(message, innerException)
+        public TinyIoCConstructorResolutionException(string message, Exception innerException)
+            : base(message, innerException)
         {
         }
 
-        public TinyIoCConstructorResolutionException(string message) : base(message)
+        public TinyIoCConstructorResolutionException(string message)
+            : base(message)
         {
         }
     }
@@ -326,7 +330,6 @@ namespace TinyIoC
             }
         }
         #endregion
-
 
         #region Public API
         #region Registration
@@ -794,7 +797,7 @@ namespace TinyIoC
             /// <summary>
             /// Constructor to use, if specified
             /// </summary>
-            public ConstructorInfo Constructor {get; protected set;}
+            public ConstructorInfo Constructor { get; protected set; }
 
             /// <summary>
             /// Create the type
@@ -1443,11 +1446,12 @@ namespace TinyIoC
                 return null;
 
             Type genericType = type.GetGenericTypeDefinition();
+            Type[] genericArguments = type.GetGenericArguments();
 
             // Just a func
             if (genericType == typeof(Func<>))
             {
-                Type returnType = type.GetGenericArguments()[0];
+                Type returnType = genericArguments[0];
 
                 MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { });
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
@@ -1459,7 +1463,23 @@ namespace TinyIoC
                 return resolveLambda;
             }
 
-            return null;
+            // Named func
+            if ((genericType == typeof(Func<,>)) && (genericArguments[0] == typeof(string)))
+            {
+                Type returnType = genericArguments[1];
+
+                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String) });
+                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+
+                ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name") };
+                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
+
+                var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
+
+                return resolveLambda;
+            }
+
+            throw new TinyIoCResolutionException(type);
         }
 
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
