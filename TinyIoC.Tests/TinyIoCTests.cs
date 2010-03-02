@@ -448,7 +448,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [Ignore]
+       // [Ignore]
         public void Dispose_RegisteredDisposableInstanceWithInterface_CallsDispose()
         {
             var item = new Mock<DisposableTestClassWithInterface>();

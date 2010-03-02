@@ -8,15 +8,10 @@ using System.Linq.Expressions;
 namespace TinyIoC
 {
     #region SafeDictionary
-    public class SafeDictionary<TKey, TValue>
+    public class SafeDictionary<TKey, TValue> : IDisposable
     {
         private readonly object _Padlock = new object();
         private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
-
-        /// <summary>
-        /// Do not use unless for disposal!
-        /// </summary>
-        public Dictionary<TKey, TValue>.ValueCollection Values { get { return _Dictionary.Values; } }
 
         public TValue this[TKey key]
         {
@@ -61,6 +56,25 @@ namespace TinyIoC
                 _Dictionary.Clear();
             }
         }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            lock (_Padlock)
+            {
+                var disposableItems = from item in _Dictionary.Values
+                                      where item is IDisposable
+                                      select item as IDisposable;
+
+                foreach (var item in disposableItems)
+                {
+                    item.Dispose();
+                }
+            }
+        }
+
+        #endregion
     }
     #endregion
 
@@ -1537,16 +1551,7 @@ namespace TinyIoC
         #region IDisposable Members
         public void Dispose()
         {
-            var disposableFactories = from factory in _RegisteredTypes.Values
-                                      where factory is IDisposable
-                                      select factory as IDisposable;
-
-            foreach (var factory in disposableFactories)
-            {
-                factory.Dispose();
-            }
-
-            _RegisteredTypes.Clear();
+            _RegisteredTypes.Dispose();
         }
 
         #endregion
