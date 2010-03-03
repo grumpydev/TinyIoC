@@ -272,5 +272,15 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
+        internal class TestClassConstructorFailure
+        {
+            /// <summary>
+            /// Initializes a new instance of the TestClassConstructorFailure class.
+            /// </summary>
+            public TestClassConstructorFailure()
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }

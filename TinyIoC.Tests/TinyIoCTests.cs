@@ -1633,5 +1633,40 @@ namespace TinyIoC.Tests
             Assert.IsTrue(result);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_ConstructorThrowsException_ThrowsTinyIoCException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassConstructorFailure>();
+
+            var result = container.Resolve<TestClassConstructorFailure>();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_DelegateFactoryThrowsException_ThrowsTinyIoCException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassConstructorFailure>((c, p) => { throw new NotImplementedException(); });
+
+            var result = container.Resolve<TestClassConstructorFailure>();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_DelegateFactoryResolvedWithUnnamedFallbackThrowsException_ThrowsTinyIoCException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassConstructorFailure>((c, p) => { throw new NotImplementedException(); });
+
+            var result = container.Resolve<TestClassConstructorFailure>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
+
+            Assert.IsTrue(true);
+        }
     }
 }
