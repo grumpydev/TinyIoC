@@ -109,17 +109,32 @@ namespace TinyIoC
         }
     }
 
+    public class TinyIoCRegistrationTypeExceptiopn : Exception
+    {
+        private const string REGISTER_ERROR_TEXT = "Cannot register type {0} - abstract classes or interfaces are not valid implementation types for {1}.";
+
+        public TinyIoCRegistrationTypeExceptiopn(Type type, string factory)
+            : base(String.Format(REGISTER_ERROR_TEXT, type.FullName, factory))
+        {
+        }
+
+        public TinyIoCRegistrationTypeExceptiopn(Type type, string factory, Exception innerException)
+            : base(String.Format(REGISTER_ERROR_TEXT, type.FullName, factory), innerException)
+        {
+        }
+    }
+
     public class TinyIoCRegistrationException : Exception
     {
-        private const string ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
+        private const string CONVERT_ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
 
         public TinyIoCRegistrationException(Type type, string method)
-            : base(String.Format(ERROR_TEXT, type.FullName, method))
+            : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method))
         {
         }
 
         public TinyIoCRegistrationException(Type type, string method, Exception innerException)
-            : base(String.Format(ERROR_TEXT, type.FullName, method), innerException)
+            : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method), innerException)
         {
         }
     }
@@ -871,6 +886,12 @@ namespace TinyIoC
         {
             public override Type CreatesType { get { return typeof(RegisterImplementation); } }
 
+            public MultiInstanceFactory()
+            {
+                if (typeof(RegisterImplementation).IsAbstract || typeof(RegisterImplementation).IsInterface)
+                    throw new TinyIoCRegistrationTypeExceptiopn(typeof(RegisterImplementation), "MultiInstanceFactory");
+            }
+
             public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 try
@@ -1033,6 +1054,11 @@ namespace TinyIoC
         {
             private RegisterImplementation _instance;
 
+            public InstanceFactory(RegisterImplementation instance)
+            {
+                this._instance = instance;
+            }
+
             public override Type CreatesType
             {
                 get { return typeof(RegisterImplementation); }
@@ -1041,11 +1067,6 @@ namespace TinyIoC
             public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
                 return _instance;
-            }
-
-            public InstanceFactory(RegisterImplementation instance)
-            {
-                this._instance = instance;
             }
 
             public override ObjectFactoryBase MultiInstanceVariant
@@ -1099,6 +1120,11 @@ namespace TinyIoC
         {
             private WeakReference _instance;
 
+            public WeakInstanceFactory(RegisterImplementation instance)
+            {
+                this._instance = new WeakReference(instance);
+            }
+
             public override Type CreatesType
             {
                 get { return typeof(RegisterImplementation); }
@@ -1112,11 +1138,6 @@ namespace TinyIoC
                     throw new TinyIoCWeakReferenceException(typeof(RegisterType));
 
                 return instance;
-            }
-
-            public WeakInstanceFactory(RegisterImplementation instance)
-            {
-                this._instance = new WeakReference(instance);
             }
 
             public override ObjectFactoryBase MultiInstanceVariant
@@ -1174,6 +1195,12 @@ namespace TinyIoC
             private readonly object SingletonLock = new object();
             private RegisterImplementation _Current;
 
+            public SingletonFactory()
+            {
+                if (typeof(RegisterImplementation).IsAbstract || typeof(RegisterImplementation).IsInterface)
+                    throw new TinyIoCRegistrationTypeExceptiopn(typeof(RegisterImplementation), "SingletonFactory");
+            }
+
             public override Type CreatesType
             {
                 get { return typeof(RegisterImplementation); }
@@ -1189,11 +1216,6 @@ namespace TinyIoC
                         _Current = container.ConstructType(typeof(RegisterImplementation), Constructor, options) as RegisterImplementation;
 
                 return _Current;
-            }
-
-            public SingletonFactory()
-            {
-
             }
 
             public override ObjectFactoryBase SingletonVariant
@@ -1332,7 +1354,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            if (typeof(RegisterType).IsInterface)
+            if (typeof(RegisterType).IsInterface || typeof(RegisterType).IsAbstract)
                 return new SingletonFactory<RegisterType, RegisterImplementation>();
 
             return new MultiInstanceFactory<RegisterType, RegisterImplementation>();

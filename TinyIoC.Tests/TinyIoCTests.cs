@@ -1683,5 +1683,27 @@ namespace TinyIoC.Tests
 
             Assert.IsTrue(true);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCRegistrationTypeExceptiopn))]
+        public void Register_AbstractClassWithNoImplementation_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<TestClassBase>();
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(TinyIoCRegistrationTypeExceptiopn))]
+        public void Register_InterfaceWithNoImplementation_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register<ITestInterface>();
+
+            Assert.IsTrue(true);
+        }
     }
 }

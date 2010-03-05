@@ -296,6 +296,16 @@ namespace TinyIoC.Tests.TestData
             {
                 throw new NotImplementedException();
             }
+       }
+
+        internal abstract class TestClassBase
+        {
         }
+
+        internal class TestClassWithBaseClass : TestClassBase
+        {
+
+        }
+
     }
 }
