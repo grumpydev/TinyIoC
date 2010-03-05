@@ -51,16 +51,12 @@ namespace TinyIoC.Tests
         public void Register_ImplementationOnly_CanRegister()
         {
             UtilityMethods.GetContainer().Register<TestClassDefaultCtor>();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
         public void Register_InterfaceAndImplementation_CanRegister()
         {
             UtilityMethods.GetContainer().Register<ITestInterface, TestClassDefaultCtor>();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -114,8 +110,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface>((c, p) => TestClassDefaultCtor.CreateNew(c));
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -123,8 +117,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface>((c, p) => new TestClassDefaultCtor() { Prop1 = "Testing" });
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -346,7 +338,7 @@ namespace TinyIoC.Tests
 
             var result = container.CanResolve<ITestInterface>();
 
-            Assert.IsTrue(true);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -357,7 +349,7 @@ namespace TinyIoC.Tests
 
             var result = container.CanResolve<ITestInterface>();
 
-            Assert.IsTrue(true);
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
@@ -369,7 +361,8 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<ITestInterface>();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -380,7 +373,8 @@ namespace TinyIoC.Tests
             Func<TinyIoCContainer, NamedParameterOverloads, ITestInterface> factory = null;
             container.Register<ITestInterface>(factory);
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -409,8 +403,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<DisposableTestClassWithInterface>(new DisposableTestClassWithInterface());
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -418,8 +410,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface>(new DisposableTestClassWithInterface());
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -520,8 +510,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.Register<GenericClassWithInterface<int, string>>();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -530,8 +518,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.Register<ITestInterface, GenericClassWithInterface<int, string>>();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -562,8 +548,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.Register<TestClassDefaultCtor>("TestName");
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -572,8 +556,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -583,8 +565,6 @@ namespace TinyIoC.Tests
             var item = new TestClassDefaultCtor();
 
             container.Register<TestClassDefaultCtor>(item, "TestName");
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -593,8 +573,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.Register<TestClassDefaultCtor>((c, p) => TestClassDefaultCtor.CreateNew(c) as TestClassDefaultCtor, "TestName");
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -979,8 +957,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>().AsSingleton();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -988,8 +964,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>().AsMultiInstance();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -998,8 +972,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>().WithStrongReference();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1009,7 +981,8 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>().WithWeakReference();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1017,8 +990,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>().AsSingleton();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1026,8 +997,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>().AsMultiInstance();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1037,7 +1006,8 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>().WithStrongReference();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1047,7 +1017,8 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>().WithWeakReference();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1057,7 +1028,8 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>((c,p)=>new TestClassDefaultCtor()).AsSingleton();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1067,7 +1039,8 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsMultiInstance();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1075,8 +1048,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithStrongReference();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1084,8 +1055,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithWeakReference();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1094,8 +1063,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).AsSingleton();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1103,8 +1070,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).AsMultiInstance();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1112,8 +1077,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithStrongReference();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1121,8 +1084,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithWeakReference();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1187,8 +1148,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             var item = new TestClassDefaultCtor();
             container.Register<ITestInterface, TestClassDefaultCtor>(item);
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1199,8 +1158,6 @@ namespace TinyIoC.Tests
             var item2 = new TestClassDefaultCtor();
             container.Register<ITestInterface, TestClassDefaultCtor>(item, "TestName");
             container.Register<ITestInterface, TestClassDefaultCtor>(item2);
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1450,8 +1407,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.AutoRegister();
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1460,8 +1415,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.AutoRegister(this.GetType().Assembly);
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1506,7 +1459,8 @@ namespace TinyIoC.Tests
 
             container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor());
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1517,7 +1471,8 @@ namespace TinyIoC.Tests
 
             container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor());
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1528,7 +1483,8 @@ namespace TinyIoC.Tests
 
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor());
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1539,7 +1495,8 @@ namespace TinyIoC.Tests
 
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor());
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1548,8 +1505,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.Register<TestClassDefaultCtor>().UsingConstructor(() => new TestClassDefaultCtor());
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1558,8 +1513,6 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             container.Register<ITestInterface, TestClassDefaultCtor>().UsingConstructor(() => new TestClassDefaultCtor());
-
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
@@ -1620,7 +1573,8 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassWithInterfaceDependency>();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1668,7 +1622,8 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassConstructorFailure>();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1680,7 +1635,8 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassConstructorFailure>();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1692,7 +1648,8 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassConstructorFailure>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1703,7 +1660,8 @@ namespace TinyIoC.Tests
 
             container.Register<TestClassBase>();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1714,7 +1672,8 @@ namespace TinyIoC.Tests
 
             container.Register<ITestInterface>();
 
-            Assert.IsTrue(true);
+            // Should have thrown by now
+            Assert.IsTrue(false);
         }
     }
 }
