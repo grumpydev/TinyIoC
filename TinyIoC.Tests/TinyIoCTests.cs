@@ -1476,6 +1476,17 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void AutoRegister_TestAssembly_CanResolveAbstractBaseClass()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(this.GetType().Assembly);
+
+            var result = container.Resolve<TestClassBase>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassBase));
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(TinyIoCResolutionException))]
         public void AutoRegister_TinyIoCAssembly_CannotResolveInternalTinyIoCClass()
         {

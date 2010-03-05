@@ -383,7 +383,7 @@ namespace TinyIoC
         /// <param name="assembly">Assembly to process</param>
         public void AutoRegister(Assembly assembly)
         {
-            var interfaceImplementations = new Dictionary<Type, Type>();
+            var abstractInterfaceImplementations = new Dictionary<Type, Type>();
 
             var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -393,9 +393,12 @@ namespace TinyIoC
 
             foreach (var type in concreteTypes)
             {
+                if (type.BaseType != typeof(object))
+                    abstractInterfaceImplementations[type.BaseType] = type;
+
                 foreach (var interfaceType in type.GetInterfaces())
                 {
-                    interfaceImplementations[interfaceType] = type;
+                    abstractInterfaceImplementations[interfaceType] = type;
                 }
 
                 Type[] genericTypes = { type, type };
@@ -403,14 +406,14 @@ namespace TinyIoC
                 this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
             }
 
-            var interfaceTypes = from type in assembly.GetTypes()
-                                 where ((type.IsInterface == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+            var abstractInterfaceTypes = from type in assembly.GetTypes()
+                                 where ((type.IsInterface == true || type.IsAbstract == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
                                  select type;
 
             Type implementationType;
-            foreach (var type in interfaceTypes)
+            foreach (var type in abstractInterfaceTypes)
             {
-                if (interfaceImplementations.TryGetValue(type, out implementationType))
+                if (abstractInterfaceImplementations.TryGetValue(type, out implementationType))
                 {
                     Type[] genericTypes = { type, implementationType };
                     var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
