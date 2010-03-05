@@ -1452,6 +1452,22 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(TinyIoCAutoRegistrationException))]
+        public void AutoRegister_ThisAssemblySpecifiedIgnoreDuplicatesOff_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(this.GetType().Assembly, false);
+            Assert.IsTrue(false);
+        }
+
+        [TestMethod]
+        public void AutoRegister_TinyIoCAssemblySpecifiedIgnoreDuplicatesOff_NoErrors()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(typeof(TinyIoCContainer).Assembly, false);
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
         public void Register_ConstructorSpecifiedForDelegateFactory_ThrowsException()
         {

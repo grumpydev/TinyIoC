@@ -178,6 +178,29 @@ namespace TinyIoC
         {
         }
     }
+
+    public class TinyIoCAutoRegistrationException : Exception
+    {
+        private const string ERROR_TEXT = "Duplicate implementation of type {0} found ({1}).";
+        
+        public TinyIoCAutoRegistrationException(Type registerType, IEnumerable<Type> types)
+            : base(String.Format(ERROR_TEXT, registerType, GetTypesString(types)))
+        {
+        }
+
+        public TinyIoCAutoRegistrationException(Type registerType, IEnumerable<Type> types, Exception innerException)
+            : base(String.Format(ERROR_TEXT, registerType, GetTypesString(types)), innerException)
+        {
+        }
+
+        private static string GetTypesString(IEnumerable<Type> types)
+        {
+            var typeNames = from type in types
+                            select type.FullName;
+
+            return string.Join(",", typeNames.ToArray());
+        }
+    }
     #endregion
 
     #region Public Setup / Settings Classes
@@ -371,7 +394,17 @@ namespace TinyIoC
         /// </summary>
         public void AutoRegister()
         {
-            AutoRegister(this.GetType().Assembly);
+            AutoRegisterInternal(this.GetType().Assembly, true);
+        }
+
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the specified assembly
+        /// </summary>
+        /// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
+        /// <exception cref="TinyIoCAutoRegistrationException"/>
+        public void AutoRegister(bool ignoreDuplicateImplementations)
+        {
+            AutoRegisterInternal(this.GetType().Assembly, ignoreDuplicateImplementations);
         }
 
         /// <summary>
@@ -383,43 +416,18 @@ namespace TinyIoC
         /// <param name="assembly">Assembly to process</param>
         public void AutoRegister(Assembly assembly)
         {
-            var abstractInterfaceImplementations = new Dictionary<Type, Type>();
+            AutoRegisterInternal(assembly, true);
+        }
 
-            var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            var concreteTypes = from type in assembly.GetTypes()
-                                where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
-                                select type;
-
-            foreach (var type in concreteTypes)
-            {
-                if (type.BaseType != typeof(object))
-                    abstractInterfaceImplementations[type.BaseType] = type;
-
-                foreach (var interfaceType in type.GetInterfaces())
-                {
-                    abstractInterfaceImplementations[interfaceType] = type;
-                }
-
-                Type[] genericTypes = { type, type };
-                var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
-                this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
-            }
-
-            var abstractInterfaceTypes = from type in assembly.GetTypes()
-                                 where ((type.IsInterface == true || type.IsAbstract == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
-                                 select type;
-
-            Type implementationType;
-            foreach (var type in abstractInterfaceTypes)
-            {
-                if (abstractInterfaceImplementations.TryGetValue(type, out implementationType))
-                {
-                    Type[] genericTypes = { type, implementationType };
-                    var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
-                    this.RegisterInternal(type, implementationType, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
-                }
-            }
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the specified assembly
+        /// </summary>
+        /// <param name="assembly">Assembly to process</param>
+        /// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
+        /// <exception cref="TinyIoCAutoRegistrationException"/>
+        public void AutoRegister(Assembly assembly, bool ignoreDuplicateImplementations)
+        {
+            AutoRegisterInternal(assembly, ignoreDuplicateImplementations);
         }
 
         /// <summary>
@@ -1320,6 +1328,48 @@ namespace TinyIoC
         #endregion
 
         #region Internal Methods
+        private readonly object _AutoRegisterLock = new object();
+        private void AutoRegisterInternal(Assembly assembly, bool ignoreDuplicateImplementations)
+        {
+            lock (_AutoRegisterLock)
+            {
+                var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                var concreteTypes = from type in assembly.GetTypes()
+                                    where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+                                    select type;
+
+                foreach (var type in concreteTypes)
+                {
+                    Type[] genericTypes = { type, type };
+                    var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
+                    this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                }
+
+                var abstractInterfaceTypes = from type in assembly.GetTypes()
+                                             where ((type.IsInterface == true || type.IsAbstract == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+                                             select type;
+
+                foreach (var type in abstractInterfaceTypes)
+                {
+                    var implementations = from implementationType in assembly.GetTypes()
+                                          where implementationType.GetInterfaces().Contains(type) || implementationType.BaseType == type
+                                          select implementationType;
+
+                    if (!ignoreDuplicateImplementations && implementations.Count() > 1)
+                        throw new TinyIoCAutoRegistrationException(type, implementations);
+
+                    var firstImplementation = implementations.FirstOrDefault();
+                    if (firstImplementation != null)
+                    {
+                        Type[] genericTypes = { type, firstImplementation };
+                        var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
+                        this.RegisterInternal(type, firstImplementation, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                    }
+                }
+            }
+        }
+        
         private void RegisterDefaultTypes()
         {
             this.Register<TinyIoCContainer>(this);
