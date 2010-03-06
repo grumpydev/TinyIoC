@@ -816,6 +816,25 @@ namespace TinyIoC
         {
             return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, options);
         }
+
+        /// <summary>
+        /// Attempts to resolve all public property dependencies on the given object.
+        /// </summary>
+        /// <param name="input">Object to "build up"</param>
+        public void BuildUp(object input)
+        {
+            BuildUpInternal(input, ResolveOptions.Default);
+        }
+
+        /// <summary>
+        /// Attempts to resolve all public property dependencies on the given object using the given resolve options.
+        /// </summary>
+        /// <param name="input">Object to "build up"</param>
+        /// <param name="resolveOptions">Resolve options to use</param>
+        public void BuildUp(object input, ResolveOptions resolveOptions)
+        {
+            BuildUpInternal(input, resolveOptions);
+        }
         #endregion
         #endregion
 
@@ -1656,6 +1675,27 @@ namespace TinyIoC
             }
         }
 
+        private void BuildUpInternal(object input, ResolveOptions resolveOptions)
+        {
+            var properties = from property in input.GetType().GetProperties()
+                             where (property.GetGetMethod() != null) && (property.GetSetMethod() != null) && !property.PropertyType.IsValueType
+                             select property;
+
+            foreach (var property in properties)
+            {
+                if (property.GetValue(input, null) == null)
+                {
+                    try
+                    {
+                        property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions), null);
+                    }
+                    catch (Exception TinyIoCResolutionException)
+                    {
+                        // Catch any resolution errors and ignore them
+                    }
+                }
+            }
+        }
         #endregion
 
         #region IDisposable Members
