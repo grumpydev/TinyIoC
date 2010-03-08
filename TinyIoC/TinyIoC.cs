@@ -109,16 +109,16 @@ namespace TinyIoC
         }
     }
 
-    public class TinyIoCRegistrationTypeExceptiopn : Exception
+    public class TinyIoCRegistrationTypeException : Exception
     {
         private const string REGISTER_ERROR_TEXT = "Cannot register type {0} - abstract classes or interfaces are not valid implementation types for {1}.";
 
-        public TinyIoCRegistrationTypeExceptiopn(Type type, string factory)
+        public TinyIoCRegistrationTypeException(Type type, string factory)
             : base(String.Format(REGISTER_ERROR_TEXT, type.FullName, factory))
         {
         }
 
-        public TinyIoCRegistrationTypeExceptiopn(Type type, string factory, Exception innerException)
+        public TinyIoCRegistrationTypeException(Type type, string factory, Exception innerException)
             : base(String.Format(REGISTER_ERROR_TEXT, type.FullName, factory), innerException)
         {
         }
@@ -900,7 +900,7 @@ namespace TinyIoC
             public MultiInstanceFactory()
             {
                 if (typeof(RegisterImplementation).IsAbstract || typeof(RegisterImplementation).IsInterface)
-                    throw new TinyIoCRegistrationTypeExceptiopn(typeof(RegisterImplementation), "MultiInstanceFactory");
+                    throw new TinyIoCRegistrationTypeException(typeof(RegisterImplementation), "MultiInstanceFactory");
             }
 
             public override object GetObject(TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
@@ -1209,7 +1209,7 @@ namespace TinyIoC
             public SingletonFactory()
             {
                 if (typeof(RegisterImplementation).IsAbstract || typeof(RegisterImplementation).IsInterface)
-                    throw new TinyIoCRegistrationTypeExceptiopn(typeof(RegisterImplementation), "SingletonFactory");
+                    throw new TinyIoCRegistrationTypeException(typeof(RegisterImplementation), "SingletonFactory");
             }
 
             public override Type CreatesType

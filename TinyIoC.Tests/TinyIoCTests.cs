@@ -1669,7 +1669,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationTypeExceptiopn))]
+        [ExpectedException(typeof(TinyIoCRegistrationTypeException))]
         public void Register_AbstractClassWithNoImplementation_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
@@ -1681,7 +1681,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationTypeExceptiopn))]
+        [ExpectedException(typeof(TinyIoCRegistrationTypeException))]
         public void Register_InterfaceWithNoImplementation_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
