@@ -307,5 +307,25 @@ namespace TinyIoC.Tests.TestData
 
         }
 
+        internal class TestClassPropertyDependencies
+        {
+            public ITestInterface Property1 { get; set; }
+            public ITestInterface2 Property2 { get; set; }
+            public int Property3 { get; set; }
+            public string Property4 { get; set; }
+
+            public TestClassDefaultCtor ConcreteProperty { get; set; }
+
+            public ITestInterface ReadOnlyProperty { get; private set; }
+            public ITestInterface2 WriteOnlyProperty { internal get; set; }
+
+            /// <summary>
+            /// Initializes a new instance of the TestClassPropertyDependencies class.
+            /// </summary>
+            public TestClassPropertyDependencies()
+            {
+                
+            }
+        }
     }
 }

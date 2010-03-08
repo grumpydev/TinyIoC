@@ -1691,5 +1691,93 @@ namespace TinyIoC.Tests
             // Should have thrown by now
             Assert.IsTrue(false);
         }
+
+        [TestMethod]
+        public void BuildUp_ObjectWithPropertyDependenciesAndDepsRegistered_SetsDependencies()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface2, TestClass2>();
+            var input = new TestClassPropertyDependencies();
+
+            container.BuildUp(input);
+
+            Assert.IsNotNull(input.Property1);
+            Assert.IsNotNull(input.Property2);
+            Assert.IsNotNull(input.ConcreteProperty);
+        }
+
+        [TestMethod]
+        public void BuildUp_ObjectAndOptionsWithPropertyDependenciesAndDepsRegistered_SetsDependencies()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface2, TestClass2>();
+            var input = new TestClassPropertyDependencies();
+
+            container.BuildUp(input, new TinyIoC.ResolveOptions());
+
+            Assert.IsNotNull(input.Property1);
+            Assert.IsNotNull(input.Property2);
+            Assert.IsNotNull(input.ConcreteProperty);
+        }
+
+        [TestMethod]
+        public void BuildUp_ObjectAndOptionsWithPropertyDependenciesAndDepsRegistered_SetsDependenciesUsingOptions()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface2, TestClass2>();
+            var input = new TestClassPropertyDependencies();
+
+            container.BuildUp(input, new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+
+            Assert.IsNotNull(input.Property1);
+            Assert.IsNotNull(input.Property2);
+            Assert.IsNull(input.ConcreteProperty);
+        }
+
+        [TestMethod]
+        public void BuildUp_ObjectWithPropertyDependenciesAndDepsNotRegistered_DoesNotThrow()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            var input = new TestClassPropertyDependencies();
+
+            container.BuildUp(input);
+
+            Assert.IsNotNull(input.Property1);
+            Assert.IsNull(input.Property2);
+        }
+
+        [TestMethod]
+        public void BuildUp_ObjectWithPropertyDependenciesWithSomeSet_SetsOnlyUnsetDependencies()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface2, TestClass2>();
+            var preset = new TestClassDefaultCtor();
+            var input = new TestClassPropertyDependencies();
+            input.Property1 = preset;
+
+            container.BuildUp(input);
+
+            Assert.ReferenceEquals(preset, input.Property1);
+            Assert.IsNotNull(input.Property2);
+        }
+
+        [TestMethod]
+        public void BuildUp_ObjectWithPropertyDependenciesAndDepsRegistered_DoesNotSetWriteOnlyProperty()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface2, TestClass2>();
+            var input = new TestClassPropertyDependencies();
+
+            container.BuildUp(input);
+
+            Assert.IsNull(input.WriteOnlyProperty);
+        }
+        
     }
 }
