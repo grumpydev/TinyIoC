@@ -73,4 +73,83 @@ namespace TinyIoC.Tests.TestData
             }
         }
     }
+
+    // Nested deps with func
+    public interface IStateManager
+    {
+        bool MoveToState(string state, object data);
+        void Init();
+    }
+
+    public interface IView
+    {
+        object GetView();
+    }
+
+    public interface IViewManager
+    {
+        bool LoadView(IView view);
+    }
+
+    public class MainView : IView, IViewManager
+    {
+
+        public IView LoadedView { get; private set; }
+
+        public object GetView()
+        {
+            return this;
+        }
+
+ 
+
+        public bool LoadView(IView view)
+        {
+            if (view == null)
+                throw new ArgumentNullException("view");
+
+            LoadedView = view;
+            return true;
+        }
+
+    }
+
+    public class SplashView : IView
+    {
+        public object GetView()
+        {
+            return this;
+        }
+    }
+
+    public class StateManager : IStateManager
+    {
+        IViewManager _ViewManager;
+        Func<string, IView> _ViewFactory;
+
+        public bool MoveToState(string state, object data)
+        {
+            var view = _ViewFactory.Invoke(state);
+            return _ViewManager.LoadView(view);
+        }
+
+        public void Init()
+        {
+            this.MoveToState("SplashView", null);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the StateManager class.
+        /// </summary>
+        /// <param name="viewManager"></param>
+        /// <param name="viewFactory"></param>
+        public StateManager(IViewManager viewManager, Func<string, IView> viewFactory)
+        {
+            _ViewManager = viewManager;
+            _ViewFactory = viewFactory;
+        }
+    }
+
+
+
 }

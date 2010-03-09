@@ -1084,6 +1084,8 @@ namespace TinyIoC
         {
             private RegisterImplementation _instance;
 
+            public override bool AssumeConstruction { get { return true; } }
+
             public InstanceFactory(RegisterImplementation instance)
             {
                 this._instance = instance;

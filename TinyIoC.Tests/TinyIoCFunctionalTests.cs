@@ -108,5 +108,22 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
         }
 
+        [TestMethod]
+        public void Dependency_Hierarchy_With_Named_Factories_Resolves_All_Correctly()
+        {
+            var container = UtilityMethods.GetContainer();
+            var mainView = new MainView();
+            container.Register<IViewManager>(mainView);
+            container.Register<IView, MainView>(mainView, "MainView");
+            container.Register<IView, SplashView>("SplashView").UsingConstructor(() => new SplashView());
+            container.Resolve<IView>("MainView");
+            container.Register<IStateManager, StateManager>();
+            var stateManager = container.Resolve<IStateManager>();
+
+            stateManager.Init();
+
+            Assert.IsInstanceOfType(mainView.LoadedView, typeof(SplashView));
+        }
+
     }
 }
