@@ -24,6 +24,7 @@ using TinyIoC.Tests.TestData.BasicClasses;
 using Moq;
 using NestedInterfaceDependencies = TinyIoC.Tests.TestData.NestedInterfaceDependencies;
 using NestedClassDependencies = TinyIoC.Tests.TestData.NestedClassDependencies;
+using System.Linq.Expressions;
 
 namespace TinyIoC.Tests
 {
@@ -1778,6 +1779,37 @@ namespace TinyIoC.Tests
 
             Assert.IsNull(input.WriteOnlyProperty);
         }
-        
+
+        [TestMethod]
+        public void Resolve_ClassWithNameAndParamsLazyFactoryDependency_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.Resolve<TestclassWithNameAndParamsLazyFactory>();
+
+            Assert.IsInstanceOfType(result, typeof(TestclassWithNameAndParamsLazyFactory));
+        }
+
+        [TestMethod]
+        public void CanResolve_ClassWithNameAndParamsLazyFactoryDependency_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.CanResolve<TestclassWithNameAndParamsLazyFactory>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void NameAndParamsLazyFactoryInvoke_Params_ResolvesWithParameters()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.Resolve<TestclassWithNameAndParamsLazyFactory>();
+
+            // Values should be set by the ctor of TestclassWithNameAndParamsLazyFactory
+            Assert.AreEqual(result.Prop1.StringProperty, "Testing");
+            Assert.AreEqual(result.Prop1.IntProperty, 22);
+        }
     }
 }

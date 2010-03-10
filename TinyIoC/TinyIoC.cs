@@ -1496,6 +1496,10 @@ namespace TinyIoC
             if ((genericType == typeof(Func<,>) && type.GetGenericArguments()[0] == typeof(string)))
                 return true;
 
+            // 3 parameter func with string as first parameter (name) and NamedParameterOverloads as second (parameters)
+            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(NamedParameterOverloads)))
+                return true;
+
             return false;
         }
 
@@ -1574,7 +1578,7 @@ namespace TinyIoC
                 return resolveLambda;
             }
 
-            // Named func
+            // 2 parameter func with string as first parameter (name)
             if ((genericType == typeof(Func<,>)) && (genericArguments[0] == typeof(string)))
             {
                 Type returnType = genericArguments[1];
@@ -1583,6 +1587,22 @@ namespace TinyIoC
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
                 ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name") };
+                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
+
+                var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
+
+                return resolveLambda;
+            }
+
+            // 3 parameter func with string as first parameter (name) and NamedParameterOverloads as second (parameters)
+            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(NamedParameterOverloads)))
+            {
+                Type returnType = genericArguments[2];
+
+                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String), typeof(NamedParameterOverloads) });
+                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+
+                ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name"), Expression.Parameter(typeof(NamedParameterOverloads), "parameters") };
                 var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
 
                 var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
@@ -1600,11 +1620,15 @@ namespace TinyIoC
 
             foreach (var parameter in ctor.GetParameters())
             {
-                // TODO - Find a better way of fixing - shouldn't really get this far with ctors with nameless params?
                 if (string.IsNullOrEmpty(parameter.Name))
                     return false;
 
-                if (!parameters.ContainsKey(parameter.Name) && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options))
+                var isParameterOverload = parameters.ContainsKey(parameter.Name);
+
+                if (parameter.ParameterType.IsPrimitive && !isParameterOverload)
+                    return false;
+
+                if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options))
                     return false;
             }
 
