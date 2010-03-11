@@ -1811,5 +1811,16 @@ namespace TinyIoC.Tests
             Assert.AreEqual(result.Prop1.StringProperty, "Testing");
             Assert.AreEqual(result.Prop1.IntProperty, 22);
         }
+
+        [TestMethod]
+        public void NamedParameterOverloads_ConstructedUsingFromIDictionary_CopiesDictionary()
+        {
+            var dictionary = new Dictionary<string, object>() {{"Test", "Test"}};
+            
+            var output = NamedParameterOverloads.FromIDictionary(dictionary);
+
+            Assert.IsNotNull(output);
+            Assert.AreEqual("Test", output["Test"]);
+        }
     }
 }

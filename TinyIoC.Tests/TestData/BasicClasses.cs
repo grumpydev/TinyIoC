@@ -269,17 +269,17 @@ namespace TinyIoC.Tests.TestData
 
         internal class TestclassWithNameAndParamsLazyFactory
         {
-            private Func<string, NamedParameterOverloads, TestClassWithParameters> _Factory;
+            private Func<string, IDictionary<String, object>, TestClassWithParameters> _Factory;
             public TestClassWithParameters Prop1 { get; private set; }
 
             /// <summary>
             /// Initializes a new instance of the TestclassWithNameAndParamsLazyFactory class.
             /// </summary>
             /// <param name="factory"></param>
-            public TestclassWithNameAndParamsLazyFactory(Func<string, NamedParameterOverloads, TestClassWithParameters> factory)
+            public TestclassWithNameAndParamsLazyFactory(Func<string, IDictionary<String, object>, TestClassWithParameters> factory)
             {
                 _Factory = factory;
-                Prop1 = _Factory.Invoke("", new NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 22 } });
+                Prop1 = _Factory.Invoke("", new Dictionary<String, object> { { "stringProperty", "Testing" }, { "intProperty", 22 } });
             }
 
         }

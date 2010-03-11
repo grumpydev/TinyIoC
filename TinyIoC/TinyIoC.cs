@@ -209,6 +209,19 @@ namespace TinyIoC
     /// </summary>
     public sealed class NamedParameterOverloads : Dictionary<string, object>
     {
+        public static NamedParameterOverloads FromIDictionary(IDictionary<string, object> data)
+        {
+            return data as NamedParameterOverloads ?? new NamedParameterOverloads(data);
+        }
+
+        public NamedParameterOverloads()
+        { 
+        }
+
+        public NamedParameterOverloads(IDictionary<string, object> data) : base(data) 
+        { 
+        }
+
         private static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
 
         public static NamedParameterOverloads Default
@@ -1496,8 +1509,8 @@ namespace TinyIoC
             if ((genericType == typeof(Func<,>) && type.GetGenericArguments()[0] == typeof(string)))
                 return true;
 
-            // 3 parameter func with string as first parameter (name) and NamedParameterOverloads as second (parameters)
-            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(NamedParameterOverloads)))
+            // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
+            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<String, object>)))
                 return true;
 
             return false;
@@ -1594,18 +1607,20 @@ namespace TinyIoC
                 return resolveLambda;
             }
 
-            // 3 parameter func with string as first parameter (name) and NamedParameterOverloads as second (parameters)
-            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(NamedParameterOverloads)))
+            // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
+            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<string, object>)))
             {
                 Type returnType = genericArguments[2];
+
+                var name = Expression.Parameter(typeof(string), "name");
+                var parameters = Expression.Parameter(typeof(IDictionary<string, object>), "parameters");
 
                 MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String), typeof(NamedParameterOverloads) });
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
-                ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name"), Expression.Parameter(typeof(NamedParameterOverloads), "parameters") };
-                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
+                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, name, Expression.Call(typeof(NamedParameterOverloads), "FromIDictionary", null, parameters));
 
-                var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
+                var resolveLambda = Expression.Lambda(resolveCall, name, parameters).Compile();
 
                 return resolveLambda;
             }
