@@ -400,24 +400,24 @@ namespace TinyIoC
         #region Public API
         #region Registration
         /// <summary>
-        /// Attempt to automatically register all non-generic classes and interfaces in the assembly containing TinyIoC.
+        /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
         /// 
         /// If more than one class implements an interface then only one implementation will be registered
         /// although no error will be thrown.
         /// </summary>
         public void AutoRegister()
         {
-            AutoRegisterInternal(this.GetType().Assembly, true);
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies(), true);
         }
 
         /// <summary>
-        /// Attempt to automatically register all non-generic classes and interfaces in the specified assembly
+        /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
         /// </summary>
         /// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
         /// <exception cref="TinyIoCAutoRegistrationException"/>
         public void AutoRegister(bool ignoreDuplicateImplementations)
         {
-            AutoRegisterInternal(this.GetType().Assembly, ignoreDuplicateImplementations);
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies(), ignoreDuplicateImplementations);
         }
 
         /// <summary>
@@ -429,7 +429,7 @@ namespace TinyIoC
         /// <param name="assembly">Assembly to process</param>
         public void AutoRegister(Assembly assembly)
         {
-            AutoRegisterInternal(assembly, true);
+            AutoRegisterInternal(new Assembly[] {assembly}, true);
         }
 
         /// <summary>
@@ -440,7 +440,30 @@ namespace TinyIoC
         /// <exception cref="TinyIoCAutoRegistrationException"/>
         public void AutoRegister(Assembly assembly, bool ignoreDuplicateImplementations)
         {
-            AutoRegisterInternal(assembly, ignoreDuplicateImplementations);
+            AutoRegisterInternal(new Assembly[] {assembly}, ignoreDuplicateImplementations);
+        }
+
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the specified assemblies
+        /// 
+        /// If more than one class implements an interface then only one implementation will be registered
+        /// although no error will be thrown.
+        /// </summary>
+        /// <param name="assemblies">Assemblies to process</param>
+        public void AutoRegister(IEnumerable<Assembly> assemblies)
+        {
+            AutoRegisterInternal(assemblies, true);
+        }
+
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the specified assemblies
+        /// </summary>
+        /// <param name="assemblies">Assemblies to process</param>
+        /// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
+        /// <exception cref="TinyIoCAutoRegistrationException"/>
+        public void AutoRegister(IEnumerable<Assembly> assemblies, bool ignoreDuplicateImplementations)
+        {
+            AutoRegisterInternal(assemblies, ignoreDuplicateImplementations);
         }
 
         /// <summary>
@@ -1363,13 +1386,17 @@ namespace TinyIoC
 
         #region Internal Methods
         private readonly object _AutoRegisterLock = new object();
-        private void AutoRegisterInternal(Assembly assembly, bool ignoreDuplicateImplementations)
+        private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, bool ignoreDuplicateImplementations)
         {
             lock (_AutoRegisterLock)
             {
                 var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                var concreteTypes = from type in assembly.GetTypes()
+                var types = assemblies.SelectMany(a => a.GetTypes()).Where(t => !IsIgnoredType(t)).ToList();
+
+                var sortedTypes = types.OrderBy(o => o.Name);
+
+                var concreteTypes = from type in types
                                     where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
                                     select type;
 
@@ -1380,13 +1407,13 @@ namespace TinyIoC
                     this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
                 }
 
-                var abstractInterfaceTypes = from type in assembly.GetTypes()
+                var abstractInterfaceTypes = from type in types
                                              where ((type.IsInterface == true || type.IsAbstract == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
                                              select type;
 
                 foreach (var type in abstractInterfaceTypes)
                 {
-                    var implementations = from implementationType in assembly.GetTypes()
+                    var implementations = from implementationType in concreteTypes
                                           where implementationType.GetInterfaces().Contains(type) || implementationType.BaseType == type
                                           select implementationType;
 
@@ -1403,7 +1430,22 @@ namespace TinyIoC
                 }
             }
         }
-        
+
+        private bool IsIgnoredType(Type type)
+        {
+            // TODO - find a better way to remove "system" types from the auto registration
+            if (type.FullName.StartsWith("System.") || type.FullName.StartsWith("Microsoft."))
+                return true;
+
+            if (type.IsPrimitive)
+                return true;
+
+            if ((type.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(type.IsInterface || type.IsAbstract))
+                return true;
+
+            return false;
+        }
+
         private void RegisterDefaultTypes()
         {
             this.Register<TinyIoCContainer>(this);

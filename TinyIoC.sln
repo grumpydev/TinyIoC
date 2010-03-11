@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC", "TinyIoC\TinyIoC.csproj", "{72FF4023-DEDF-40D2-8E54-1BB3E9C38C5C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC.Tests.ExternalTypes", "TinyIoC.Tests.ExternalTypes\TinyIoC.Tests.ExternalTypes.csproj", "{F6422C73-C40A-489A-A822-387E3098B2F1}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -32,6 +34,10 @@ Global
 		{72FF4023-DEDF-40D2-8E54-1BB3E9C38C5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72FF4023-DEDF-40D2-8E54-1BB3E9C38C5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72FF4023-DEDF-40D2-8E54-1BB3E9C38C5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6422C73-C40A-489A-A822-387E3098B2F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6422C73-C40A-489A-A822-387E3098B2F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6422C73-C40A-489A-A822-387E3098B2F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6422C73-C40A-489A-A822-387E3098B2F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -25,6 +25,7 @@ using Moq;
 using NestedInterfaceDependencies = TinyIoC.Tests.TestData.NestedInterfaceDependencies;
 using NestedClassDependencies = TinyIoC.Tests.TestData.NestedClassDependencies;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace TinyIoC.Tests
 {
@@ -1822,5 +1823,43 @@ namespace TinyIoC.Tests
             Assert.IsNotNull(output);
             Assert.AreEqual("Test", output["Test"]);
         }
+
+        [TestMethod]
+        public void AutoRegister_IEnumerableAssemblies_DoesNotThrow()
+        {
+            var container = UtilityMethods.GetContainer();
+            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly, typeof(ExternalTypes.IExternalTestInterface).Assembly };
+
+            container.AutoRegister(assemblies);
+        }
+
+        [TestMethod]
+        public void AutoRegister_IEnumerableAssemblies_TypesFromBothAssembliesResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly, typeof(ExternalTypes.IExternalTestInterface).Assembly };
+
+            container.AutoRegister(assemblies);
+
+            var result1 = container.Resolve<ITestInterface>();
+            var result2 = container.Resolve<ExternalTypes.IExternalTestInterface>();
+
+            Assert.IsInstanceOfType(result1, typeof(ITestInterface));
+            Assert.IsInstanceOfType(result2, typeof(ExternalTypes.IExternalTestInterface));
+        }
+
+        [TestMethod]
+        public void AutoRegister_NoParameters_TypesFromDifferentAssembliesInAppDomainResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister();
+
+            var result1 = container.Resolve<ITestInterface>();
+            var result2 = container.Resolve<ExternalTypes.IExternalTestInterface>();
+
+            Assert.IsInstanceOfType(result1, typeof(ITestInterface));
+            Assert.IsInstanceOfType(result2, typeof(ExternalTypes.IExternalTestInterface));
+        }
+
     }
 }
