@@ -177,5 +177,30 @@ namespace TinyIoC.Tests
             Assert.ReferenceEquals(payload, receivedMessage);
         }
 
+        [TestMethod]
+        public void GenericTinyMessage_String_SubscribeDoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var output = string.Empty;
+            messenger.Subscribe<GenericTinyMessage<string>>(this, (m) => { output = m._Content; });
+        }
+
+        [TestMethod]
+        public void GenericTinyMessage_String_PubishDoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            messenger.Publish(new GenericTinyMessage<string>(this, "Testing"));
+        }
+
+        [TestMethod]
+        public void GenericTinyMessage_String_PubishAndSubscribeDeliversContent()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var output = string.Empty;
+            messenger.Subscribe<GenericTinyMessage<string>>(this, (m) => { output = m._Content; });
+            messenger.Publish(new GenericTinyMessage<string>(this, "Testing"));
+
+            Assert.AreEqual("Testing", output);
+        }
     }
 }

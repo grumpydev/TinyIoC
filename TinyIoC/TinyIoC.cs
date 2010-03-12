@@ -13,8 +13,9 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 //===============================================================================
 
-// Comment this line if you don't want the TinyMessenger messenger/event aggregator
-#define TINYMESSENGER
+// Uncomment this line if you want the container to automatically
+// register the TinyMessenger messenger/event aggregator
+//#define TINYMESSENGER
 
 using System;
 using System.Collections.Generic;
