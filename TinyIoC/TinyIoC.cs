@@ -398,6 +398,13 @@ namespace TinyIoC
         #endregion
 
         #region Public API
+        #region Child Containers
+        public TinyIoCContainer GetChildContainer()
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+
         #region Registration
         /// <summary>
         /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.

@@ -1861,5 +1861,54 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result2, typeof(ExternalTypes.IExternalTestInterface));
         }
 
+        [TestMethod]
+        public void GetChildContainer_NoParameters_ReturnsContainerInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var child = container.GetChildContainer();
+
+            Assert.IsInstanceOfType(child, typeof(TinyIoCContainer));
+        }
+
+        [TestMethod]
+        public void GetChildContainer_NoParameters_ContainerReturnedIsNewContainer()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var child = container.GetChildContainer();
+
+            Assert.IsFalse(object.ReferenceEquals(child, container));
+        }
+
+        [TestMethod]
+        public void ChildContainerResolve_TypeRegisteredWithParent_ResolvesType()
+        {
+            throw new NotImplementedException();
+        }
+
+        [TestMethod]
+        public void ChildContainerCanResolve_TypeRegisteredWithParent_ReturnsTrue()
+        {
+            throw new NotImplementedException();
+        }
+
+        [TestMethod]
+        public void ChildContainerResolve_TypeRegisteredWithChild_ResolvesType()
+        {
+            throw new NotImplementedException();
+        }
+
+        [TestMethod]
+        public void ChildContainerCanResolve_TypeRegisteredWithChild_ReturnsTrue()
+        {
+            throw new NotImplementedException();
+        }
+
+        [TestMethod]
+        public void ChildContainerResolve_TypeRegisteredWithParentAndChild_ResolvesChildVersion()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
