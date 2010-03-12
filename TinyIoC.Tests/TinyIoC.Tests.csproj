@@ -50,9 +50,11 @@
     <Compile Include="TestData\BasicClasses.cs" />
     <Compile Include="TestData\NestedClassDependencies.cs" />
     <Compile Include="TestData\NestedInterfaceDependencies.cs" />
+    <Compile Include="TestData\TinyMessengerTestData.cs" />
     <Compile Include="TestData\UtilityMethods.cs" />
     <Compile Include="TinyIoCFunctionalTests.cs" />
     <Compile Include="TinyIoCTests.cs" />
+    <Compile Include="TinyMessengerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TinyIoC.Tests.ExternalTypes\TinyIoC.Tests.ExternalTypes.csproj">

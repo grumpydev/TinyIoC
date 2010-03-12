@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using TinyIoC.Tests.TestData.BasicClasses;
+using TinyMessenger;
 
 namespace TinyIoC.Tests.TestData
 {
@@ -60,5 +61,20 @@ namespace TinyIoC.Tests.TestData
             container.Register<TestClassDefaultCtor>(item).WithWeakReference();
         }
 
+        public static ITinyMessengerHub GetMessenger()
+        {
+            return new TinyMessengerHub();
+        }
+
+        public static void FakeDeliveryAction<T>(T message)
+            where T:ITinyMessage
+        {
+        }
+
+        public static bool FakeMessageFilter<T>(T message)
+            where T:ITinyMessage
+        {
+            return true;
+        }
     }
 }
