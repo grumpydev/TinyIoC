@@ -26,6 +26,14 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Subscribe_ValidDestinationAndDeliverActionWIthStrongReferences_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+
+            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), true);
+        }
+
+        [TestMethod]
         public void Subscribe_ValidDestinationDeliveryActionAndFilter_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();

@@ -116,25 +116,52 @@ namespace TinyMessenger
     {
         /// <summary>
         /// Subscribe to a message type with the given destination and delivery action.
+        /// All references are held with WeakReferences
         /// 
         /// All messages of this type will be delivered.
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
-        /// <param name="destination">Destination (usually "this") - held in a weak reference and used for tracking if the recipient is GCd and for Unsubscribe <see cref="Unsubscribe"/></param>
+        /// <param name="destination">Destination (usually "this") - used for Unsubscribe <see cref="Unsubscribe"/></param>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
-        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception>  
+        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception> 
         void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction) where TMessage : class, ITinyMessage;
 
         /// <summary>
+        /// Subscribe to a message type with the given destination and delivery action.
+        /// 
+        /// All messages of this type will be delivered.
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="destination">Destination (usually "this") - used for Unsubscribe <see cref="Unsubscribe"/></param>
+        /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
+        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception> 
+        void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction, bool useStrongReferences) where TMessage : class, ITinyMessage;
+
+        /// <summary>
         /// Subscribe to a message type with the given destination and delivery action with the given filter.
+        /// All references are held with WeakReferences
         /// 
         /// Only messages that "pass" the filter will be delivered.
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
-        /// <param name="destination">Destination (usually "this") - held in a weak reference and used for tracking if the recipient is GCd</param>
+        /// <param name="destination">Destination (usually "this") - used for Unsubscribe <see cref="Unsubscribe"/></param>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
-        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception>  
+        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception>          
         void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter) where TMessage : class, ITinyMessage;
+
+        /// <summary>
+        /// Subscribe to a message type with the given destination and delivery action with the given filter.
+        /// All references are held with WeakReferences
+        /// 
+        /// Only messages that "pass" the filter will be delivered.
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="destination">Destination (usually "this") - held in a weak reference used for Unsubscribe <see cref="Unsubscribe"/></param>
+        /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
+        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception>          
+        void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, bool useStrongReferences) where TMessage : class, ITinyMessage;
 
         /// <summary>
         /// Unsubscribe from a particular message type.
@@ -170,12 +197,12 @@ namespace TinyMessenger
             void Deliver(ITinyMessage message);
         }
 
-        private class TinyMessageSubscription<TMessage> : ITinyMessageSubscription
+        private class WeakTinyMessageSubscription<TMessage> : ITinyMessageSubscription
             where TMessage : class, ITinyMessage
         {
             protected WeakReference _Destination;
-            protected Action<TMessage> _DeliveryAction;
-            protected Func<TMessage, bool> _MessageFilter;
+            protected WeakReference _DeliveryAction;
+            protected WeakReference _MessageFilter;
 
             public object Destination
             {
@@ -190,7 +217,13 @@ namespace TinyMessenger
                 if (!_Destination.IsAlive)
                     return false;
 
-                return _MessageFilter.Invoke(message as TMessage);
+                if (!_DeliveryAction.IsAlive)
+                    return false;
+
+                if (!_MessageFilter.IsAlive)
+                    return false;
+
+                return ((Func<TMessage, bool>) _MessageFilter.Target).Invoke(message as TMessage);
             }
 
             public void Deliver(ITinyMessage message)
@@ -200,6 +233,67 @@ namespace TinyMessenger
 
                 if (!_Destination.IsAlive)
                     return;
+
+                if (!_DeliveryAction.IsAlive)
+                    return;
+
+                try
+                {
+                    ((Action<TMessage>) _DeliveryAction.Target).Invoke(message as TMessage);
+                }
+                catch (Exception)
+                {
+                    // We don't want publish exceptions to bubble up
+                }
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the WeakTinyMessageSubscription class.
+            /// </summary>
+            /// <param name="destination">Destination object</param>
+            /// <param name="deliveryAction">Delivery action</param>
+            /// <param name="messageFilter">Filter function</param>
+            public WeakTinyMessageSubscription(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter)
+            {
+                if (destination == null)
+                    throw new ArgumentNullException("destination");
+
+                if (deliveryAction == null)
+                    throw new ArgumentNullException("deliveryAction");
+
+                if (messageFilter == null)
+                    throw new ArgumentNullException("messageFilter");
+
+                _Destination = new WeakReference(destination);
+                _DeliveryAction = new WeakReference(deliveryAction);
+                _MessageFilter = new WeakReference(messageFilter);
+            }
+        }
+
+        private class StrongTinyMessageSubscription<TMessage> : ITinyMessageSubscription
+            where TMessage : class, ITinyMessage
+        {
+            protected object _Destination;
+            protected Action<TMessage> _DeliveryAction;
+            protected Func<TMessage, bool> _MessageFilter;
+
+            public object Destination
+            {
+                get { return _Destination; }
+            }
+
+            public bool CanDeliver(ITinyMessage message)
+            {
+                if (!(message is TMessage))
+                    return false;
+
+                return _MessageFilter.Invoke(message as TMessage);
+            }
+
+            public void Deliver(ITinyMessage message)
+            {
+                if (!(message is TMessage))
+                    throw new ArgumentException("Message is not the correct type");
 
                 try
                 {
@@ -217,7 +311,7 @@ namespace TinyMessenger
             /// <param name="destination">Destination object</param>
             /// <param name="deliveryAction">Delivery action</param>
             /// <param name="messageFilter">Filter function</param>
-            public TinyMessageSubscription(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter)
+            public StrongTinyMessageSubscription(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter)
             {
                 if (destination == null)
                     throw new ArgumentNullException("destination");
@@ -228,7 +322,7 @@ namespace TinyMessenger
                 if (messageFilter == null)
                     throw new ArgumentNullException("messageFilter");
 
-                _Destination = new WeakReference(destination);
+                _Destination = destination;
                 _DeliveryAction = deliveryAction;
                 _MessageFilter = messageFilter;
             }
@@ -243,30 +337,63 @@ namespace TinyMessenger
         #region Public API
         /// <summary>
         /// Subscribe to a message type with the given destination and delivery action.
+        /// All references are held with WeakReferences
         /// 
         /// All messages of this type will be delivered.
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
-        /// <param name="destination">Destination (usually "this") - held in a weak reference and used for tracking if the recipient is GCd and Unsubscribe <see cref="Unsubscribe"/></param>
+        /// <param name="destination">Destination (usually "this") - used for Unsubscribe <see cref="Unsubscribe"/></param>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
         /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception> 
         public void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction) where TMessage : class, ITinyMessage
         {
-            Subscribe<TMessage>(destination, deliveryAction, (m) => true);
+            AddSubscriptionInternal<TMessage>(destination, deliveryAction, (m) => true, false);
+        }
+
+        /// <summary>
+        /// Subscribe to a message type with the given destination and delivery action.
+        /// 
+        /// All messages of this type will be delivered.
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="destination">Destination (usually "this") - used for Unsubscribe <see cref="Unsubscribe"/></param>
+        /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
+        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception> 
+        public void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction, bool useStrongReferences) where TMessage : class, ITinyMessage
+        {
+            AddSubscriptionInternal<TMessage>(destination, deliveryAction, (m) => true, useStrongReferences);
         }
 
         /// <summary>
         /// Subscribe to a message type with the given destination and delivery action with the given filter.
+        /// All references are held with WeakReferences
         /// 
         /// Only messages that "pass" the filter will be delivered.
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
-        /// <param name="destination">Destination (usually "this") - held in a weak reference and used for tracking if the recipient is GCd</param>
+        /// <param name="destination">Destination (usually "this") - used for Unsubscribe <see cref="Unsubscribe"/></param>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
         /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception>          
         public void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter) where TMessage : class, ITinyMessage
         {
-            AddSubscriptionInternal<TMessage>(destination, deliveryAction, messageFilter);
+            AddSubscriptionInternal<TMessage>(destination, deliveryAction, messageFilter, false);
+        }
+
+        /// <summary>
+        /// Subscribe to a message type with the given destination and delivery action with the given filter.
+        /// All references are held with WeakReferences
+        /// 
+        /// Only messages that "pass" the filter will be delivered.
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="destination">Destination (usually "this") - held in a weak reference used for Unsubscribe <see cref="Unsubscribe"/></param>
+        /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
+        /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception>          
+        public void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, bool useStrongReferences) where TMessage : class, ITinyMessage
+        {
+            AddSubscriptionInternal<TMessage>(destination, deliveryAction, messageFilter, useStrongReferences);
         }
 
         /// <summary>
@@ -293,7 +420,7 @@ namespace TinyMessenger
         #endregion
 
         #region Internal Methods
-        private void AddSubscriptionInternal<TMessage>(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter)
+        private void AddSubscriptionInternal<TMessage>(object destination, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, bool strongReference)
                 where TMessage : class, ITinyMessage
         {
             if (destination == null)
@@ -322,7 +449,10 @@ namespace TinyMessenger
                 if (currentlySubscribed.Count() != 0)
                     throw new TinyMessengerSubscriptionException(typeof(TMessage), "An existing subscription for that message type and destination already exists");
 
-                currentSubscriptions.Add(new TinyMessageSubscription<TMessage>(destination, deliveryAction, messageFilter));
+                if (strongReference)
+                    currentSubscriptions.Add(new StrongTinyMessageSubscription<TMessage>(destination, deliveryAction, messageFilter));
+                else
+                    currentSubscriptions.Add(new WeakTinyMessageSubscription<TMessage>(destination, deliveryAction, messageFilter));
             }
         }
 
