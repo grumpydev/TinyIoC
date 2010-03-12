@@ -13,6 +13,9 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 //===============================================================================
 
+// Comment this line if you don't want the TinyMessenger messenger/event aggregator
+#define TINYMESSENGER
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -87,6 +90,8 @@ namespace TinyIoC
                     item.Dispose();
                 }
             }
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion
@@ -398,6 +403,13 @@ namespace TinyIoC
         #endregion
 
         #region Public API
+        #region Child Containers
+        public TinyIoCContainer GetChildContainer()
+        {
+            return new TinyIoCContainer(this);
+        }
+        #endregion
+
         #region Registration
         /// <summary>
         /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
@@ -1382,6 +1394,17 @@ namespace TinyIoC
 
             RegisterDefaultTypes();
         }
+
+        ~TinyIoCContainer()
+        {
+            _RegisteredTypes.Clear();
+        }
+
+        TinyIoCContainer _Parent;
+        private TinyIoCContainer(TinyIoCContainer parent) : this()
+        {
+            this._Parent = parent;
+        }
         #endregion
 
         #region Internal Methods
@@ -1449,6 +1472,12 @@ namespace TinyIoC
         private void RegisterDefaultTypes()
         {
             this.Register<TinyIoCContainer>(this);
+
+#if TINYMESSENGER
+            // Only register the TinyMessenger singleton if we are the root container
+            if (this._Parent != null)
+                this.Register<TinyMessenger.ITinyMessengerHub, TinyMessenger.TinyMessengerHub>();
+#endif
         }
 
         private ObjectFactoryBase GetCurrentFactory(TypeRegistration registration)
@@ -1510,8 +1539,9 @@ namespace TinyIoC
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
+            // Or bubble up if we have a parent
             if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
-                return false;
+                return (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options) : false;
 
             // Attemped unnamed fallback container resolution if relevant and requested
             if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
@@ -1530,8 +1560,13 @@ namespace TinyIoC
                 return true;
 
             // Attempt unregistered construction if possible and requested
+            // If we cant', bubble if we have a parent
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (checkType.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
-                return (GetBestConstructor(checkType, parameters, options) != null) ? true : false;
+                return (GetBestConstructor(checkType, parameters, options) != null) ? true : (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options) : false;
+
+            // Bubble resolution up the container tree if we have a parent
+            if (_Parent != null)
+                return _Parent.CanResolveInternal(registration, parameters, options);
 
             return false;
         }
@@ -1577,7 +1612,13 @@ namespace TinyIoC
 
             // Fail if requesting named resolution and settings set to fail if unresolved
             if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
-                throw new TinyIoCResolutionException(registration.Type);
+            {
+                // Bubble resolution up the container tree if we have a parent
+                if (_Parent != null)
+                    return _Parent.ResolveInternal(registration, parameters, options);
+                else
+                    throw new TinyIoCResolutionException(registration.Type);
+            }
 
             // Attemped unnamed fallback container resolution if relevant and requested
             if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
@@ -1605,6 +1646,10 @@ namespace TinyIoC
                 if (!registration.Type.IsAbstract && !registration.Type.IsInterface)
                     return ConstructType(registration.Type, parameters, options);
             }
+
+            // Bubble resolution up the container tree if we have a parent
+            if (_Parent != null)
+                return _Parent.ResolveInternal(registration, parameters, options);
 
             // Unable to resolve - throw
             throw new TinyIoCResolutionException(registration.Type);
@@ -1772,7 +1817,7 @@ namespace TinyIoC
                     {
                         property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions), null);
                     }
-                    catch (Exception TinyIoCResolutionException)
+                    catch (TinyIoCResolutionException)
                     {
                         // Catch any resolution errors and ignore them
                     }
@@ -1785,6 +1830,8 @@ namespace TinyIoC
         public void Dispose()
         {
             _RegisteredTypes.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion
