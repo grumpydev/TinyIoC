@@ -1,4 +1,16 @@
-﻿#define TINYMESSENGER
+﻿//===============================================================================
+// TinyIoC - TinyMessenger
+//
+// A simple messenger/event aggregator.
+//
+// http://hg.grumpydev.com/tinyioc
+//===============================================================================
+// Copyright © Steven Robbins.  All rights reserved.
+// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
+// OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT
+// LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+// FITNESS FOR A PARTICULAR PURPOSE.
+//===============================================================================
 
 using System;
 using System.Collections.Generic;
@@ -108,7 +120,7 @@ namespace TinyMessenger
         /// All messages of this type will be delivered.
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
-        /// <param name="destination">Destination (usually "this") - held in a weak reference and used for tracking if the recipient is GCd and Unsubscribe <see cref="Unsubscribe"/></param>
+        /// <param name="destination">Destination (usually "this") - held in a weak reference and used for tracking if the recipient is GCd and for Unsubscribe <see cref="Unsubscribe"/></param>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
         /// <exception cref="TinyMessengerSubscriptionException">Thrown when attempting to subscribe more than once with the same destination and message type</exception>  
         void Subscribe<TMessage>(object destination, Action<TMessage> deliveryAction) where TMessage : class, ITinyMessage;
