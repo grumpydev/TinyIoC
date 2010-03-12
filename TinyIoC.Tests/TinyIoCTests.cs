@@ -1884,31 +1884,124 @@ namespace TinyIoC.Tests
         [TestMethod]
         public void ChildContainerResolve_TypeRegisteredWithParent_ResolvesType()
         {
-            throw new NotImplementedException();
+            var container = UtilityMethods.GetContainer();
+            var child = container.GetChildContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            var result = child.Resolve<ITestInterface>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
         }
 
         [TestMethod]
         public void ChildContainerCanResolve_TypeRegisteredWithParent_ReturnsTrue()
         {
-            throw new NotImplementedException();
+            var container = UtilityMethods.GetContainer();
+            var child = container.GetChildContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            var result = child.CanResolve<ITestInterface>();
+
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
         public void ChildContainerResolve_TypeRegisteredWithChild_ResolvesType()
         {
-            throw new NotImplementedException();
+            var container = UtilityMethods.GetContainer();
+            var child = container.GetChildContainer();
+            child.Register<ITestInterface, TestClassDefaultCtor>();
+
+            var result = child.Resolve<ITestInterface>();
+
+            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
         }
 
         [TestMethod]
         public void ChildContainerCanResolve_TypeRegisteredWithChild_ReturnsTrue()
         {
-            throw new NotImplementedException();
+            var container = UtilityMethods.GetContainer();
+            var child = container.GetChildContainer();
+            child.Register<ITestInterface, TestClassDefaultCtor>();
+
+            var result = child.CanResolve<ITestInterface>();
+
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
         public void ChildContainerResolve_TypeRegisteredWithParentAndChild_ResolvesChildVersion()
         {
-            throw new NotImplementedException();
+            var container = UtilityMethods.GetContainer();
+            var containerInstance = new TestClassDefaultCtor();
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(containerInstance);
+            child.Register<ITestInterface>(childInstance);
+
+            var result = child.Resolve<ITestInterface>();
+
+            Assert.ReferenceEquals(result, childInstance);
         }
+
+        [TestMethod]
+        public void ChildContainerResolve_NamedOnlyRegisteredWithParent_ResolvesFromParent()
+        {
+            var container = UtilityMethods.GetContainer();
+            var containerInstance = new TestClassDefaultCtor();
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(containerInstance, "Testing");
+            child.Register<ITestInterface>(childInstance);
+
+            var result = child.Resolve<ITestInterface>("Testing");
+
+            Assert.ReferenceEquals(result, containerInstance);
+        }
+
+        [TestMethod]
+        public void ChildContainerCanResolve_NamedOnlyRegisteredWithParent_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            var containerInstance = new TestClassDefaultCtor();
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(containerInstance, "Testing");
+            child.Register<ITestInterface>(childInstance);
+
+            var result = child.CanResolve<ITestInterface>("Testing");
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void ChildContainerResolve_NamedOnlyRegisteredWithParentUnnamedFallbackOn_ResolvesFromChild()
+        {
+            var container = UtilityMethods.GetContainer();
+            var containerInstance = new TestClassDefaultCtor();
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(containerInstance, "Testing");
+            child.Register<ITestInterface>(childInstance);
+
+            var result = child.Resolve<ITestInterface>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
+
+            Assert.ReferenceEquals(result, childInstance);
+        }
+
+        [TestMethod]
+        public void ChildContainerResolve_NamedOnlyRegisteredWithParentChildNoRegistrationUnnamedFallbackOn_ResolvesFromParent()
+        {
+            var container = UtilityMethods.GetContainer();
+            var containerInstance = new TestClassDefaultCtor();
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(containerInstance, "Testing");
+
+            var result = child.Resolve<ITestInterface>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
+
+            Assert.ReferenceEquals(result, childInstance);
+        }
+
     }
 }
