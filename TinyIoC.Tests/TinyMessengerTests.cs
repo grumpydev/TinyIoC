@@ -8,6 +8,7 @@ using TinyMessenger;
 
 namespace TinyIoC.Tests
 {
+
     [TestClass]
     public class TinyMessengerTests
     {
@@ -18,36 +19,37 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void Subscribe_ValidDestinationAndDeliverAction_DoesNotThrow()
+        public void Subscribe_ValidDeliverAction_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>));
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>));
         }
 
         [TestMethod]
-        public void Subscribe_ValidDestinationAndDeliverActionWIthStrongReferences_DoesNotThrow()
+        public void SubScribe_ValidDeliveryAction_ReturnsRegistrationObject()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), true);
+            var output = messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>));
+
+            Assert.IsInstanceOfType(output, typeof(TinyMessageSubscription));
         }
 
         [TestMethod]
-        public void Subscribe_ValidDestinationDeliveryActionAndFilter_DoesNotThrow()
+        public void Subscribe_ValidDeliverActionWIthStrongReferences_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), true);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
-        public void Subscribe_NullDestination_Throws()
+        public void Subscribe_ValidDeliveryActionAndFilter_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(null, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
         }
 
         [TestMethod]
@@ -56,7 +58,7 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(this, null, new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+            messenger.Subscribe<TestMessage>(null, new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
         }
 
         [TestMethod]
@@ -65,39 +67,12 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), null);
-        }
-
-        [TestMethod]
-        [ExpectedException(typeof(TinyMessengerSubscriptionException))]
-        public void Subscribe_SameDestinationAndEventTwice_ThrowsException()
-        {
-            var messenger = UtilityMethods.GetMessenger();
-
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
-        }
-
-        [TestMethod]
-        public void Unsubscribe_NoPreviousSubscription_DoesNotThrow()
-        {
-            var messenger = UtilityMethods.GetMessenger();
-
-            messenger.Unsubscribe<TestMessage>(this);
-        }
-
-        [TestMethod]
-        public void Unsubscribe_PreviousSubscription_DoesNotThrow()
-        {
-            var messenger = UtilityMethods.GetMessenger();
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
-
-            messenger.Unsubscribe<TestMessage>(this);
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), null);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
-        public void Unsubscribe_NullDestination_Throws()
+        public void Unsubscribe_NullSubscriptionObject_Throws()
         {
             var messenger = UtilityMethods.GetMessenger();
 
@@ -105,13 +80,22 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void Unsubscribe_PreviousSubscription_CanSubscribeAgainWithoutThrowing()
+        public void Unsubscribe_PreviousSubscription_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
-            messenger.Unsubscribe<TestMessage>(this);
+            var subscription = messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
 
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+            messenger.Unsubscribe<TestMessage>(subscription);
+        }
+
+        [TestMethod]
+        public void Subscribe_PreviousSubscription_ReturnsDifferentSubscriptionObject()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var sub1 = messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+            var sub2 = messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+
+            Assert.IsFalse(object.ReferenceEquals(sub1, sub2));
         }
 
         [TestMethod]
@@ -135,7 +119,7 @@ namespace TinyIoC.Tests
         public void Publish_Subscriber_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();
-            messenger.Subscribe<TestMessage>(this, new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
 
             messenger.Publish<TestMessage>(new TestMessage(this));
         }
@@ -145,7 +129,7 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
             bool received = false;
-            messenger.Subscribe<TestMessage>(this, (m) => { received = true; });
+            messenger.Subscribe<TestMessage>((m) => { received = true; });
 
             messenger.Publish<TestMessage>(new TestMessage(this));
 
@@ -153,11 +137,24 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Publish_SubscribedThenUnsubscribedMessageNoFilter_DoesNotGetMessage()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            bool received = false;
+            var token = messenger.Subscribe<TestMessage>((m) => { received = true; });
+            messenger.Unsubscribe<TestMessage>(token);
+
+            messenger.Publish<TestMessage>(new TestMessage(this));
+
+            Assert.IsFalse(received);
+        }
+
+        [TestMethod]
         public void Publish_SubscribedMessageButFiltered_DoesNotGetMessage()
         {
             var messenger = UtilityMethods.GetMessenger();
             bool received = false;
-            messenger.Subscribe<TestMessage>(this, (m) => { received = true; }, (m) => false);
+            messenger.Subscribe<TestMessage>((m) => { received = true; }, (m) => false);
 
             messenger.Publish<TestMessage>(new TestMessage(this));
 
@@ -170,7 +167,7 @@ namespace TinyIoC.Tests
             var messenger = UtilityMethods.GetMessenger();
             ITinyMessage receivedMessage = null;
             var payload = new TestMessage(this);
-            messenger.Subscribe<TestMessage>(this, (m) => { receivedMessage = m; });
+            messenger.Subscribe<TestMessage>((m) => { receivedMessage = m; });
 
             messenger.Publish<TestMessage>(payload);
 
@@ -182,7 +179,7 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
             var output = string.Empty;
-            messenger.Subscribe<GenericTinyMessage<string>>(this, (m) => { output = m._Content; });
+            messenger.Subscribe<GenericTinyMessage<string>>((m) => { output = m._Content; });
         }
 
         [TestMethod]
@@ -197,7 +194,7 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
             var output = string.Empty;
-            messenger.Subscribe<GenericTinyMessage<string>>(this, (m) => { output = m._Content; });
+            messenger.Subscribe<GenericTinyMessage<string>>((m) => { output = m._Content; });
             messenger.Publish(new GenericTinyMessage<string>(this, "Testing"));
 
             Assert.AreEqual("Testing", output);
