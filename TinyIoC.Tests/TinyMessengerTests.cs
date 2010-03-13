@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TinyIoC.Tests.TestData;
 using TinyMessenger;
+using System.Threading;
 
 namespace TinyIoC.Tests
 {
@@ -302,7 +303,83 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
             messenger.Subscribe<GenericTinyMessage<string>>((m) => { throw new NotImplementedException(); });
+
             messenger.Publish(new GenericTinyMessage<string>(this, "Testing"));
         }
+
+        [TestMethod]
+        public void PublishAsync_NoCallback_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+
+            messenger.PublishAsync(new TestMessage(this));
+        }
+
+        [TestMethod]
+        public void PublishAsync_NoCallback_PublishesMessage()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            bool received = false;
+            messenger.Subscribe<TestMessage>((m) => { received = true; });
+
+            messenger.PublishAsync(new TestMessage(this));
+
+            // Horrible wait loop!
+            int waitCount = 0;
+            while (!received && waitCount < 100)
+            {
+                Thread.Sleep(10);
+                waitCount++;
+            }
+            Assert.IsTrue(received);
+        }
+
+        [TestMethod]
+        public void PublishAsync_Callback_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+
+            messenger.PublishAsync(new TestMessage(this), (r) => {string test = "Testing";});
+        }
+
+        [TestMethod]
+        public void PublishAsync_Callback_PublishesMessage()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            bool received = false;
+            messenger.Subscribe<TestMessage>((m) => { received = true; });
+
+            messenger.PublishAsync(new TestMessage(this), (r) => { string test = "Testing"; });
+
+            // Horrible wait loop!
+            int waitCount = 0;
+            while (!received && waitCount < 100)
+            {
+                Thread.Sleep(10);
+                waitCount++;
+            }
+            Assert.IsTrue(received);
+        }
+
+        [TestMethod]
+        public void PublishAsync_Callback_CallsCallback()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            bool received = false;
+            bool callbackReceived = false;
+            messenger.Subscribe<TestMessage>((m) => { received = true; });
+
+            messenger.PublishAsync(new TestMessage(this), (r) => { callbackReceived = true; });
+
+            // Horrible wait loop!
+            int waitCount = 0;
+            while (!callbackReceived && waitCount < 100)
+            {
+                Thread.Sleep(10);
+                waitCount++;
+            }
+            Assert.IsTrue(received);
+        }
+
     }
 }

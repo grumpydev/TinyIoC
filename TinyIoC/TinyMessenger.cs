@@ -269,6 +269,21 @@ namespace TinyMessenger
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="message">Message to deliver</param>
         void Publish<TMessage>(TMessage message) where TMessage : class, ITinyMessage;
+
+        /// <summary>
+        /// Publish a message to any subscribers asynchronously
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="message">Message to deliver</param>
+        void PublishAsync<TMessage>(TMessage message) where TMessage : class, ITinyMessage;
+
+        /// <summary>
+        /// Publish a message to any subscribers asynchronously
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="message">Message to deliver</param>
+        /// <param name="callback">AsyncCallback called on completion</param>
+        void PublishAsync<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage;
     }
     #endregion
 
@@ -564,6 +579,27 @@ namespace TinyMessenger
         {
             PublishInternal<TMessage>(message);
         }
+
+        /// <summary>
+        /// Publish a message to any subscribers asynchronously
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="message">Message to deliver</param>
+        public void PublishAsync<TMessage>(TMessage message) where TMessage : class, ITinyMessage
+        {
+            PublishAsyncInternal<TMessage>(message, null);
+        }
+
+        /// <summary>
+        /// Publish a message to any subscribers asynchronously
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message</typeparam>
+        /// <param name="message">Message to deliver</param>
+        /// <param name="callback">AsyncCallback called on completion</param>
+        public void PublishAsync<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
+        {
+            PublishAsyncInternal<TMessage>(message, callback);
+        }
         #endregion
 
         #region Internal Methods
@@ -653,6 +689,13 @@ namespace TinyMessenger
                     // TODO - add to a list of erroring subs and remove them?
                 }
             });
+        }
+
+        private void PublishAsyncInternal<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
+        {
+            Action publishAction = () => { PublishInternal<TMessage>(message); };
+
+            publishAction.BeginInvoke(callback, null);
         }
         #endregion
     }
