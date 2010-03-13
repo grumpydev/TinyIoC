@@ -33,7 +33,7 @@ namespace TinyIoC.Tests
 
             var output = messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>));
 
-            Assert.IsInstanceOfType(output, typeof(TinyMessageSubscription));
+            Assert.IsInstanceOfType(output, typeof(TinyMessageSubscriptionToken));
         }
 
         [TestMethod]
@@ -67,7 +67,16 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), null);
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), null, new TestProxy());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void Subscribe_NullProxy_Throws()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>), null);
         }
 
         [TestMethod]
@@ -96,6 +105,94 @@ namespace TinyIoC.Tests
             var sub2 = messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
 
             Assert.IsFalse(object.ReferenceEquals(sub1, sub2));
+        }
+
+        [TestMethod]
+        public void Subscribe_CustomProxyNoFilter_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), proxy);
+        }
+
+        [TestMethod]
+        public void Subscribe_CustomProxyWithFilter_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>), proxy);
+        }
+
+        [TestMethod]
+        public void Subscribe_CustomProxyNoFilterStrongReference_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), true, proxy);
+        }
+
+        [TestMethod]
+        public void Subscribe_CustomProxyFilterStrongReference_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>), true, proxy);
+        }
+
+        [TestMethod]
+        public void Publish_CustomProxyNoFilter_UsesCorrectProxy()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), proxy);
+            var message = new TestMessage(this);
+
+            messenger.Publish<TestMessage>(message);
+
+            Assert.ReferenceEquals(message, proxy.Message);
+        }
+
+        [TestMethod]
+        public void Publish_CustomProxyWithFilter_UsesCorrectProxy()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>), proxy);
+            var message = new TestMessage(this);
+
+            messenger.Publish<TestMessage>(message);
+
+            Assert.ReferenceEquals(message, proxy.Message);
+        }
+
+        [TestMethod]
+        public void Publish_CustomProxyNoFilterStrongReference_UsesCorrectProxy()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), true, proxy);
+            var message = new TestMessage(this);
+
+            messenger.Publish<TestMessage>(message);
+
+            Assert.ReferenceEquals(message, proxy.Message);
+        }
+
+        [TestMethod]
+        public void Publish_CustomProxyFilterStrongReference_UsesCorrectProxy()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            var proxy = new TestProxy();
+            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>), true, proxy);
+            var message = new TestMessage(this);
+
+            messenger.Publish<TestMessage>(message);
+
+            Assert.ReferenceEquals(message, proxy.Message);
         }
 
         [TestMethod]
@@ -198,6 +295,14 @@ namespace TinyIoC.Tests
             messenger.Publish(new GenericTinyMessage<string>(this, "Testing"));
 
             Assert.AreEqual("Testing", output);
+        }
+
+        [TestMethod]
+        public void Publish_SubscriptionThrowingException_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            messenger.Subscribe<GenericTinyMessage<string>>((m) => { throw new NotImplementedException(); });
+            messenger.Publish(new GenericTinyMessage<string>(this, "Testing"));
         }
     }
 }
