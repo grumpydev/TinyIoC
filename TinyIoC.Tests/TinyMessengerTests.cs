@@ -277,7 +277,7 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
             var output = string.Empty;
-            messenger.Subscribe<GenericTinyMessage<string>>((m) => { output = m._Content; });
+            messenger.Subscribe<GenericTinyMessage<string>>((m) => { output = m.Content; });
         }
 
         [TestMethod]
@@ -292,7 +292,7 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
             var output = string.Empty;
-            messenger.Subscribe<GenericTinyMessage<string>>((m) => { output = m._Content; });
+            messenger.Subscribe<GenericTinyMessage<string>>((m) => { output = m.Content; });
             messenger.Publish(new GenericTinyMessage<string>(this, "Testing"));
 
             Assert.AreEqual("Testing", output);
@@ -381,5 +381,45 @@ namespace TinyIoC.Tests
             Assert.IsTrue(received);
         }
 
+        [TestMethod]
+        public void CancellableGenericTinyMessage_Publish_DoesNotThrow()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", () => { bool test = true; }));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void CancellableGenericTinyMessage_PublishWithNullAction_Throws()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", null));
+        }
+
+        [TestMethod]
+        public void CancellableGenericTinyMessage_SubscriberCancels_CancelActioned()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            bool cancelled = false;
+            messenger.Subscribe<CancellableGenericTinyMessage<string>>((m) => { m.Cancel(); });
+
+            messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", () => { cancelled = true; }));
+
+            Assert.IsTrue(cancelled);
+        }
+
+        [TestMethod]
+        public void CancellableGenericTinyMessage_SeveralSubscribersOneCancels_CancelActioned()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+            bool cancelled = false;
+            messenger.Subscribe<CancellableGenericTinyMessage<string>>((m) => { var test = 1; });
+            messenger.Subscribe<CancellableGenericTinyMessage<string>>((m) => { m.Cancel(); });
+            messenger.Subscribe<CancellableGenericTinyMessage<string>>((m) => { var test = 1; });
+
+            messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", () => { cancelled = true; }));
+
+            Assert.IsTrue(cancelled);
+        }
     }
 }
