@@ -126,6 +126,40 @@ namespace TinyMessenger
     {
         void Deliver(ITinyMessage message, ITinyMessageSubscription subscription);
     }
+
+    /// <summary>
+    /// Default "pass through" proxy.
+    /// 
+    /// Does nothing other than deliver the message.
+    /// </summary>
+    public sealed class DefaultTinyMessageProxy : ITinyMessageProxy
+    {
+        private static readonly DefaultTinyMessageProxy _Instance = new DefaultTinyMessageProxy();
+
+        static DefaultTinyMessageProxy()
+        {
+        }
+
+        /// <summary>
+        /// Singleton instance of the proxy.
+        /// </summary>
+        public static DefaultTinyMessageProxy Instance
+        {
+            get
+            {
+                return _Instance;
+            }
+        }
+
+        private DefaultTinyMessageProxy()
+        {
+        }
+
+        public void Deliver(ITinyMessage message, ITinyMessageSubscription subscription)
+        {
+            subscription.Deliver(message);
+        }
+    }
     #endregion
 
     #region Exceptions
@@ -404,18 +438,6 @@ namespace TinyMessenger
                 _MessageFilter = messageFilter;
             }
         }
-
-        #region Default Message Proxy + Singleton
-        private static readonly ITinyMessageProxy _DefaultTinyMessageProxy = new DefaultPassThroughTinyMessageProxy();
-
-        private class DefaultPassThroughTinyMessageProxy : ITinyMessageProxy
-        {
-            public void Deliver(ITinyMessage message, ITinyMessageSubscription subscription)
-            {
-                subscription.Deliver(message);
-            }
-        }
-        #endregion
         #endregion
 
         #region Subscription dictionary
@@ -430,7 +452,7 @@ namespace TinyMessenger
                 Subscription = subscription;
             }
         }
-        
+
         private readonly object _SubscriptionsPadlock = new object();
         private readonly Dictionary<Type, List<SubscriptionItem>> _Subscriptions = new Dictionary<Type, List<SubscriptionItem>>();
         #endregion
@@ -447,7 +469,7 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, false, _DefaultTinyMessageProxy);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, false, DefaultTinyMessageProxy.Instance);
         }
 
         /// <summary>
@@ -477,7 +499,7 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, bool useStrongReferences) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, useStrongReferences, _DefaultTinyMessageProxy);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, useStrongReferences, DefaultTinyMessageProxy.Instance);
         }
 
         /// <summary>
@@ -507,7 +529,7 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, false, _DefaultTinyMessageProxy);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, false, DefaultTinyMessageProxy.Instance);
         }
 
         /// <summary>
@@ -538,7 +560,7 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, bool useStrongReferences) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, useStrongReferences, _DefaultTinyMessageProxy);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, useStrongReferences, DefaultTinyMessageProxy.Instance);
         }
 
         /// <summary>
