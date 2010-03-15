@@ -1418,8 +1418,6 @@ namespace TinyIoC
 
                 var types = assemblies.SelectMany(a => a.GetTypes()).Where(t => !IsIgnoredType(t)).ToList();
 
-                var sortedTypes = types.OrderBy(o => o.Name);
-
                 var concreteTypes = from type in types
                                     where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
                                     select type;

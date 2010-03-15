@@ -6,7 +6,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3549B35C-E6A0-4007-8BBD-C82396AA28A1}"
 	ProjectSection(SolutionItems) = preProject
 		LocalTestRun.testrunconfig = LocalTestRun.testrunconfig
-		TinyIoC.vsmdi = TinyIoC.vsmdi
+		tinyioc.vsmdi = tinyioc.vsmdi
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC", "TinyIoC\TinyIoC.csproj", "{72FF4023-DEDF-40D2-8E54-1BB3E9C38C5C}"
