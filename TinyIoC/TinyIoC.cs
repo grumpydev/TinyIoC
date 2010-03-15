@@ -1474,7 +1474,7 @@ namespace TinyIoC
 
 #if TINYMESSENGER
             // Only register the TinyMessenger singleton if we are the root container
-            if (this._Parent != null)
+            if (this._Parent == null)
                 this.Register<TinyMessenger.ITinyMessengerHub, TinyMessenger.TinyMessengerHub>();
 #endif
         }
