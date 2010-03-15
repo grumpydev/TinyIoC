@@ -1368,7 +1368,7 @@ namespace TinyIoC
             {
                 var typeRegistration = obj as TypeRegistration;
 
-                if (obj == null)
+                if (typeRegistration == null)
                     return false;
 
                 if (this.Type != typeRegistration.Type)
