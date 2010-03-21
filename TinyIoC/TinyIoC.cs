@@ -1396,11 +1396,6 @@ namespace TinyIoC
             RegisterDefaultTypes();
         }
 
-        ~TinyIoCContainer()
-        {
-            _RegisteredTypes.Clear();
-        }
-
         TinyIoCContainer _Parent;
         private TinyIoCContainer(TinyIoCContainer parent) : this()
         {
