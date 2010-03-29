@@ -76,5 +76,14 @@ namespace TinyIoC.Tests.TestData
         {
             return true;
         }
+
+        public static TinyMessageSubscriptionToken GetTokenWithOutOfScopeMessenger()
+        {
+            var messenger = UtilityMethods.GetMessenger();
+
+            var token = new TinyMessageSubscriptionToken(messenger, typeof(TestMessage));
+
+            return token;
+        }
     }
 }

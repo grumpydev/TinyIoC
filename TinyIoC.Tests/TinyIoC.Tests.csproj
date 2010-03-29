@@ -54,6 +54,7 @@
     <Compile Include="TestData\UtilityMethods.cs" />
     <Compile Include="TinyIoCFunctionalTests.cs" />
     <Compile Include="TinyIoCTests.cs" />
+    <Compile Include="TinyMessageSubscriptionTokenTests.cs" />
     <Compile Include="TinyMessengerTests.cs" />
   </ItemGroup>
   <ItemGroup>
