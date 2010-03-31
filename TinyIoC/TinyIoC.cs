@@ -888,7 +888,7 @@ namespace TinyIoC
         }
 
         /// <summary>
-        /// Attemps to resolve a type using the default options and given name
+        /// Attemps to resolve a type using the given options
         /// </summary>
         /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="options">Resolution options</param>
@@ -931,6 +931,50 @@ namespace TinyIoC
             }
         }
 
+        /// <summary>
+        /// Attemps to resolve a type using the given options and name
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(string name, ResolveOptions options, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(name, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and supplied constructor parameters
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(NamedParameterOverloads parameters, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(parameters);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
         /// <summary>
         /// Attempts to resolve all public property dependencies on the given object.
         /// </summary>

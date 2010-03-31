@@ -2073,7 +2073,6 @@ namespace TinyIoC.Tests
             Assert.IsFalse(result);
         }
 
-
         [TestMethod]
         public void TryResolve_ValidResolveWithName_ReturnsTrue()
         {
@@ -2108,5 +2107,76 @@ namespace TinyIoC.Tests
 
             Assert.IsFalse(result);
         }
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithNameAndOptions_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>("Testing", new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithNameAndOptions_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            ITestInterface output;
+            container.TryResolve<ITestInterface>("Testing", new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolve_InvalidResolveWithNameAndOptions_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>("Testing", new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithParameters_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            TestClassWithParameters output;
+            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() {{"stringProperty", "test"}, {"intProperty", 2}}, out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithParameters_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            TestClassWithParameters output;
+            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, out output);
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        public void TryResolve_InvalidResolveWithParameters_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            TestClassWithParameters output;
+            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "intProperty", 2 } }, out output);
+
+            Assert.IsFalse(result);
+        }
+
     }
 }
