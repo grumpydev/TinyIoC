@@ -2037,5 +2037,76 @@ namespace TinyIoC.Tests
 
             Assert.IsFalse(result);
         }
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithOptions_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>(new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithOptions_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>(new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolve_InvalidResolveWithOptions_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>(new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsFalse(result);
+        }
+
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithName_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>("Testing", out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolve_ValidResolveWithName_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            ITestInterface output;
+            container.TryResolve<ITestInterface>("Testing", out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolve_InvalidResolveWithName_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>("Testing", out output);
+
+            Assert.IsFalse(result);
+        }
     }
 }

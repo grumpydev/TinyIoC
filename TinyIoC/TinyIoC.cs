@@ -866,12 +866,62 @@ namespace TinyIoC
             return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, options);
         }
 
+        /// <summary>
+        /// Attemps to resolve a type using the default options
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
         public bool TryResolve<ResolveType>(out ResolveType resolvedType)
             where ResolveType : class
         {
             try
             {
                 resolvedType = this.Resolve<ResolveType>();
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and given name
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(ResolveOptions options, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and given name
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(string name, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(name);
                 return true;
             }
             catch (TinyIoCResolutionException)
