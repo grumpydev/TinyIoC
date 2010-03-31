@@ -2003,5 +2003,39 @@ namespace TinyIoC.Tests
             Assert.ReferenceEquals(result, childInstance);
         }
 
+        [TestMethod]
+        public void TryResolve_ValidResolve_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>(out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolve_ValidResolve_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            ITestInterface output;
+            container.TryResolve<ITestInterface>(out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolve_InvalidResolve_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            ITestInterface output;
+            var result = container.TryResolve<ITestInterface>(out output);
+
+            Assert.IsFalse(result);
+        }
     }
 }

@@ -866,6 +866,21 @@ namespace TinyIoC
             return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, options);
         }
 
+        public bool TryResolve<ResolveType>(out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>();
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
         /// <summary>
         /// Attempts to resolve all public property dependencies on the given object.
         /// </summary>
