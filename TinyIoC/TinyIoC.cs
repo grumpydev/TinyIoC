@@ -33,6 +33,10 @@
     #undef APPDOMAIN_GETASSEMBLIES
     #undef UNBOUND_GENERICS_GETCONSTRUCTORS
 #endif
+
+#if SILVERLIGHT
+    #undef APPDOMAIN_GETASSEMBLIES
+#endif
 #endregion
 
 using System;
@@ -1586,7 +1590,7 @@ namespace TinyIoC
                 if (this.Type != typeRegistration.Type)
                     return false;
 
-                if (String.Compare(this.Name, typeRegistration.Name, true) != 0)
+                if (String.Compare(this.Name, typeRegistration.Name, StringComparison.Ordinal) != 0)
                     return false;
 
                 return true;
@@ -1633,7 +1637,14 @@ namespace TinyIoC
                 {
                     Type[] genericTypes = { type, type };
                     var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
-                    this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                    try
+                    {
+                        this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                    }
+                    catch (MethodAccessException)
+                    {
+                        // Ignore methods we can't access - added for Silverlight
+                    }
                 }
 
                 var abstractInterfaceTypes = from type in types
@@ -1654,7 +1665,14 @@ namespace TinyIoC
                     {
                         Type[] genericTypes = { type, firstImplementation };
                         var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
-                        this.RegisterInternal(type, firstImplementation, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                        try
+                        {
+                            this.RegisterInternal(type, firstImplementation, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                        }
+                        catch (MethodAccessException)
+                        {
+                            // Ignore methods we can't access - added for Silverlight
+                        }
                     }
                 }
             }
