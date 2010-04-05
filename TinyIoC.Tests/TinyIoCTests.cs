@@ -1212,6 +1212,15 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(TinyIoCResolutionException))]
+        public void Resolve_NormalUnregisteredType_FailsWithUnregisteredFallbackSetToGenericsOnly()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var testing = container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly });
+        }
+
+        [TestMethod]
         public void Resolve_BoundGenericTypeWithoutRegistered_ResolvesWithUnRegisteredFallbackSetToGenericsOnly()
         {
             var container = UtilityMethods.GetContainer();

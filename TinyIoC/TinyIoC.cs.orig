@@ -13,6 +13,10 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 //===============================================================================
 
+// Uncomment this line if you want the container to automatically
+// register the TinyMessenger messenger/event aggregator
+//#define TINYMESSENGER
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -87,6 +91,8 @@ namespace TinyIoC
                     item.Dispose();
                 }
             }
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion
@@ -127,6 +133,7 @@ namespace TinyIoC
     public class TinyIoCRegistrationException : Exception
     {
         private const string CONVERT_ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
+        private const string INVALID_TYPE_REGISTRATION_TEXT = "Unable to register {0}. Cannot register interfaces or abstract classes as an implementation type or without an implementation type specified";
 
         public TinyIoCRegistrationException(Type type, string method)
             : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method))
@@ -135,6 +142,16 @@ namespace TinyIoC
 
         public TinyIoCRegistrationException(Type type, string method, Exception innerException)
             : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method), innerException)
+        {
+        }
+
+        public TinyIoCRegistrationException(Type type)
+            : base(String.Format(INVALID_TYPE_REGISTRATION_TEXT, type.FullName))
+        {
+        }
+
+        public TinyIoCRegistrationException(Type type, Exception innerException)
+            : base(String.Format(INVALID_TYPE_REGISTRATION_TEXT, type.FullName), innerException)
         {
         }
     }
@@ -398,6 +415,13 @@ namespace TinyIoC
         #endregion
 
         #region Public API
+        #region Child Containers
+        public TinyIoCContainer GetChildContainer()
+        {
+            return new TinyIoCContainer(this);
+        }
+        #endregion
+
         #region Registration
         /// <summary>
         /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
@@ -851,6 +875,187 @@ namespace TinyIoC
             where ResolveType : class
         {
             return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, options);
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>();
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the given options
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(ResolveOptions options, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and given name
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(string name, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(name);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the given options and name
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(string name, ResolveOptions options, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(name, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and supplied constructor parameters
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(NamedParameterOverloads parameters, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(parameters);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and supplied name and constructor parameters
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(string name, NamedParameterOverloads parameters, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(name, parameters);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the supplied options and constructor parameters
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(NamedParameterOverloads parameters, ResolveOptions options, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(parameters, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the supplied name, options and constructor parameters
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolve</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve<ResolveType>(string name, NamedParameterOverloads parameters, ResolveOptions options, out ResolveType resolvedType)
+            where ResolveType : class
+        {
+            try
+            {
+                resolvedType = this.Resolve<ResolveType>(name, parameters, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = default(ResolveType);
+                return false;
+            }
         }
 
         /// <summary>
@@ -1355,7 +1560,7 @@ namespace TinyIoC
             {
                 var typeRegistration = obj as TypeRegistration;
 
-                if (obj == null)
+                if (typeRegistration == null)
                     return false;
 
                 if (this.Type != typeRegistration.Type)
@@ -1382,6 +1587,12 @@ namespace TinyIoC
 
             RegisterDefaultTypes();
         }
+
+        TinyIoCContainer _Parent;
+        private TinyIoCContainer(TinyIoCContainer parent) : this()
+        {
+            this._Parent = parent;
+        }
         #endregion
 
         #region Internal Methods
@@ -1393,8 +1604,6 @@ namespace TinyIoC
                 var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var types = assemblies.SelectMany(a => a.GetTypes()).Where(t => !IsIgnoredType(t)).ToList();
-
-                var sortedTypes = types.OrderBy(o => o.Name);
 
                 var concreteTypes = from type in types
                                     where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
@@ -1449,9 +1658,11 @@ namespace TinyIoC
         private void RegisterDefaultTypes()
         {
             this.Register<TinyIoCContainer>(this);
+
 #if TINYMESSENGER
-            if (parent == null)
-                this.Register<ITinyMessenger, TinyMessenger>();
+            // Only register the TinyMessenger singleton if we are the root container
+            if (this._Parent == null)
+                this.Register<TinyMessenger.ITinyMessengerHub, TinyMessenger.TinyMessengerHub>();
 #endif
         }
 
@@ -1466,6 +1677,9 @@ namespace TinyIoC
 
         private RegisterOptions RegisterInternal(Type registerType, Type registerImplementation, string name, ObjectFactoryBase factory)
         {
+            if (registerImplementation.IsInterface || registerImplementation.IsAbstract)
+                throw new TinyIoCRegistrationException(registerType);
+
             var typeRegistration = new TypeRegistration(registerType, name);
 
             return AddUpdateRegistration(typeRegistration, factory);
@@ -1514,8 +1728,9 @@ namespace TinyIoC
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
+            // Or bubble up if we have a parent
             if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
-                return false;
+                return (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options) : false;
 
             // Attemped unnamed fallback container resolution if relevant and requested
             if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
@@ -1534,8 +1749,13 @@ namespace TinyIoC
                 return true;
 
             // Attempt unregistered construction if possible and requested
+            // If we cant', bubble if we have a parent
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (checkType.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
-                return (GetBestConstructor(checkType, parameters, options) != null) ? true : false;
+                return (GetBestConstructor(checkType, parameters, options) != null) ? true : (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options) : false;
+
+            // Bubble resolution up the container tree if we have a parent
+            if (_Parent != null)
+                return _Parent.CanResolveInternal(registration, parameters, options);
 
             return false;
         }
@@ -1581,7 +1801,13 @@ namespace TinyIoC
 
             // Fail if requesting named resolution and settings set to fail if unresolved
             if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
-                throw new TinyIoCResolutionException(registration.Type);
+            {
+                // Bubble resolution up the container tree if we have a parent
+                if (_Parent != null)
+                    return _Parent.ResolveInternal(registration, parameters, options);
+                else
+                    throw new TinyIoCResolutionException(registration.Type);
+            }
 
             // Attemped unnamed fallback container resolution if relevant and requested
             if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
@@ -1609,6 +1835,10 @@ namespace TinyIoC
                 if (!registration.Type.IsAbstract && !registration.Type.IsInterface)
                     return ConstructType(registration.Type, parameters, options);
             }
+
+            // Bubble resolution up the container tree if we have a parent
+            if (_Parent != null)
+                return _Parent.ResolveInternal(registration, parameters, options);
 
             // Unable to resolve - throw
             throw new TinyIoCResolutionException(registration.Type);
@@ -1776,7 +2006,7 @@ namespace TinyIoC
                     {
                         property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions), null);
                     }
-                    catch (Exception TinyIoCResolutionException)
+                    catch (TinyIoCResolutionException)
                     {
                         // Catch any resolution errors and ignore them
                     }
@@ -1789,6 +2019,8 @@ namespace TinyIoC
         public void Dispose()
         {
             _RegisteredTypes.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion

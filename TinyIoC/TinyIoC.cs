@@ -13,16 +13,37 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 //===============================================================================
 
+#region Preprocessor Directives
 // Uncomment this line if you want the container to automatically
 // register the TinyMessenger messenger/event aggregator
 //#define TINYMESSENGER
+
+// Preprocessor directives for enabling/disabling functionality
+// depending on platform features. If the platform has an appropriate
+// #DEFINE then these should be set automatically below.
+#define EXPRESSIONS                         // Platform supports System.Linq.Expressions
+#define APPDOMAIN_GETASSEMBLIES             // Platform supports getting all assemblies from the AppDomain object
+#define UNBOUND_GENERICS_GETCONSTRUCTORS    // Platform supports GetConstructors on unbound generic types
+
+// CompactFramework
+// By default does not support System.Linq.Expressions.
+// AppDomain object does not support enumerating all assemblies in the app domain.
+#if PocketPC
+    #undef EXPRESSIONS
+    #undef APPDOMAIN_GETASSEMBLIES
+    #undef UNBOUND_GENERICS_GETCONSTRUCTORS
+#endif
+#endregion
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.Diagnostics;
+#if EXPRESSIONS
 using System.Linq.Expressions;
+#endif
 
 namespace TinyIoC
 {
@@ -378,6 +399,7 @@ namespace TinyIoC
                 return _Container.AddUpdateRegistration(_Registration, currentFactory.StrongReferenceVariant);
             }
 
+#if EXPRESSIONS
             public RegisterOptions UsingConstructor<RegisterType>(Expression<Func<RegisterType>> constructor)
             {
                 var lambda = constructor as LambdaExpression;
@@ -400,6 +422,7 @@ namespace TinyIoC
 
                 return this;
             }
+#endif
         }
         #endregion
 
@@ -420,7 +443,11 @@ namespace TinyIoC
         /// </summary>
         public void AutoRegister()
         {
+#if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies(), true);
+#else
+            AutoRegisterInternal(new Assembly[] {this.GetType().Assembly}, true);
+#endif
         }
 
         /// <summary>
@@ -430,7 +457,11 @@ namespace TinyIoC
         /// <exception cref="TinyIoCAutoRegistrationException"/>
         public void AutoRegister(bool ignoreDuplicateImplementations)
         {
+#if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies(), ignoreDuplicateImplementations);
+#else
+            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly }, ignoreDuplicateImplementations);
+#endif
         }
 
         /// <summary>
@@ -1638,6 +1669,10 @@ namespace TinyIoC
             if (type.IsPrimitive)
                 return true;
 
+#if !UNBOUND_GENERICS_GETCONSTRUCTORS
+            if (type.IsGenericTypeDefinition)
+                return true;
+#endif 
             if ((type.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(type.IsInterface || type.IsAbstract))
                 return true;
 
@@ -1811,10 +1846,11 @@ namespace TinyIoC
                 }
             }
 
+#if EXPRESSIONS
             // Attempt to construct an automatic lazy factory if possible
             if (IsAutomaticLazyFactoryRequest(registration.Type))
                 return GetLazyAutomaticFactoryRequest(registration.Type);
-
+#endif
             // Attempt unregistered construction if possible and requested
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (registration.Type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
             {
@@ -1830,6 +1866,7 @@ namespace TinyIoC
             throw new TinyIoCResolutionException(registration.Type);
         }
 
+#if EXPRESSIONS
         private object GetLazyAutomaticFactoryRequest(Type type)
         {
             if (!type.IsGenericType)
@@ -1889,7 +1926,7 @@ namespace TinyIoC
 
             throw new TinyIoCResolutionException(type);
         }
-
+#endif
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
