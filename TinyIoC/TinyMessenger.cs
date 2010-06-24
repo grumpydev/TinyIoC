@@ -527,7 +527,7 @@ namespace TinyMessenger
         #region Public API
         /// <summary>
         /// Subscribe to a message type with the given destination and delivery action.
-        /// All references are held with WeakReferences
+        /// All references are held with strong references
         /// 
         /// All messages of this type will be delivered.
         /// </summary>
@@ -536,13 +536,13 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, false, DefaultTinyMessageProxy.Instance);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, true, DefaultTinyMessageProxy.Instance);
         }
 
         /// <summary>
         /// Subscribe to a message type with the given destination and delivery action.
         /// Messages will be delivered via the specified proxy.
-        /// All references (apart from the proxy) are held with WeakReferences
+        /// All references (apart from the proxy) are held with strong references
         /// 
         /// All messages of this type will be delivered.
         /// </summary>
@@ -552,7 +552,7 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, ITinyMessageProxy proxy) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, false, proxy);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, (m) => true, true, proxy);
         }
 
         /// <summary>
