@@ -596,7 +596,7 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, false, DefaultTinyMessageProxy.Instance);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, true, DefaultTinyMessageProxy.Instance);
         }
 
         /// <summary>
@@ -612,7 +612,7 @@ namespace TinyMessenger
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, ITinyMessageProxy proxy) where TMessage : class, ITinyMessage
         {
-            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, false, proxy);
+            return AddSubscriptionInternal<TMessage>(deliveryAction, messageFilter, true, proxy);
         }
 
         /// <summary>
