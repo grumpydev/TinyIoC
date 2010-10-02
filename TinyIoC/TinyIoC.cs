@@ -2057,11 +2057,17 @@ namespace TinyIoC
         #endregion
 
         #region IDisposable Members
+        bool disposed = false;
         public void Dispose()
         {
-            _RegisteredTypes.Dispose();
+            if (disposed)
+            {
+                disposed = true;
 
-            GC.SuppressFinalize(this);
+                _RegisteredTypes.Dispose();
+
+                GC.SuppressFinalize(this);
+            }
         }
 
         #endregion

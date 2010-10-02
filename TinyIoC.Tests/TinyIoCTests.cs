@@ -439,7 +439,6 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [Ignore]
         public void Dispose_RegisteredDisposableInstance_CallsDispose()
         {
             var item = new Mock<DisposableTestClassWithInterface>();
@@ -455,7 +454,6 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [Ignore]
         public void Dispose_RegisteredDisposableInstanceWithInterface_CallsDispose()
         {
             var item = new Mock<DisposableTestClassWithInterface>();
