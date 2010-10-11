@@ -2289,5 +2289,28 @@ namespace TinyIoC.Tests
 
             Assert.IsFalse(result);
         }
+
+        [TestMethod]
+        public void ResolveAll_MultipleTypesRegistered_ReturnsIEnumerableWithCorrectCount()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named1");
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named2");
+
+            var result = container.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(3, result.Count());
+        }
+
+        [TestMethod]
+        public void ResolveAll_NoTypesRegistered_ReturnsIEnumerableWithNoItems()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(0, result.Count());
+        }
     }
 }

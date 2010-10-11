@@ -101,6 +101,13 @@ namespace TinyIoC
             }
         }
 
+        public IEnumerable<TKey> Keys
+        {
+            get
+            {
+                return _Dictionary.Keys;
+            }
+        }
         #region IDisposable Members
 
         public void Dispose()
@@ -1083,6 +1090,17 @@ namespace TinyIoC
         }
 
         /// <summary>
+        /// Returns all registrations of a type, both named and unnamed
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolveAll</typeparam>
+        /// <returns>IEnumerable</returns>
+        public IEnumerable<ResolveType> ResolveAll<ResolveType>()
+            where ResolveType : class
+        {
+            return ResolveAllInternal(typeof(ResolveType)).Cast<ResolveType>();
+        }
+
+        /// <summary>
         /// Attempts to resolve all public property dependencies on the given object.
         /// </summary>
         /// <param name="input">Object to "build up"</param>
@@ -2052,6 +2070,16 @@ namespace TinyIoC
                         // Catch any resolution errors and ignore them
                     }
                 }
+            }
+        }
+
+        private IEnumerable<object> ResolveAllInternal(Type resolveType)
+        {
+            var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType);
+
+            foreach (var registration in registrations)
+            {
+                yield return ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default);
             }
         }
         #endregion
