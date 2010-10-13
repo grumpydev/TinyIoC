@@ -2298,7 +2298,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>("Named1");
             container.Register<ITestInterface, TestClassDefaultCtor>("Named2");
 
-            var result = container.ResolveAll<ITestInterface>();
+            IEnumerable<ITestInterface> result = container.ResolveAll<ITestInterface>();
 
             Assert.AreEqual(3, result.Count());
         }
@@ -2308,9 +2308,34 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            var result = container.ResolveAll<ITestInterface>();
+            IEnumerable<ITestInterface> result = container.ResolveAll<ITestInterface>();
 
             Assert.AreEqual(0, result.Count());
+        }
+
+        [TestMethod]
+        public void Resolve_TypeWithIEnumerableOfRegisteredTypeDependency_ResolvesWithIEnumerableOfCorrectCount()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named1");
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named2");
+            container.Register<TestClassEnumerableDependency>();
+
+            var result = container.Resolve<TestClassEnumerableDependency>();
+
+            Assert.AreEqual(3, result.EnumerableCount);
+        }
+
+        [TestMethod]
+        public void Resolve_TypeWithIEnumerableOfNonRegisteredTypeDependency_ResolvesWithIEnumerablewithNoItems()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassEnumerableDependency>();
+
+            var result = container.Resolve<TestClassEnumerableDependency>();
+
+            Assert.AreEqual(0, result.EnumerableCount);
         }
     }
 }

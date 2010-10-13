@@ -29,13 +29,13 @@
 // By default does not support System.Linq.Expressions.
 // AppDomain object does not support enumerating all assemblies in the app domain.
 #if PocketPC
-    #undef EXPRESSIONS
-    #undef APPDOMAIN_GETASSEMBLIES
-    #undef UNBOUND_GENERICS_GETCONSTRUCTORS
+#undef EXPRESSIONS
+#undef APPDOMAIN_GETASSEMBLIES
+#undef UNBOUND_GENERICS_GETCONSTRUCTORS
 #endif
 
 #if SILVERLIGHT
-    #undef APPDOMAIN_GETASSEMBLIES
+#undef APPDOMAIN_GETASSEMBLIES
 #endif
 #endregion
 
@@ -220,7 +220,7 @@ namespace TinyIoC
     public class TinyIoCAutoRegistrationException : Exception
     {
         private const string ERROR_TEXT = "Duplicate implementation of type {0} found ({1}).";
-        
+
         public TinyIoCAutoRegistrationException(Type registerType, IEnumerable<Type> types)
             : base(String.Format(ERROR_TEXT, registerType, GetTypesString(types)))
         {
@@ -253,11 +253,12 @@ namespace TinyIoC
         }
 
         public NamedParameterOverloads()
-        { 
+        {
         }
 
-        public NamedParameterOverloads(IDictionary<string, object> data) : base(data) 
-        { 
+        public NamedParameterOverloads(IDictionary<string, object> data)
+            : base(data)
+        {
         }
 
         private static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
@@ -484,7 +485,7 @@ namespace TinyIoC
         /// <param name="assembly">Assembly to process</param>
         public void AutoRegister(Assembly assembly)
         {
-            AutoRegisterInternal(new Assembly[] {assembly}, true);
+            AutoRegisterInternal(new Assembly[] { assembly }, true);
         }
 
         /// <summary>
@@ -495,7 +496,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCAutoRegistrationException"/>
         public void AutoRegister(Assembly assembly, bool ignoreDuplicateImplementations)
         {
-            AutoRegisterInternal(new Assembly[] {assembly}, ignoreDuplicateImplementations);
+            AutoRegisterInternal(new Assembly[] { assembly }, ignoreDuplicateImplementations);
         }
 
         /// <summary>
@@ -1097,7 +1098,7 @@ namespace TinyIoC
         public IEnumerable<ResolveType> ResolveAll<ResolveType>()
             where ResolveType : class
         {
-            return ResolveAllInternal(typeof(ResolveType)).Cast<ResolveType>();
+            return ResolveAllInternal(typeof(ResolveType)).Select(o => o as ResolveType);
         }
 
         /// <summary>
@@ -1631,7 +1632,8 @@ namespace TinyIoC
         }
 
         TinyIoCContainer _Parent;
-        private TinyIoCContainer(TinyIoCContainer parent) : this()
+        private TinyIoCContainer(TinyIoCContainer parent)
+            : this()
         {
             this._Parent = parent;
         }
@@ -1708,7 +1710,7 @@ namespace TinyIoC
 #if !UNBOUND_GENERICS_GETCONSTRUCTORS
             if (type.IsGenericTypeDefinition)
                 return true;
-#endif 
+#endif
             if ((type.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(type.IsInterface || type.IsAbstract))
                 return true;
 
@@ -1805,6 +1807,10 @@ namespace TinyIoC
             if (IsAutomaticLazyFactoryRequest(checkType))
                 return true;
 
+            // Check if type is an IEnumerable<ResolveType>
+            if (IsIEnumerableRequest(registration.Type))
+                return true;
+
             // Attempt unregistered construction if possible and requested
             // If we cant', bubble if we have a parent
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (checkType.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
@@ -1813,6 +1819,19 @@ namespace TinyIoC
             // Bubble resolution up the container tree if we have a parent
             if (_Parent != null)
                 return _Parent.CanResolveInternal(registration, parameters, options);
+
+            return false;
+        }
+
+        private bool IsIEnumerableRequest(Type type)
+        {
+            if (!type.IsGenericType)
+                return false;
+
+            Type genericType = type.GetGenericTypeDefinition();
+
+            if (genericType == typeof(IEnumerable<>))
+                return true;
 
             return false;
         }
@@ -1887,6 +1906,9 @@ namespace TinyIoC
             if (IsAutomaticLazyFactoryRequest(registration.Type))
                 return GetLazyAutomaticFactoryRequest(registration.Type);
 #endif
+            if (IsIEnumerableRequest(registration.Type))
+                return GetIEnumerableRequest(registration.Type);
+
             // Attempt unregistered construction if possible and requested
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (registration.Type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
             {
@@ -1963,6 +1985,17 @@ namespace TinyIoC
             throw new TinyIoCResolutionException(type);
         }
 #endif
+        private object GetIEnumerableRequest(Type type)
+        {
+            // Using MakeGenericMethod (slow) because we need to
+            // cast the IEnumerable or constructing the type wil fail.
+            // We may as well use the ResolveAll<ResolveType> public
+            // method to do this.
+            var resolveAllMethod = this.GetType().GetMethod("ResolveAll", BindingFlags.Public | BindingFlags.Instance);
+            var genericResolveAllMethod = resolveAllMethod.MakeGenericMethod(type.GetGenericArguments()[0]);
+            return genericResolveAllMethod.Invoke(this, new object[] {});
+        }
+
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
