@@ -144,6 +144,18 @@ namespace TinyIoC.Tests.PlatformTestSuite
                 Prop1 = _Factory.Invoke("Testing", new Dictionary<String, object> { { "stringProperty", "Testing" }, { "intProperty", 22 } });
             }
         }
+
+        internal class TestClassEnumerableDependency
+        {
+            IEnumerable<ITestInterface> _Enumerable;
+
+            public int EnumerableCount { get { return _Enumerable == null ? 0 : _Enumerable.Count(); } }
+
+            public TestClassEnumerableDependency(IEnumerable<ITestInterface> enumerable)
+            {
+                _Enumerable = enumerable;
+            }
+        }
         #endregion
 
 
@@ -180,8 +192,10 @@ namespace TinyIoC.Tests.PlatformTestSuite
 #if EXPRESSIONS
                 ResolveLazyFactory,
                 ResolveNamedLazyFactory,
-                ResolveNamedAndParamsLazyFactory
+                ResolveNamedAndParamsLazyFactory,
 #endif
+                ResolveAll,
+                IEnumerableDependency,
             };
         }
 
@@ -380,6 +394,32 @@ namespace TinyIoC.Tests.PlatformTestSuite
             var output = container.Resolve<TestclassWithNameAndParamsLazyFactory>();
             return (output.Prop1 != null);
         }
+
 #endif
+
+        private bool ResolveAll(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("ResolveAll");
+            container.Register<ITestInterface, TestClassWithInterface>();
+            container.Register<ITestInterface, TestClassWithInterface>("Named1");
+            container.Register<ITestInterface, TestClassWithInterface>("Named2");
+
+            IEnumerable<ITestInterface> result = container.ResolveAll<ITestInterface>();
+
+            return (result.Count() == 3);
+        }
+
+        private bool IEnumerableDependency(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("IEnumerableDependency");
+            container.Register<ITestInterface, TestClassWithInterface>();
+            container.Register<ITestInterface, TestClassWithInterface>("Named1");
+            container.Register<ITestInterface, TestClassWithInterface>("Named2");
+            container.Register<TestClassEnumerableDependency>();
+
+            var result = container.Resolve<TestClassEnumerableDependency>();
+
+            return (result.EnumerableCount == 3);
+        }
     }
 }
