@@ -13,7 +13,7 @@
 // CompactFramework
 // By default does not support System.Linq.Expressions.
 // AppDomain object does not support enumerating all assemblies in the app domain.
-#if PocketPC
+#if PocketPC || WINDOWS_PHONE
 #undef EXPRESSIONS
 #undef APPDOMAIN_GETASSEMBLIES
 #undef UNBOUND_GENERICS_GETCONSTRUCTORS
