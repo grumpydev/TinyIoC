@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartDeviceProject1", "SmartDeviceProject1\SmartDeviceProject1.csproj", "{0174DBF7-9449-4379-B169-AAD3060A531D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0174DBF7-9449-4379-B169-AAD3060A531D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0174DBF7-9449-4379-B169-AAD3060A531D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0174DBF7-9449-4379-B169-AAD3060A531D}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{0174DBF7-9449-4379-B169-AAD3060A531D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0174DBF7-9449-4379-B169-AAD3060A531D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0174DBF7-9449-4379-B169-AAD3060A531D}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
