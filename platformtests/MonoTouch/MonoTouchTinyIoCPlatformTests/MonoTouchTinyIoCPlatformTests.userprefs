@@ -1,0 +1,28 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|iPhoneSimulator" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="../../../src/TinyIoC/TinyIoC.cs">
+    <Files>
+      <File FileName="MonoTouchTinyIoCPlatformTests/Main.cs" Line="24" Column="47" />
+      <File FileName="MonoTouchTinyIoCPlatformTests/MainWindow.xib.designer.cs" Line="51" Column="1" />
+      <File FileName="MonoTouchTinyIoCPlatformTests/AppDelegate.cs" Line="22" Column="3" />
+      <File FileName="../../../src/TinyIoC/TinyIoC.cs" Line="1" Column="1" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State expanded="True">
+          <Node name="MonoTouchTinyIoCPlatformTests" expanded="True" selected="True">
+            <Node name="TinyIoC" expanded="True" />
+            <Node name="MainWindow.xib" expanded="True" />
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="ClassPad">
+        <State expanded="True" selected="True" />
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
