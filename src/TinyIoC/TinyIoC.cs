@@ -456,7 +456,7 @@ namespace TinyIoC
         public void AutoRegister()
         {
 #if APPDOMAIN_GETASSEMBLIES
-            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies(), true);
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), true);
 #else
             AutoRegisterInternal(new Assembly[] {this.GetType().Assembly}, true);
 #endif
@@ -470,7 +470,7 @@ namespace TinyIoC
         public void AutoRegister(bool ignoreDuplicateImplementations)
         {
 #if APPDOMAIN_GETASSEMBLIES
-            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies(), ignoreDuplicateImplementations);
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations);
 #else
             AutoRegisterInternal(new Assembly[] { this.GetType().Assembly }, ignoreDuplicateImplementations);
 #endif
@@ -1698,21 +1698,48 @@ namespace TinyIoC
             }
         }
 
+        private bool IsIgnoredAssembly(Assembly assembly)
+        {
+            // TODO - find a better way to remove "system" assemblies from the auto registration
+            var ignoreChecks = new List<Func<Assembly, bool>>()
+            {
+                asm => asm.FullName.StartsWith("Microsoft.", StringComparison.InvariantCulture),
+                asm => asm.FullName.StartsWith("System.", StringComparison.InvariantCulture),
+                asm => asm.FullName.StartsWith("System,", StringComparison.InvariantCulture),
+                asm => asm.FullName.StartsWith("CR_ExtUnitTest", StringComparison.InvariantCulture),
+                asm => asm.FullName.StartsWith("mscorlib,", StringComparison.InvariantCulture),
+                asm => asm.FullName.StartsWith("CR_VSTest", StringComparison.InvariantCulture),
+                asm => asm.FullName.StartsWith("DevExpress.CodeRush", StringComparison.InvariantCulture),
+            };
+
+            foreach (var check in ignoreChecks)
+            {
+                if (check(assembly))
+                    return true;
+            }
+
+            return false;
+        }
+
         private bool IsIgnoredType(Type type)
         {
             // TODO - find a better way to remove "system" types from the auto registration
-            if (type.FullName.StartsWith("System.") || type.FullName.StartsWith("Microsoft."))
-                return true;
-
-            if (type.IsPrimitive)
-                return true;
-
+            var ignoreChecks = new List<Func<Type, bool>>()
+            {
+                t => t.FullName.StartsWith("System.", StringComparison.InvariantCulture),
+                t => t.FullName.StartsWith("Microsoft.", StringComparison.InvariantCulture),
+                t => t.IsPrimitive,
 #if !UNBOUND_GENERICS_GETCONSTRUCTORS
-            if (type.IsGenericTypeDefinition)
-                return true;
+                t => t.IsGenericTypeDefinition,
 #endif
-            if ((type.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(type.IsInterface || type.IsAbstract))
-                return true;
+                t => (t.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(t.IsInterface || t.IsAbstract),
+            };
+
+            foreach (var check in ignoreChecks)
+            {
+                if (check(type))
+                    return true;
+            }
 
             return false;
         }
