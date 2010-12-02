@@ -2121,7 +2121,7 @@ namespace TinyIoC
         bool disposed = false;
         public void Dispose()
         {
-            if (disposed)
+            if (!disposed)
             {
                 disposed = true;
 
