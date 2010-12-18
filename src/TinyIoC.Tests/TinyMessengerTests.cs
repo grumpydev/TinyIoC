@@ -338,8 +338,9 @@ namespace TinyIoC.Tests
         public void PublishAsync_Callback_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();
-
+#pragma warning disable 219
             messenger.PublishAsync(new TestMessage(this), (r) => {string test = "Testing";});
+#pragma warning restore 219
         }
 
         [TestMethod]
@@ -349,7 +350,9 @@ namespace TinyIoC.Tests
             bool received = false;
             messenger.Subscribe<TestMessage>((m) => { received = true; });
 
+#pragma warning disable 219
             messenger.PublishAsync(new TestMessage(this), (r) => { string test = "Testing"; });
+#pragma warning restore 219
 
             // Horrible wait loop!
             int waitCount = 0;
@@ -385,7 +388,9 @@ namespace TinyIoC.Tests
         public void CancellableGenericTinyMessage_Publish_DoesNotThrow()
         {
             var messenger = UtilityMethods.GetMessenger();
+#pragma warning disable 219
             messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", () => { bool test = true; }));
+#pragma warning restore 219
         }
 
         [TestMethod]
@@ -413,10 +418,11 @@ namespace TinyIoC.Tests
         {
             var messenger = UtilityMethods.GetMessenger();
             bool cancelled = false;
+#pragma warning disable 219
             messenger.Subscribe<CancellableGenericTinyMessage<string>>((m) => { var test = 1; });
             messenger.Subscribe<CancellableGenericTinyMessage<string>>((m) => { m.Cancel(); });
             messenger.Subscribe<CancellableGenericTinyMessage<string>>((m) => { var test = 1; });
-
+#pragma warning restore 219
             messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", () => { cancelled = true; }));
 
             Assert.IsTrue(cancelled);
