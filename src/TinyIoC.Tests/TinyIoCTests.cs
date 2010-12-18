@@ -2298,7 +2298,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>("Named1");
             container.Register<ITestInterface, TestClassDefaultCtor>("Named2");
 
-            IEnumerable<ITestInterface> result = container.ResolveAll<ITestInterface>();
+            var result = container.ResolveAll<ITestInterface>();
 
             Assert.AreEqual(3, result.Count());
         }
@@ -2308,7 +2308,7 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            IEnumerable<ITestInterface> result = container.ResolveAll<ITestInterface>();
+            var result = container.ResolveAll<ITestInterface>();
 
             Assert.AreEqual(0, result.Count());
         }

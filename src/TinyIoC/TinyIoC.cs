@@ -1502,12 +1502,25 @@ namespace TinyIoC
         /// <summary>
         /// Returns all registrations of a type, both named and unnamed
         /// </summary>
+        /// <param name="ResolveType">Type to resolveAll</param>
+        /// <returns>IEnumerable</returns>
+        public IEnumerable<object> ResolveAll(Type resolveType)
+        {
+            return ResolveAllInternal(resolveType).Select(o => o);
+        }
+
+        /// <summary>
+        /// Returns all registrations of a type, both named and unnamed
+        /// </summary>
         /// <typeparam name="ResolveType">Type to resolveAll</typeparam>
         /// <returns>IEnumerable</returns>
         public IEnumerable<ResolveType> ResolveAll<ResolveType>()
             where ResolveType : class
         {
-            return ResolveAllInternal(typeof(ResolveType)).Select(o => o as ResolveType);
+            foreach (var resolvedType in ResolveAll(typeof(ResolveType)))
+            {
+                yield return resolvedType as ResolveType;
+            }
         }
 
         /// <summary>
@@ -2427,7 +2440,7 @@ namespace TinyIoC
             // cast the IEnumerable or constructing the type wil fail.
             // We may as well use the ResolveAll<ResolveType> public
             // method to do this.
-            var resolveAllMethod = this.GetType().GetMethod("ResolveAll", BindingFlags.Public | BindingFlags.Instance);
+            var resolveAllMethod = this.GetType().GetMethod("ResolveAll", new Type[] {});
             var genericResolveAllMethod = resolveAllMethod.MakeGenericMethod(type.GetGenericArguments()[0]);
             return genericResolveAllMethod.Invoke(this, new object[] {});
         }
