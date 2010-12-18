@@ -1011,7 +1011,7 @@ namespace TinyIoC
         /// <param name="parameters">User supplied named parameter overloads</param>
         /// <param name="options">Resolution options</param>
         /// <returns>Bool indicating whether the type can be resolved</returns>
-        private bool CanResolve(Type resolveType, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        public bool CanResolve(Type resolveType, string name, NamedParameterOverloads parameters, ResolveOptions options)
         {
             return CanResolveInternal(new TypeRegistration(resolveType, name), parameters, options);
         }
