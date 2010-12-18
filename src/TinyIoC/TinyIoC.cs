@@ -1148,6 +1148,179 @@ namespace TinyIoC
         /// <summary>
         /// Attemps to resolve a type using the default options
         /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the given options
+        /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, ResolveOptions options, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and given name
+        /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, string name, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType, name);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the given options and name
+        /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, string name, ResolveOptions options, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType, name, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and supplied constructor parameters
+        /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, NamedParameterOverloads parameters, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType, parameters);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the default options and supplied name and constructor parameters
+        /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, string name, NamedParameterOverloads parameters, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType, name, parameters);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the supplied options and constructor parameters
+        /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, NamedParameterOverloads parameters, ResolveOptions options, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType, parameters, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attemps to resolve a type using the supplied name, options and constructor parameters
+        /// </summary>
+        /// <param name="ResolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User specified constructor parameters</param>
+        /// <param name="options">Resolution options</param>
+        /// <param name="resolvedType">Resolved type or default if resolve fails</param>
+        /// <returns>True if resolved sucessfully, false otherwise</returns>
+        public bool TryResolve(Type resolveType, string name, NamedParameterOverloads parameters, ResolveOptions options, out object resolvedType)
+        {
+            try
+            {
+                resolvedType = Resolve(resolveType, name, parameters, options);
+                return true;
+            }
+            catch (TinyIoCResolutionException)
+            {
+                resolvedType = null;
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Attemps to resolve a type using the default options
+        /// </summary>
         /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="resolvedType">Resolved type or default if resolve fails</param>
         /// <returns>True if resolved sucessfully, false otherwise</returns>

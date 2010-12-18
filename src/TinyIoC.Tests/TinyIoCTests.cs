@@ -1274,7 +1274,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void TryResolve_UnRegisteredNonGenericType_ReturnsFalseWithOptionsSetToGenericOnly()
+        public void CanResolve_UnRegisteredNonGenericType_ReturnsFalseWithOptionsSetToGenericOnly()
         {
             var container = UtilityMethods.GetContainer();
 
@@ -2337,5 +2337,287 @@ namespace TinyIoC.Tests
 
             Assert.AreEqual(0, result.EnumerableCount);
         }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolve_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolve_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            object output;
+            container.TryResolve(typeof(ITestInterface), out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolve_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithOptions_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithOptions_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolveWithOptions_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithName_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), "Testing", out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithName_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            object output;
+            container.TryResolve(typeof(ITestInterface), "Testing", out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolveWithName_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), "Testing", out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithNameAndOptions_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), "Testing", new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithNameAndOptions_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
+
+            object output;
+            container.TryResolve(typeof(ITestInterface), "Testing", new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolveWithNameAndOptions_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(ITestInterface), "Testing", new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithParameters_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithParameters_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, out output);
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolveWithParameters_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "intProperty", 2 } }, out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithNameAndParameters_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>("Testing");
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithNameAndParameters_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>("Testing");
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, out output);
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolveWithNameAndParameters_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "intProperty", 2 } }, out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithParametersAndOptions_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithParametersAndOptions_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolveWithParametersAndOptions_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithNameParametersAndOptions_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>("Testing");
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_ValidResolveWithNameParametersAndOptions_ReturnsType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithParameters>("Testing");
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+        }
+
+        [TestMethod]
+        public void TryResolveNonGeneric_InvalidResolveWithNameParametersAndOptions_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            object output;
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+
+            Assert.IsFalse(result);
+        }
+
+
     }
 }
