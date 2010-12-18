@@ -1038,7 +1038,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>();
+                resolvedType = Resolve<ResolveType>();
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1060,7 +1060,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>(options);
+                resolvedType = Resolve<ResolveType>(options);
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1082,7 +1082,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>(name);
+                resolvedType = Resolve<ResolveType>(name);
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1105,7 +1105,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>(name, options);
+                resolvedType = Resolve<ResolveType>(name, options);
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1127,7 +1127,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>(parameters);
+                resolvedType = Resolve<ResolveType>(parameters);
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1150,7 +1150,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>(name, parameters);
+                resolvedType = Resolve<ResolveType>(name, parameters);
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1174,7 +1174,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>(parameters, options);
+                resolvedType = Resolve<ResolveType>(parameters, options);
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1198,7 +1198,7 @@ namespace TinyIoC
         {
             try
             {
-                resolvedType = this.Resolve<ResolveType>(name, parameters, options);
+                resolvedType = Resolve<ResolveType>(name, parameters, options);
                 return true;
             }
             catch (TinyIoCResolutionException)
@@ -1303,7 +1303,7 @@ namespace TinyIoC
 
             public virtual void SetConstructor(ConstructorInfo constructor)
             {
-                this.Constructor = constructor;
+                Constructor = constructor;
             }
         }
 
@@ -1490,7 +1490,7 @@ namespace TinyIoC
 
             public InstanceFactory(RegisterImplementation instance)
             {
-                this._instance = instance;
+                _instance = instance;
             }
 
             public override Type CreatesType
@@ -1556,7 +1556,7 @@ namespace TinyIoC
 
             public WeakInstanceFactory(RegisterImplementation instance)
             {
-                this._instance = new WeakReference(instance);
+                _instance = new WeakReference(instance);
             }
 
             public override Type CreatesType
@@ -1724,10 +1724,10 @@ namespace TinyIoC
                 if (typeRegistration == null)
                     return false;
 
-                if (this.Type != typeRegistration.Type)
+                if (Type != typeRegistration.Type)
                     return false;
 
-                if (String.Compare(this.Name, typeRegistration.Name, StringComparison.Ordinal) != 0)
+                if (String.Compare(Name, typeRegistration.Name, StringComparison.Ordinal) != 0)
                     return false;
 
                 return true;
@@ -1735,7 +1735,7 @@ namespace TinyIoC
 
             public override int GetHashCode()
             {
-                return String.Format("{0}|{1}", this.Type.FullName, this.Name).GetHashCode();
+                return String.Format("{0}|{1}", Type.FullName, Name).GetHashCode();
             }
         }
         private readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
@@ -1753,7 +1753,7 @@ namespace TinyIoC
         private TinyIoCContainer(TinyIoCContainer parent)
             : this()
         {
-            this._Parent = parent;
+            _Parent = parent;
         }
         #endregion
 
@@ -1768,7 +1768,7 @@ namespace TinyIoC
                 var types = assemblies.SelectMany(a => a.GetTypes()).Where(t => !IsIgnoredType(t)).ToList();
 
                 var concreteTypes = from type in types
-                                    where (type.IsClass == true) && (type.IsAbstract == false) && (type != GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+                                    where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
                                     select type;
 
                 foreach (var type in concreteTypes)
@@ -1777,7 +1777,7 @@ namespace TinyIoC
                     var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
                     try
                     {
-                        this.RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                        RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
                     }
                     catch (MethodAccessException)
                     {
@@ -1805,7 +1805,7 @@ namespace TinyIoC
                         var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
                         try
                         {
-                            this.RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                            RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
                         }
                         catch (MethodAccessException)
                         {
@@ -1864,12 +1864,12 @@ namespace TinyIoC
 
         private void RegisterDefaultTypes()
         {
-            this.Register<TinyIoCContainer>(this);
+            Register<TinyIoCContainer>(this);
 
 #if TINYMESSENGER
             // Only register the TinyMessenger singleton if we are the root container
-            if (this._Parent == null)
-                this.Register<TinyMessenger.ITinyMessengerHub, TinyMessenger.TinyMessengerHub>();
+            if (_Parent == null)
+                Register<TinyMessenger.ITinyMessengerHub, TinyMessenger.TinyMessengerHub>();
 #endif
         }
 
