@@ -38,19 +38,16 @@
 #undef APPDOMAIN_GETASSEMBLIES
 #endif
 #endregion
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Reflection;
-using System.Diagnostics;
-#if EXPRESSIONS
-using System.Linq.Expressions;
-#endif
-
 namespace TinyIoC
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
+#if EXPRESSIONS
+    using System.Linq.Expressions;
+#endif
+
     #region SafeDictionary
     public class SafeDictionary<TKey, TValue> : IDisposable
     {
@@ -903,13 +900,134 @@ namespace TinyIoC
         ///
         /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
         /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        public bool CanResolve(Type resolveType)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, ResolveOptions.Default);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with default options.
+        ///
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        private bool CanResolve(Type resolveType, string name)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, ResolveOptions.Default);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given type can be resolved with the specified options.
+        ///
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        public bool CanResolve(Type resolveType, ResolveOptions options)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, options);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with the specified options.
+        ///
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        public bool CanResolve(Type resolveType, string name, ResolveOptions options)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, options);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given type can be resolved with the supplied constructor parameters and default options.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// 
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <param name="parameters">User supplied named parameter overloads</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        public bool CanResolve(Type resolveType, NamedParameterOverloads parameters)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType), parameters, ResolveOptions.Default);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with the supplied constructor parameters and default options.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// 
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User supplied named parameter overloads</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        public bool CanResolve(Type resolveType, string name, NamedParameterOverloads parameters)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType, name), parameters, ResolveOptions.Default);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given type can be resolved with the supplied constructor parameters options.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// 
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <param name="parameters">User supplied named parameter overloads</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        public bool CanResolve(Type resolveType, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType), parameters, options);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given named type can be resolved with the supplied constructor parameters options.
+        ///
+        /// Parameters are used in conjunction with normal container resolution to find the most suitable constructor (if one exists).
+        /// All user supplied parameters must exist in at least one resolvable constructor of RegisterType or resolution will fail.
+        /// 
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
+        /// <param name="resolveType">Type to resolve</param>
+        /// <param name="name">Name of registration</param>
+        /// <param name="parameters">User supplied named parameter overloads</param>
+        /// <param name="options">Resolution options</param>
+        /// <returns>Bool indicating whether the type can be resolved</returns>
+        private bool CanResolve(Type resolveType, string name, NamedParameterOverloads parameters, ResolveOptions options)
+        {
+            return CanResolveInternal(new TypeRegistration(resolveType, name), parameters, options);
+        }
+
+        /// <summary>
+        /// Attempts to predict whether a given type can be resolved with default options.
+        ///
+        /// Note: Resolution may still fail if user defined factory registations fail to construct objects when called.
+        /// </summary>
         /// <typeparam name="ResolveType">Type to resolve</typeparam>
         /// <param name="name">Name of registration</param>
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve<ResolveType>()
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), NamedParameterOverloads.Default, ResolveOptions.Default);
+            return CanResolve(typeof(ResolveType));
         }
 
         /// <summary>
@@ -922,7 +1040,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name)
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), NamedParameterOverloads.Default, ResolveOptions.Default);
+            return CanResolve(typeof(ResolveType), name);
         }
 
         /// <summary>
@@ -937,7 +1055,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), NamedParameterOverloads.Default, options);
+            return CanResolve(typeof(ResolveType), options);
         }
 
         /// <summary>
@@ -952,7 +1070,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), NamedParameterOverloads.Default, options);
+            return CanResolve(typeof(ResolveType), name, options);
         }
 
         /// <summary>
@@ -969,7 +1087,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(NamedParameterOverloads parameters)
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), parameters, ResolveOptions.Default);
+            return CanResolve(typeof(ResolveType), parameters);
         }
 
         /// <summary>
@@ -987,7 +1105,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters)
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, ResolveOptions.Default);
+            return CanResolve(typeof(ResolveType), name, parameters);
         }
 
         /// <summary>
@@ -1005,7 +1123,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType)), parameters, options);
+            return CanResolve(typeof(ResolveType), parameters, options);
         }
 
         /// <summary>
@@ -1024,7 +1142,7 @@ namespace TinyIoC
         public bool CanResolve<ResolveType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
-            return CanResolveInternal(new TypeRegistration(typeof(ResolveType), name), parameters, options);
+            return CanResolve(typeof(ResolveType), name, parameters, options);
         }
 
         /// <summary>
