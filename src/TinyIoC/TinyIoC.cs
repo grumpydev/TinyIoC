@@ -530,7 +530,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>()
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterType), string.Empty, GetDefaultObjectFactory<RegisterType, RegisterType>());
+            return RegisterInternal(typeof(RegisterType), string.Empty, GetDefaultObjectFactory<RegisterType, RegisterType>());
         }
 
         /// <summary>
@@ -542,7 +542,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(string name)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterType), name, GetDefaultObjectFactory<RegisterType, RegisterType>());
+            return RegisterInternal(typeof(RegisterType), name, GetDefaultObjectFactory<RegisterType, RegisterType>());
         }
 
         /// <summary>
@@ -555,7 +555,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterImplementation), string.Empty, GetDefaultObjectFactory<RegisterType, RegisterImplementation>());
+            return RegisterInternal(typeof(RegisterType), string.Empty, GetDefaultObjectFactory<RegisterType, RegisterImplementation>());
         }
 
         /// <summary>
@@ -569,7 +569,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterImplementation), name, GetDefaultObjectFactory<RegisterType, RegisterImplementation>());
+            return RegisterInternal(typeof(RegisterType), name, GetDefaultObjectFactory<RegisterType, RegisterImplementation>());
         }
 
         /// <summary>
@@ -581,7 +581,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(RegisterType instance)
            where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterType), string.Empty, new InstanceFactory<RegisterType, RegisterType>(instance));
+            return RegisterInternal(typeof(RegisterType), string.Empty, new InstanceFactory<RegisterType, RegisterType>(instance));
         }
 
         /// <summary>
@@ -594,7 +594,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(RegisterType instance, string name)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterType), name, new InstanceFactory<RegisterType, RegisterType>(instance));
+            return RegisterInternal(typeof(RegisterType), name, new InstanceFactory<RegisterType, RegisterType>(instance));
         }
 
         /// <summary>
@@ -608,7 +608,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterImplementation), string.Empty, new InstanceFactory<RegisterType, RegisterImplementation>(instance));
+            return RegisterInternal(typeof(RegisterType), string.Empty, new InstanceFactory<RegisterType, RegisterImplementation>(instance));
         }
 
         /// <summary>
@@ -623,7 +623,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterImplementation), name, new InstanceFactory<RegisterType, RegisterImplementation>(instance));
+            return RegisterInternal(typeof(RegisterType), name, new InstanceFactory<RegisterType, RegisterImplementation>(instance));
         }
 
         /// <summary>
@@ -635,7 +635,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterType), string.Empty, new DelegateFactory<RegisterType>(factory));
+            return RegisterInternal(typeof(RegisterType), string.Empty, new DelegateFactory<RegisterType>(factory));
         }
 
         /// <summary>
@@ -648,7 +648,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory, string name)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), typeof(RegisterType), name, new DelegateFactory<RegisterType>(factory));
+            return RegisterInternal(typeof(RegisterType), name, new DelegateFactory<RegisterType>(factory));
         }
 
         #endregion
@@ -1768,7 +1768,7 @@ namespace TinyIoC
                 var types = assemblies.SelectMany(a => a.GetTypes()).Where(t => !IsIgnoredType(t)).ToList();
 
                 var concreteTypes = from type in types
-                                    where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+                                    where (type.IsClass == true) && (type.IsAbstract == false) && (type != GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
                                     select type;
 
                 foreach (var type in concreteTypes)
@@ -1777,7 +1777,7 @@ namespace TinyIoC
                     var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
                     try
                     {
-                        this.RegisterInternal(type, type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                        this.RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
                     }
                     catch (MethodAccessException)
                     {
@@ -1805,7 +1805,7 @@ namespace TinyIoC
                         var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
                         try
                         {
-                            this.RegisterInternal(type, firstImplementation, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                            this.RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
                         }
                         catch (MethodAccessException)
                         {
@@ -1882,7 +1882,7 @@ namespace TinyIoC
             return current;
         }
 
-        private RegisterOptions RegisterInternal(Type registerType, Type registerImplementation, string name, ObjectFactoryBase factory)
+        private RegisterOptions RegisterInternal(Type registerType, string name, ObjectFactoryBase factory)
         {
             var typeRegistration = new TypeRegistration(registerType, name);
 
