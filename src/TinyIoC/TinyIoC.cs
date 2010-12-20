@@ -128,6 +128,42 @@ namespace TinyIoC
     }
     #endregion
 
+    #region Extensions
+    public static class TypeExtensions
+    {
+        /// <summary>
+        /// Gets a generic method from a type given the method name, binding flags, generic types and parameter types
+        /// </summary>
+        /// <param name="sourceType">Source type</param>
+        /// <param name="bindingFlags">Binding flags</param>
+        /// <param name="methodName">Name of the method</param>
+        /// <param name="genericTypes">Generic types to use to make the method generic</param>
+        /// <param name="parameterTypes">Method parameters</param>
+        /// <returns>MethodInfo or null if no matches found</returns>
+        /// <exception cref="System.Reflection.AmbiguousMatchException"/>
+        public static MethodInfo GetGenericMethod(this Type sourceType, System.Reflection.BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
+        {
+            var methods = sourceType.GetMethods(bindingFlags)
+                .Where(mi => string.Compare(methodName, mi.Name, StringComparison.InvariantCulture) == 0)
+                .Where(mi => mi.ContainsGenericParameters)
+                .Where(mi => mi.GetGenericArguments().Length == genericTypes.Length)
+                .Where(mi => mi.GetParameters().Length == parameterTypes.Length)
+                .Where(mi => mi.GetParameters().Select(pi => pi.ParameterType).SequenceEqual(parameterTypes))
+                .ToList();
+
+            if (methods.Count > 1)
+                throw new AmbiguousMatchException();
+
+            var method = methods.FirstOrDefault();
+
+            if (method == null)
+                return null;
+
+            return method.MakeGenericMethod(genericTypes);
+        }
+    }
+    #endregion
+
     #region TinyIoC Exception Types
     public class TinyIoCResolutionException : Exception
     {

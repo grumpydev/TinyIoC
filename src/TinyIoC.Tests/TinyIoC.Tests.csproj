@@ -79,6 +79,7 @@
     <Compile Include="TinyIoCTests.cs" />
     <Compile Include="TinyMessageSubscriptionTokenTests.cs" />
     <Compile Include="TinyMessengerTests.cs" />
+    <Compile Include="TypeExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TinyIoC.Tests.ExternalTypes\TinyIoC.Tests.ExternalTypes.csproj">

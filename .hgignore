@@ -4,6 +4,7 @@
 syntax: glob
 
 # Ignore Visual Studio 2008 files
+*.csproj.orig
 *.obj
 *.exe
 *.pdb

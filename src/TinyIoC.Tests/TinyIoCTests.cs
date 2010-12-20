@@ -2617,7 +2617,5 @@ namespace TinyIoC.Tests
 
             Assert.IsFalse(result);
         }
-
-
     }
 }
