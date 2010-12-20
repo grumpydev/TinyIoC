@@ -141,13 +141,15 @@ namespace TinyIoC
         /// <param name="parameterTypes">Method parameters</param>
         /// <returns>MethodInfo or null if no matches found</returns>
         /// <exception cref="System.Reflection.AmbiguousMatchException"/>
+        /// <exception cref="System.ArgumentException"/>
         public static MethodInfo GetGenericMethod(this Type sourceType, System.Reflection.BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
         {
             var methods = sourceType.GetMethods(bindingFlags)
-                .Where(mi => string.Compare(methodName, mi.Name, StringComparison.InvariantCulture) == 0)
+                .Where(mi => string.Equals(methodName, mi.Name, StringComparison.InvariantCulture))
                 .Where(mi => mi.ContainsGenericParameters)
                 .Where(mi => mi.GetGenericArguments().Length == genericTypes.Length)
                 .Where(mi => mi.GetParameters().Length == parameterTypes.Length)
+                .Select(mi => mi.MakeGenericMethod(genericTypes))
                 .Where(mi => mi.GetParameters().Select(pi => pi.ParameterType).SequenceEqual(parameterTypes))
                 .ToList();
 
@@ -156,10 +158,7 @@ namespace TinyIoC
 
             var method = methods.FirstOrDefault();
 
-            if (method == null)
-                return null;
-
-            return method.MakeGenericMethod(genericTypes);
+            return method;
         }
     }
     #endregion
@@ -198,6 +197,7 @@ namespace TinyIoC
     public class TinyIoCRegistrationException : Exception
     {
         private const string CONVERT_ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
+        private const string GENERIC_CONSTRAINT_ERROR_TEXT = "Type {1} is not valid for a registration of type {0}";
 
         public TinyIoCRegistrationException(Type type, string method)
             : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method))
@@ -206,6 +206,16 @@ namespace TinyIoC
 
         public TinyIoCRegistrationException(Type type, string method, Exception innerException)
             : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method), innerException)
+        {
+        }
+
+        public TinyIoCRegistrationException(Type registerType, Type implementationType)
+            : base(String.Format(GENERIC_CONSTRAINT_ERROR_TEXT, registerType.FullName, implementationType.FullName))
+        {
+        }
+
+        public TinyIoCRegistrationException(Type registerType, Type implementationType, Exception innerException)
+            : base(String.Format(GENERIC_CONSTRAINT_ERROR_TEXT, registerType.FullName, implementationType.FullName), innerException)
         {
         }
     }
@@ -340,6 +350,9 @@ namespace TinyIoC
     public sealed class ResolveOptions
     {
         private static readonly ResolveOptions _Default = new ResolveOptions();
+        private static readonly ResolveOptions _FailUnregisteredAndNameNotFound = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.Fail };
+        private static readonly ResolveOptions _FailUnregisteredOnly = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution, UnregisteredResolutionAction = UnregisteredResolutionActions.Fail };
+        private static readonly ResolveOptions _FailNameNotFoundOnly = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve };
 
         private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
         public UnregisteredResolutionActions UnregisteredResolutionAction
@@ -355,11 +368,47 @@ namespace TinyIoC
             set { _NamedResolutionFailureAction = value; }
         }
 
+        /// <summary>
+        /// Gets the default options (attempt resolution of unregistered types, fail on named resolution if name not found)
+        /// </summary>
         public static ResolveOptions Default
         {
             get
             {
                 return _Default;
+            }
+        }
+
+        /// <summary>
+        /// Preconfigured option for attempting resolution of unregistered types and failing on named resolution if name not found
+        /// </summary>
+        public static ResolveOptions FailNameNotFoundOnly
+        {
+            get
+            {
+                return _FailNameNotFoundOnly;
+            }
+        }
+
+        /// <summary>
+        /// Preconfigured option for failing on resolving unregistered types and on named resolution if name not found
+        /// </summary>
+        public static ResolveOptions FailUnregisteredAndNameNotFound
+        {
+            get
+            {
+                return _FailUnregisteredAndNameNotFound;
+            }
+        }
+
+        /// <summary>
+        /// Preconfigured option for failing on resolving unregistered types, but attempting unnamed resolution if name not found
+        /// </summary>
+        public static ResolveOptions FailUnregisteredOnly
+        {
+            get
+            {
+                return _FailUnregisteredOnly;
             }
         }
     }
@@ -553,6 +602,98 @@ namespace TinyIoC
         public void AutoRegister(IEnumerable<Assembly> assemblies, bool ignoreDuplicateImplementations)
         {
             AutoRegisterInternal(assemblies, ignoreDuplicateImplementations);
+        }
+
+        /// <summary>
+        /// Creates/replaces a container class registration with default options.
+        /// </summary>
+        /// <param name="registerImplementation">Type to register</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerImplementation)
+        {
+            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { }, null);
+        }
+
+        /// <summary>
+        /// Creates/replaces a named container class registration with default options.
+        /// </summary>
+        /// <param name="registerImplementation">Type to register</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerImplementation, string name)
+        {
+            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { typeof(string) }, new object[] { name });
+        }
+
+        /// <summary>
+        /// Creates/replaces a container class registration with a given implementation and default options.
+        /// </summary>
+        /// <param name="registerType">Type to register</param>
+        /// <param name="registerImplementation">Type to instantiate that implements RegisterType</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerType, Type registerImplementation)
+        {
+            return ExecuteGenericRegister(new Type[] { registerType, registerImplementation }, new Type[] { }, null);
+        }
+
+        /// <summary>
+        /// Creates/replaces a named container class registration with a given implementation and default options.
+        /// </summary>
+        /// <param name="registerType">Type to register</param>
+        /// <param name="registerImplementation">Type to instantiate that implements RegisterType</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerType, Type registerImplementation, string name)
+        {
+            return ExecuteGenericRegister(new Type[] { registerType, registerImplementation }, new Type[] { typeof(string) }, new object[] { name });
+        }
+
+        /// <summary>
+        /// Creates/replaces a container class registration with a specific, strong referenced, instance.
+        /// </summary>
+        /// <param name="registerImplementation">Type to register</param>
+        /// <param name="instance">Instance of RegisterType to register</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerImplementation, object instance)
+        {
+            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { registerImplementation }, new object[] { instance });
+        }
+
+        /// <summary>
+        /// Creates/replaces a named container class registration with a specific, strong referenced, instance.
+        /// </summary>
+        /// <param name="registerImplementation">Type to register</param>
+        /// <param name="instance">Instance of RegisterType to register</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerImplementation, object instance, string name)
+        {
+            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { registerImplementation, typeof(string) }, new object[] { instance, name });
+        }
+
+        /// <summary>
+        /// Creates/replaces a container class registration with a specific, strong referenced, instance.
+        /// </summary>
+        /// <param name="registerType">Type to register</param>
+        /// <param name="registerImplementation">Type of instance to register that implements RegisterType</param>
+        /// <param name="instance">Instance of RegisterImplementation to register</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerType, Type implementationType, object instance)
+        {
+            return ExecuteGenericRegister(new Type[] { registerType, implementationType }, new Type[] { implementationType }, new object[] { instance });
+        }
+
+        /// <summary>
+        /// Creates/replaces a named container class registration with a specific, strong referenced, instance.
+        /// </summary>
+        /// <param name="registerType">Type to register</param>
+        /// <param name="registerImplementation">Type of instance to register that implements RegisterType</param>
+        /// <param name="instance">Instance of RegisterImplementation to register</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerType, Type implementationType, object instance, string name)
+        {
+            return ExecuteGenericRegister(new Type[] { registerType, implementationType }, new Type[] { implementationType, typeof(string) }, new object[] { instance, name });
         }
 
         /// <summary>
@@ -2598,6 +2739,26 @@ namespace TinyIoC
             foreach (var registration in registrations)
             {
                 yield return ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default);
+            }
+        }
+
+        private RegisterOptions ExecuteGenericRegister(Type[] genericParameterTypes, Type[] methodParameterTypes, object[] methodParameters)
+        {
+            try
+            {
+                var method = this.GetType().GetGenericMethod(BindingFlags.Instance | BindingFlags.Public, "Register", genericParameterTypes, methodParameterTypes);
+
+                return (RegisterOptions)method.Invoke(this, methodParameters);
+            }
+            catch (ArgumentException ex)
+            {
+                var registrationType = genericParameterTypes[0];
+                var implementationType = genericParameterTypes[1];
+
+                if (genericParameterTypes.Length == 2)
+                    implementationType = genericParameterTypes[2];
+
+                throw new TinyIoCRegistrationException(registrationType, implementationType, ex);
             }
         }
         #endregion

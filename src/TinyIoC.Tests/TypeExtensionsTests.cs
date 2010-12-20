@@ -104,5 +104,27 @@ namespace TinyIoC.Tests.TypeExtensions
             Assert.AreEqual(secondGenericParameter, method.GetGenericArguments()[1]);
         }
 
+        [TestMethod]
+        public void GetGenericMethod_RegisterWithGenericTypeAsAMethodParameter_ReturnsCorrectMethod()
+        {
+            var firstGenericParameter = typeof(ITestInterface);
+            var secondGenericParameter = typeof(ClassImplementingITestInterface);
+            var firstParameter = typeof(ClassImplementingITestInterface);
+
+            var method = typeof(TinyIoCContainer).GetGenericMethod(
+                BindingFlags.Public | BindingFlags.Instance,
+                "Register",
+                new Type[] { firstGenericParameter, secondGenericParameter },
+                new Type[] { firstParameter }
+                );
+
+            Assert.IsInstanceOfType(method, typeof(MethodInfo));
+            Assert.IsTrue(method.IsGenericMethod);
+            Assert.AreEqual(1, method.GetParameters().Length);
+            Assert.AreEqual(firstParameter, method.GetParameters()[0].ParameterType);
+            Assert.AreEqual(2, method.GetGenericArguments().Length);
+            Assert.AreEqual(firstGenericParameter, method.GetGenericArguments()[0]);
+            Assert.AreEqual(secondGenericParameter, method.GetGenericArguments()[1]);
+        }
     }
 }

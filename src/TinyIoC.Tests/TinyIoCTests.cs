@@ -1190,7 +1190,6 @@ namespace TinyIoC.Tests
         public void Resolve_BoundGenericTypeWithoutRegistered_ResolvesWithDefaultOptions()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register(typeof(GenericClassWithInterface<,>));
 
             var testing = container.Resolve<GenericClassWithInterface<int, string>>();
 
@@ -1202,7 +1201,6 @@ namespace TinyIoC.Tests
         public void Resolve_BoundGenericTypeWithoutRegistered_FailsWithUnRegisteredFallbackOff()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register(typeof(GenericClassWithInterface<,>));
 
             var testing = container.Resolve<GenericClassWithInterface<int, string>>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
 
@@ -1222,7 +1220,6 @@ namespace TinyIoC.Tests
         public void Resolve_BoundGenericTypeWithoutRegistered_ResolvesWithUnRegisteredFallbackSetToGenericsOnly()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register(typeof(GenericClassWithInterface<,>));
 
             var testing = container.Resolve<GenericClassWithInterface<int, string>>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly });
 
@@ -1233,7 +1230,6 @@ namespace TinyIoC.Tests
         public void CanResolve_BoundGenericTypeWithoutRegistered_ReturnsTrueWithDefaultOptions()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register(typeof(GenericClassWithInterface<,>));
 
             var testing = container.CanResolve<GenericClassWithInterface<int, string>>();
 
@@ -1244,7 +1240,6 @@ namespace TinyIoC.Tests
         public void CanResolve_BoundGenericTypeWithoutRegistered_ReturnsFalseWithUnRegisteredFallbackOff()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register(typeof(GenericClassWithInterface<,>));
 
             var testing = container.CanResolve<GenericClassWithInterface<int, string>>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
 
@@ -1255,7 +1250,6 @@ namespace TinyIoC.Tests
         public void CanResolve_BoundGenericTypeWithoutRegistered_ReturnsTrueWithUnRegisteredFallbackSetToGenericsOnly()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register(typeof(GenericClassWithInterface<,>));
 
             var testing = container.CanResolve<GenericClassWithInterface<int, string>>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly });
 
@@ -2616,6 +2610,98 @@ namespace TinyIoC.Tests
             var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
 
             Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_BasicType_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register(typeof(TestClassDefaultCtor));
+            var result = container.Resolve<TestClassDefaultCtor>(ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_BasicTypeAndName_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register(typeof(TestClassDefaultCtor), "TestClass");
+            var result = container.Resolve<TestClassDefaultCtor>("TestClass", ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_TypeImplementingInterface_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register(typeof(ITestInterface), typeof(TestClassDefaultCtor));
+            var result = container.Resolve<ITestInterface>(ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.IsInstanceOfType(result, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_NamedTypeImplementingInterface_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register(typeof(ITestInterface), typeof(TestClassDefaultCtor), "TestClass");
+            var result = container.Resolve<ITestInterface>("TestClass", ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.IsInstanceOfType(result, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_BasicTypeAndInstance_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance = new TestClassDefaultCtor();
+
+            container.Register(typeof(TestClassDefaultCtor), instance);
+            var result = container.Resolve<TestClassDefaultCtor>(ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.ReferenceEquals(instance, result);
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_BasicTypeInstanceAndName_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance = new TestClassDefaultCtor();
+
+            container.Register(typeof(TestClassDefaultCtor), instance, "TestClass");
+            var result = container.Resolve<TestClassDefaultCtor>("TestClass", ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.ReferenceEquals(instance, result);
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_TypeImplementingInterfaceAndInstance_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance = new TestClassDefaultCtor();
+
+            container.Register(typeof(ITestInterface), typeof(TestClassDefaultCtor), instance);
+            var result = container.Resolve<ITestInterface>(ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.IsInstanceOfType(result, typeof(ITestInterface));
+        }
+
+        [TestMethod]
+        public void RegisterNonGeneric_TypeImplementingInterfaceInstanceAndName_RegistersAndCanResolve()
+        {
+            var container = UtilityMethods.GetContainer();
+            var instance = new TestClassDefaultCtor();
+
+            container.Register(typeof(ITestInterface), typeof(TestClassDefaultCtor), instance, "TestClass");
+            var result = container.Resolve<ITestInterface>("TestClass", ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            Assert.IsInstanceOfType(result, typeof(ITestInterface));
         }
     }
 }
