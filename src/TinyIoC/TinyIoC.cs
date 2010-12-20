@@ -420,8 +420,6 @@ namespace TinyIoC
         /// <summary>
         /// Registration options for "fluent" API
         /// </summary>
-        /// <typeparam name="RegisterType">Registered type</typeparam>
-        /// <typeparam name="RegisterImplementation">Implementation type for construction of RegisteredType</typeparam>
         public sealed class RegisterOptions
         {
             private TinyIoCContainer _Container;
@@ -517,6 +515,57 @@ namespace TinyIoC
                 return this;
             }
 #endif
+        }
+
+        /// <summary>
+        /// Registration options for "fluent" API when registering multiple implementations
+        /// </summary>
+        public sealed class MultiRegisterOptions
+        {
+            private IEnumerable<RegisterOptions> _RegisterOptions;
+
+            /// <summary>
+            /// Initializes a new instance of the MultiRegisterOptions class.
+            /// </summary>
+            /// <param name="registerOptions">Registration options</param>
+            public MultiRegisterOptions(IEnumerable<RegisterOptions> registerOptions)
+            {
+                _RegisterOptions = registerOptions;
+            }
+
+            /// <summary>
+            /// Make registration a singleton (single instance) if possible
+            /// </summary>
+            /// <returns>RegisterOptions</returns>
+            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            public MultiRegisterOptions AsSingleton()
+            {
+                _RegisterOptions = ExecuteOnAllRegisterOptions(ro => ro.AsSingleton());
+                return this;
+            }
+
+            /// <summary>
+            /// Make registration multi-instance if possible
+            /// </summary>
+            /// <returns>MultiRegisterOptions</returns>
+            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            public MultiRegisterOptions AsMultiInstance()
+            {
+                _RegisterOptions = ExecuteOnAllRegisterOptions(ro => ro.AsMultiInstance());
+                return this;
+            }
+
+            private IEnumerable<RegisterOptions> ExecuteOnAllRegisterOptions(Func<RegisterOptions, RegisterOptions> action)
+            {
+                var newRegisterOptions = new List<RegisterOptions>();
+
+                foreach (var registerOption in _RegisterOptions)
+                {
+                    newRegisterOptions.Add(action(registerOption));
+                }
+
+                return newRegisterOptions;
+            }
         }
         #endregion
 
@@ -825,6 +874,35 @@ namespace TinyIoC
             return RegisterInternal(typeof(RegisterType), name, new DelegateFactory<RegisterType>(factory));
         }
 
+        /// <summary>
+        /// Register multiple implementations of a type.
+        /// 
+        /// Internally this registers each implementation using the full name of the class as its registration name.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type that each implementation implements</typeparam>
+        /// <param name="types">Types that implement RegisterType</param>
+        /// <returns>MultiRegisterOptions for the fluent API</returns>
+        public MultiRegisterOptions RegisterMultiple<RegisterType>(IEnumerable<Type> types)
+        {
+            if (types == null)
+                throw new ArgumentNullException("types", "types is null.");
+
+            foreach (var type in types)
+                if (!typeof(RegisterType).IsAssignableFrom(type))
+                    throw new ArgumentException(String.Format("types: The type {0} is not assignable from {1}", typeof(RegisterType).FullName, type.FullName));
+
+            if (types.Count() != types.Distinct().Count())
+                throw new ArgumentException("types: The same implementation type cannot be specificed multiple times");
+
+            var registerOptions = new List<RegisterOptions>();
+
+            foreach (var type in types)
+            {
+                registerOptions.Add(Register(typeof(RegisterType), type, type.FullName));
+            }
+
+            return new MultiRegisterOptions(registerOptions);
+        }
         #endregion
 
         #region Resolution

@@ -658,8 +658,8 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             var instance1 = new TestClassDefaultCtor();
             var instance2 = new TestClassDefaultCtor();
-            container.Register<TestClassDefaultCtor>((c,p) => instance1, "TestName");
-            container.Register<TestClassDefaultCtor>((c,p) => instance2);
+            container.Register<TestClassDefaultCtor>((c, p) => instance1, "TestName");
+            container.Register<TestClassDefaultCtor>((c, p) => instance2);
 
             var result = container.Resolve<TestClassDefaultCtor>("TestName");
 
@@ -710,7 +710,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
 
-            var output = container.Resolve<TestClassDefaultCtor>("Testing", new ResolveOptions() { NamedResolutionFailureAction =  NamedResolutionFailureActions.Fail });
+            var output = container.Resolve<TestClassDefaultCtor>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail });
 
             Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
@@ -760,7 +760,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>();
 
             var output = container.Resolve<TestClassWithParameters>(
-                    new NamedParameterOverloads {{ "stringProperty", "Testing" }, { "intProperty", 12 }},
+                    new NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } },
                     ResolveOptions.Default
                 );
 
@@ -1026,7 +1026,7 @@ namespace TinyIoC.Tests
         public void Register_FactoryToSingletonFluent_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<TestClassDefaultCtor>((c,p)=>new TestClassDefaultCtor()).AsSingleton();
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsSingleton();
 
             // Should have thrown by now
             Assert.IsTrue(false);
@@ -1262,8 +1262,8 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            var result = container.Resolve<TestClassDefaultCtor>(new ResolveOptions() {UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly});
-        
+            var result = container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly });
+
             Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
         }
 
@@ -1272,8 +1272,8 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            var result = container.CanResolve<TestClassDefaultCtor>(new ResolveOptions() {UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly});
-        
+            var result = container.CanResolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly });
+
             Assert.IsFalse(result);
         }
 
@@ -1329,7 +1329,7 @@ namespace TinyIoC.Tests
             var item = new TestClassDefaultCtor() { Prop1 = "Testing" };
             container.Register<TestClassDefaultCtor>(item);
 
-            var result = container.Resolve<TestClassDefaultCtor>("Testing",new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
+            var result = container.Resolve<TestClassDefaultCtor>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
 
             Assert.ReferenceEquals(item, result);
         }
@@ -1817,8 +1817,8 @@ namespace TinyIoC.Tests
         [TestMethod]
         public void NamedParameterOverloads_ConstructedUsingFromIDictionary_CopiesDictionary()
         {
-            var dictionary = new Dictionary<string, object>() {{"Test", "Test"}};
-            
+            var dictionary = new Dictionary<string, object>() { { "Test", "Test" } };
+
             var output = NamedParameterOverloads.FromIDictionary(dictionary);
 
             Assert.IsNotNull(output);
@@ -2151,7 +2151,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>();
 
             TestClassWithParameters output;
-            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() {{"stringProperty", "test"}, {"intProperty", 2}}, out output);
+            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, out output);
 
             Assert.IsTrue(result);
         }
@@ -2703,5 +2703,129 @@ namespace TinyIoC.Tests
 
             Assert.IsInstanceOfType(result, typeof(ITestInterface));
         }
+
+        [TestMethod]
+        public void RegisterMultiple_Null_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            try
+            {
+                container.RegisterMultiple<ITestInterface>(null);
+
+                Assert.Fail();
+            }
+            catch (ArgumentNullException)
+            {
+            }
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_ATypeThatDoesntImplementTheRegisterType_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            try
+            {
+                container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(TestClass2) });
+
+                Assert.Fail();
+            }
+            catch (ArgumentException)
+            {
+            }
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_ValidTypesButSameTypeMoreThanOnce_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            try
+            {
+                container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(TestClassDefaultCtor) });
+
+                Assert.Fail();
+            }
+            catch (ArgumentException)
+            {
+            }
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_TypesThatImplementTheRegisterType_DoesNotThrow()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_ValidTypes_ReturnsMultipleRegisterOptions()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            var result = container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
+
+            Assert.IsInstanceOfType(result, typeof(TinyIoC.TinyIoCContainer.MultiRegisterOptions));
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_ValidTypes_CorrectCountReturnedByResolveAll()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
+
+            var result = container.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(2, result.Count());
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_ValidTypes_InstancesOfCorrectTypesReturnedByResolveAll()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
+
+            var result = container.ResolveAll<ITestInterface>();
+
+            Assert.IsNotNull(result.Where(o => o.GetType() == typeof(TestClassDefaultCtor)).FirstOrDefault());
+            Assert.IsNotNull(result.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault());
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_ValidTypesRegisteredAsSingleton_AlwaysReturnsSameInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) }).AsSingleton();
+
+            var result1 = container.ResolveAll<ITestInterface>();
+            var result2 = container.ResolveAll<ITestInterface>();
+            var result1Class1Instance = result1.Where(o => o.GetType() == typeof(TestClassDefaultCtor)).FirstOrDefault();
+            var result2Class1Instance = result2.Where(o => o.GetType() == typeof(TestClassDefaultCtor)).FirstOrDefault();
+            var result1Class2Instance = result1.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault();
+            var result2Class2Instance = result2.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault();
+
+            Assert.ReferenceEquals(result1Class1Instance, result2Class1Instance);
+            Assert.ReferenceEquals(result1Class2Instance, result2Class2Instance);
+        }
+
+        [TestMethod]
+        public void RegisterMultiple_ValidTypesRegisteredAsMultiInstance_AlwaysReturnsNewInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) }).AsMultiInstance();
+
+            var result1 = container.ResolveAll<ITestInterface>();
+            var result2 = container.ResolveAll<ITestInterface>();
+            var result1Class1Instance = result1.Where(o => o.GetType() == typeof(TestClassDefaultCtor)).FirstOrDefault();
+            var result2Class1Instance = result2.Where(o => o.GetType() == typeof(TestClassDefaultCtor)).FirstOrDefault();
+            var result1Class2Instance = result1.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault();
+            var result2Class2Instance = result2.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault();
+
+            Assert.IsFalse(object.ReferenceEquals(result1Class1Instance, result2Class1Instance));
+            Assert.IsFalse(object.ReferenceEquals(result1Class2Instance, result2Class2Instance));
+        }
+
     }
 }
