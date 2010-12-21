@@ -1755,27 +1755,51 @@ namespace TinyIoC
         }
 
         /// <summary>
+        /// Returns all registrations of a type
+        /// </summary>
+        /// <param name="ResolveType">Type to resolveAll</param>
+        /// <param name="includeUnnamed">Whether to include un-named (default) registrations</param>
+        /// <returns>IEnumerable</returns>
+        public IEnumerable<object> ResolveAll(Type resolveType, bool includeUnnamed)
+        {
+            return ResolveAllInternal(resolveType, includeUnnamed).Select(o => o);
+        }
+
+        /// <summary>
         /// Returns all registrations of a type, both named and unnamed
         /// </summary>
         /// <param name="ResolveType">Type to resolveAll</param>
         /// <returns>IEnumerable</returns>
         public IEnumerable<object> ResolveAll(Type resolveType)
         {
-            return ResolveAllInternal(resolveType).Select(o => o);
+            return ResolveAll(resolveType, false);
+        }
+
+        /// <summary>
+        /// Returns all registrations of a type
+        /// </summary>
+        /// <typeparam name="ResolveType">Type to resolveAll</typeparam>
+        /// <param name="includeUnnamed">Whether to include un-named (default) registrations</param>
+        /// <returns>IEnumerable</returns>
+        public IEnumerable<ResolveType> ResolveAll<ResolveType>(bool includeUnnamed)
+            where ResolveType : class
+        {
+            foreach (var resolvedType in ResolveAll(typeof(ResolveType), includeUnnamed))
+            {
+                yield return resolvedType as ResolveType;
+            }
         }
 
         /// <summary>
         /// Returns all registrations of a type, both named and unnamed
         /// </summary>
         /// <typeparam name="ResolveType">Type to resolveAll</typeparam>
+        /// <param name="includeUnnamed">Whether to include un-named (default) registrations</param>
         /// <returns>IEnumerable</returns>
         public IEnumerable<ResolveType> ResolveAll<ResolveType>()
             where ResolveType : class
         {
-            foreach (var resolvedType in ResolveAll(typeof(ResolveType)))
-            {
-                yield return resolvedType as ResolveType;
-            }
+            return ResolveAll<ResolveType>(true);
         }
 
         /// <summary>
@@ -2810,9 +2834,12 @@ namespace TinyIoC
             }
         }
 
-        private IEnumerable<object> ResolveAllInternal(Type resolveType)
+        private IEnumerable<object> ResolveAllInternal(Type resolveType, bool includeUnnamed)
         {
             var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType);
+
+            if (!includeUnnamed)
+                registrations = registrations.Where(tr => tr.Name != string.Empty);
 
             foreach (var registration in registrations)
             {

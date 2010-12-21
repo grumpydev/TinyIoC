@@ -2298,6 +2298,32 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void ResolveAll_NamedAndUnnamedRegisteredAndPassedTrue_ReturnsIEnumerableWithNamedAndUnnamedRegistrations()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named1");
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named2");
+
+            var result = container.ResolveAll<ITestInterface>(true);
+
+            Assert.AreEqual(3, result.Count());
+        }
+
+        [TestMethod]
+        public void ResolveAll_NamedAndUnnamedRegisteredAndPassedFalse_ReturnsIEnumerableWithJustNamedRegistrations()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named1");
+            container.Register<ITestInterface, TestClassDefaultCtor>("Named2");
+
+            var result = container.ResolveAll<ITestInterface>(false);
+
+            Assert.AreEqual(2, result.Count());
+        }
+
+        [TestMethod]
         public void ResolveAll_NoTypesRegistered_ReturnsIEnumerableWithNoItems()
         {
             var container = UtilityMethods.GetContainer();
