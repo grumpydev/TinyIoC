@@ -1046,7 +1046,7 @@ namespace TinyIoC
         public ResolveType Resolve<ResolveType>(ResolveOptions options)
             where ResolveType : class
         {
-            return (ResolveType) Resolve(typeof(ResolveType), options);
+            return (ResolveType)Resolve(typeof(ResolveType), options);
         }
 
         /// <summary>
@@ -1062,7 +1062,7 @@ namespace TinyIoC
         public ResolveType Resolve<ResolveType>(string name)
             where ResolveType : class
         {
-            return (ResolveType) Resolve(typeof(ResolveType), name);
+            return (ResolveType)Resolve(typeof(ResolveType), name);
         }
 
         /// <summary>
@@ -1079,7 +1079,7 @@ namespace TinyIoC
         public ResolveType Resolve<ResolveType>(string name, ResolveOptions options)
             where ResolveType : class
         {
-            return (ResolveType) Resolve(typeof(ResolveType), name, options);
+            return (ResolveType)Resolve(typeof(ResolveType), name, options);
         }
 
         /// <summary>
@@ -1095,7 +1095,7 @@ namespace TinyIoC
         public ResolveType Resolve<ResolveType>(NamedParameterOverloads parameters)
             where ResolveType : class
         {
-            return (ResolveType) Resolve(typeof(ResolveType), parameters);
+            return (ResolveType)Resolve(typeof(ResolveType), parameters);
         }
 
         /// <summary>
@@ -1112,7 +1112,7 @@ namespace TinyIoC
         public ResolveType Resolve<ResolveType>(NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
-            return (ResolveType) Resolve(typeof(ResolveType), parameters, options);
+            return (ResolveType)Resolve(typeof(ResolveType), parameters, options);
         }
 
         /// <summary>
@@ -1129,7 +1129,7 @@ namespace TinyIoC
         public ResolveType Resolve<ResolveType>(string name, NamedParameterOverloads parameters)
             where ResolveType : class
         {
-            return (ResolveType) Resolve(typeof(ResolveType), name, parameters);
+            return (ResolveType)Resolve(typeof(ResolveType), name, parameters);
         }
 
         /// <summary>
@@ -1147,7 +1147,7 @@ namespace TinyIoC
         public ResolveType Resolve<ResolveType>(string name, NamedParameterOverloads parameters, ResolveOptions options)
             where ResolveType : class
         {
-            return (ResolveType) Resolve(typeof(ResolveType), name, parameters, options);
+            return (ResolveType)Resolve(typeof(ResolveType), name, parameters, options);
         }
 
         /// <summary>
@@ -1572,7 +1572,7 @@ namespace TinyIoC
                 return false;
             }
         }
-        
+
         /// <summary>
         /// Attemps to resolve a type using the default options
         /// </summary>
@@ -1887,6 +1887,11 @@ namespace TinyIoC
             public virtual void SetConstructor(ConstructorInfo constructor)
             {
                 Constructor = constructor;
+            }
+
+            public virtual ObjectFactoryBase GetFactoryForChildContainer()
+            {
+                return this;
             }
         }
 
@@ -2251,6 +2256,17 @@ namespace TinyIoC
                 }
             }
 
+            // We override this here so "cached" singleton instances aren't shared with the 
+            // child containers. If we don't do this then resolving an IFoo, that is dependant
+            // on an IBar, where IBar is registered in the child container, would return a different
+            // IBar inside of the IFoo depending on whether the parent had previously resolved IFoo.
+            // See Resolve_SingletonAlreadyResolvedTypeInParentContainerButDependencyInChildContainer_GetsDependencyFromChild()
+            // for more information :-)
+            public override ObjectFactoryBase GetFactoryForChildContainer()
+            {
+                return new SingletonFactory<RegisterType, RegisterImplementation>();
+            }
+
             public void Dispose()
             {
                 if (_Current != null)
@@ -2586,6 +2602,21 @@ namespace TinyIoC
             return false;
         }
 
+        private ObjectFactoryBase GetParentObjectFactory(TypeRegistration registration)
+        {
+            if (_Parent == null)
+                return null;
+
+            ObjectFactoryBase factory;
+            if (_Parent._RegisteredTypes.TryGetValue(registration, out factory))
+            {
+                // TODO - clone factory so singletons are "reset"
+                return factory.GetFactoryForChildContainer();
+            }
+
+            return _Parent.GetParentObjectFactory(registration);
+        }
+
         private object ResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
         {
             ObjectFactoryBase factory;
@@ -2603,15 +2634,23 @@ namespace TinyIoC
                 }
             }
 
+            // Attempt to get a factory from parent if we can
+            var bubbledObjectFactory = GetParentObjectFactory(registration);
+            if (bubbledObjectFactory != null)
+            {
+                try
+                {
+                    return bubbledObjectFactory.GetObject(this, parameters, options);
+                }
+                catch (Exception ex)
+                {
+                    throw new TinyIoCResolutionException(registration.Type, ex);
+                }
+            }
+
             // Fail if requesting named resolution and settings set to fail if unresolved
             if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
-            {
-                // Bubble resolution up the container tree if we have a parent
-                if (_Parent != null)
-                    return _Parent.ResolveInternal(registration, parameters, options);
-                else
-                    throw new TinyIoCResolutionException(registration.Type);
-            }
+                throw new TinyIoCResolutionException(registration.Type);
 
             // Attemped unnamed fallback container resolution if relevant and requested
             if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
@@ -2643,10 +2682,6 @@ namespace TinyIoC
                 if (!registration.Type.IsAbstract && !registration.Type.IsInterface)
                     return ConstructType(registration.Type, parameters, options);
             }
-
-            // Bubble resolution up the container tree if we have a parent
-            if (_Parent != null)
-                return _Parent.ResolveInternal(registration, parameters, options);
 
             // Unable to resolve - throw
             throw new TinyIoCResolutionException(registration.Type);
@@ -2719,9 +2754,9 @@ namespace TinyIoC
             // cast the IEnumerable or constructing the type wil fail.
             // We may as well use the ResolveAll<ResolveType> public
             // method to do this.
-            var resolveAllMethod = this.GetType().GetMethod("ResolveAll", new Type[] {});
+            var resolveAllMethod = this.GetType().GetMethod("ResolveAll", new Type[] { });
             var genericResolveAllMethod = resolveAllMethod.MakeGenericMethod(type.GetGenericArguments()[0]);
-            return genericResolveAllMethod.Invoke(this, new object[] {});
+            return genericResolveAllMethod.Invoke(this, new object[] { });
         }
 
         private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)

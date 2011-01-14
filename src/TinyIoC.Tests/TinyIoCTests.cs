@@ -2853,5 +2853,38 @@ namespace TinyIoC.Tests
             Assert.IsFalse(object.ReferenceEquals(result1Class2Instance, result2Class2Instance));
         }
 
+        [TestMethod]
+        public void Resolve_TypeInParentContainerButDependencyInChildContainer_GetsDependencyFromChild()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface2, TestClassWithInterfaceDependency>();
+            var parentInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(parentInstance);
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            child.Register<ITestInterface>(childInstance);
+
+            var result = child.Resolve<ITestInterface2>() as TestClassWithInterfaceDependency;
+
+            Assert.IsTrue(object.ReferenceEquals(result.Dependency, childInstance));
+        }
+
+        [TestMethod]
+        public void Resolve_SingletonAlreadyResolvedTypeInParentContainerButDependencyInChildContainer_GetsDependencyFromChild()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface2, TestClassWithInterfaceDependency>().AsSingleton();
+            var parentInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(parentInstance);
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            child.Register<ITestInterface>(childInstance);
+            container.Resolve<ITestInterface2>();
+
+            var result = child.Resolve<ITestInterface2>() as TestClassWithInterfaceDependency;
+
+            Assert.IsTrue(object.ReferenceEquals(result.Dependency, childInstance));
+        }
+
     }
 }
