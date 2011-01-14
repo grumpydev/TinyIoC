@@ -2854,26 +2854,10 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        public void Resolve_TypeInParentContainerButDependencyInChildContainer_GetsDependencyFromChild()
+        public void Resolve_MultiInstanceTypeInParentContainerButDependencyInChildContainer_GetsDependencyFromChild()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<ITestInterface2, TestClassWithInterfaceDependency>();
-            var parentInstance = new TestClassDefaultCtor();
-            container.Register<ITestInterface>(parentInstance);
-            var child = container.GetChildContainer();
-            var childInstance = new TestClassDefaultCtor();
-            child.Register<ITestInterface>(childInstance);
-
-            var result = child.Resolve<ITestInterface2>() as TestClassWithInterfaceDependency;
-
-            Assert.IsTrue(object.ReferenceEquals(result.Dependency, childInstance));
-        }
-
-        [TestMethod]
-        public void Resolve_SingletonAlreadyResolvedTypeInParentContainerButDependencyInChildContainer_GetsDependencyFromChild()
-        {
-            var container = UtilityMethods.GetContainer();
-            container.Register<ITestInterface2, TestClassWithInterfaceDependency>().AsSingleton();
+            container.Register<ITestInterface2, TestClassWithInterfaceDependency>().AsMultiInstance();
             var parentInstance = new TestClassDefaultCtor();
             container.Register<ITestInterface>(parentInstance);
             var child = container.GetChildContainer();
@@ -2886,5 +2870,57 @@ namespace TinyIoC.Tests
             Assert.IsTrue(object.ReferenceEquals(result.Dependency, childInstance));
         }
 
+        [TestMethod]
+        public void Resolve_AlreadyResolvedSingletonTypeInParentContainerButDependencyInChildContainer_GetsDependencyFromParent()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface2, TestClassWithInterfaceDependency>().AsSingleton();
+            var parentInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(parentInstance);
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            child.Register<ITestInterface>(childInstance);
+            container.Resolve<ITestInterface2>();
+
+            var result = child.Resolve<ITestInterface2>() as TestClassWithInterfaceDependency;
+
+            Assert.IsTrue(object.ReferenceEquals(result.Dependency, parentInstance));
+        }
+
+        [TestMethod]
+        public void Resolve_NotAlreadyResolvedSingletonTypeInParentContainerButDependencyInChildContainer_GetsDependencyFromParent()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface2, TestClassWithInterfaceDependency>().AsSingleton();
+            var parentInstance = new TestClassDefaultCtor();
+            container.Register<ITestInterface>(parentInstance);
+            var child = container.GetChildContainer();
+            var childInstance = new TestClassDefaultCtor();
+            child.Register<ITestInterface>(childInstance);
+
+            var result = child.Resolve<ITestInterface2>() as TestClassWithInterfaceDependency;
+
+            Assert.IsTrue(object.ReferenceEquals(result.Dependency, parentInstance));
+        }
+
+        [TestMethod]
+        public void Resolve_ContainerHierarchy_ResolvesCorrectlyUsingHierarchy()
+        {
+            var rootContainer = UtilityMethods.GetContainer();
+            var firstChildContainer = rootContainer.GetChildContainer();
+            var secondChildContainer = firstChildContainer.GetChildContainer();
+            var rootInstance = new TestClassDefaultCtor();
+            var firstChildInstance = new TestClassDefaultCtor();
+            var secondChildInstance = new TestClassDefaultCtor();
+            rootContainer.Register<ITestInterface2, TestClassWithInterfaceDependency>().AsMultiInstance();
+            rootContainer.Register<ITestInterface>(rootInstance);
+            firstChildContainer.Register<ITestInterface>(firstChildInstance);
+            secondChildContainer.Register<ITestInterface>(secondChildInstance);
+            rootContainer.Resolve<ITestInterface2>();
+
+            var result = secondChildContainer.Resolve<ITestInterface2>() as TestClassWithInterfaceDependency;
+
+            Assert.IsTrue(object.ReferenceEquals(result.Dependency, secondChildInstance));
+        }
     }
 }

@@ -1889,7 +1889,7 @@ namespace TinyIoC
                 Constructor = constructor;
             }
 
-            public virtual ObjectFactoryBase GetFactoryForChildContainer()
+            public virtual ObjectFactoryBase GetFactoryForChildContainer(TinyIoCContainer parent, TinyIoCContainer child)
             {
                 return this;
             }
@@ -2256,15 +2256,13 @@ namespace TinyIoC
                 }
             }
 
-            // We override this here so "cached" singleton instances aren't shared with the 
-            // child containers. If we don't do this then resolving an IFoo, that is dependant
-            // on an IBar, where IBar is registered in the child container, would return a different
-            // IBar inside of the IFoo depending on whether the parent had previously resolved IFoo.
-            // See Resolve_SingletonAlreadyResolvedTypeInParentContainerButDependencyInChildContainer_GetsDependencyFromChild()
-            // for more information :-)
-            public override ObjectFactoryBase GetFactoryForChildContainer()
+            public override ObjectFactoryBase GetFactoryForChildContainer(TinyIoCContainer parent, TinyIoCContainer child)
             {
-                return new SingletonFactory<RegisterType, RegisterImplementation>();
+                // We make sure that the singleton is constructed before the child container takes the factory.
+                // Otherwise the results would vary depending on whether or not the parent container had resolved
+                // the type before the child container does.
+                GetObject(parent, NamedParameterOverloads.Default, ResolveOptions.Default);
+                return this;
             }
 
             public void Dispose()
@@ -2611,7 +2609,7 @@ namespace TinyIoC
             if (_Parent._RegisteredTypes.TryGetValue(registration, out factory))
             {
                 // TODO - clone factory so singletons are "reset"
-                return factory.GetFactoryForChildContainer();
+                return factory.GetFactoryForChildContainer(_Parent, this);
             }
 
             return _Parent.GetParentObjectFactory(registration);
