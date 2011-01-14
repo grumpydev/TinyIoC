@@ -2867,9 +2867,19 @@ namespace TinyIoC
             }
         }
 
+        private IEnumerable<TypeRegistration> GetParentRegistrationsForType(Type resolveType)
+        {
+            if (_Parent == null)
+                return new TypeRegistration[] { };
+
+            var registrations = _Parent._RegisteredTypes.Keys.Where(tr => tr.Type == resolveType);
+
+            return registrations.Concat(_Parent.GetParentRegistrationsForType(resolveType));
+        }
+
         private IEnumerable<object> ResolveAllInternal(Type resolveType, bool includeUnnamed)
         {
-            var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType);
+            var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType).Concat(GetParentRegistrationsForType(resolveType));
 
             if (!includeUnnamed)
                 registrations = registrations.Where(tr => tr.Name != string.Empty);

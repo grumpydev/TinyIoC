@@ -347,13 +347,25 @@ namespace TinyIoC.Tests.TestData
 
         internal class TestClassEnumerableDependency
         {
-            IEnumerable<ITestInterface> _Enumerable;
+            public IEnumerable<ITestInterface> Enumerable {get; private set;}
 
-            public int EnumerableCount { get { return _Enumerable == null ? 0 : _Enumerable.Count(); } }
+            public int EnumerableCount { get { return Enumerable == null ? 0 : Enumerable.Count(); } }
 
             public TestClassEnumerableDependency(IEnumerable<ITestInterface> enumerable)
             {
-                _Enumerable = enumerable;
+                Enumerable = enumerable;
+            }
+        }
+
+        internal class TestClassEnumerableDependency2
+        {
+            public IEnumerable<ITestInterface2> Enumerable { get; private set; }
+
+            public int EnumerableCount { get { return Enumerable == null ? 0 : Enumerable.Count(); } }
+
+            public TestClassEnumerableDependency2(IEnumerable<ITestInterface2> enumerable)
+            {
+                Enumerable = enumerable;
             }
         }
 

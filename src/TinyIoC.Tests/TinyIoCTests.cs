@@ -2922,5 +2922,146 @@ namespace TinyIoC.Tests
 
             Assert.IsTrue(object.ReferenceEquals(result.Dependency, secondChildInstance));
         }
+
+        [TestMethod]
+        public void ResolveAll_ChildContainerNoRegistrationsParentContainerHasRegistrations_ReturnsAllParentRegistrations()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+
+            var result = childContainer.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(3, result.Count());
+        }
+
+        [TestMethod]
+        public void ResolveAll_ChildContainerHasRegistrationsParentContainerHasRegistrations_ReturnsAllRegistrations()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "4");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "5");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "6");
+
+            var result = childContainer.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(6, result.Count());
+        }
+
+        [TestMethod]
+        public void ResolveAll_ChildContainerRegistrationsParentContainerNoRegistrations_ReturnsAllChildRegistrations()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+
+            var result = childContainer.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(3, result.Count());
+        }
+
+        [TestMethod]
+        public void ResolveAll_ParentContainerMultiInstanceRegistrationWithDependencyInChildContainer_ReturnsRegistrationWithChildContainerDependencyInstance()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            var parentInstance = new TestClassDefaultCtor();
+            var childInstance = new TestClassDefaultCtor();
+            parentContainer.Register<ITestInterface2, TestClassWithInterfaceDependency>("1").AsMultiInstance();
+            parentContainer.Register<ITestInterface>(parentInstance);
+            childContainer.Register<ITestInterface2, TestClassWithInterfaceDependency>("2").AsMultiInstance();
+            childContainer.Register<ITestInterface>(childInstance);
+
+            var result = childContainer.ResolveAll<ITestInterface2>(false).ToArray();
+            var item1 = result[0] as TestClassWithInterfaceDependency;
+            var item2 = result[1] as TestClassWithInterfaceDependency;
+
+            Assert.IsNotNull(item1);
+            Assert.IsNotNull(item2);
+            Assert.IsFalse(object.ReferenceEquals(item1, item2), "items are same instance");
+            Assert.IsTrue(object.ReferenceEquals(item1.Dependency, childInstance), "item1 has wrong dependency");
+            Assert.IsTrue(object.ReferenceEquals(item2.Dependency, childInstance), "item2 has wrong dependency");
+        }
+
+        [TestMethod]
+        public void Resolve_IEnumerableDependencyClassInChildContainerChildContainerNoRegistrationsParentContainerHasRegistrations_ReturnsAllParentRegistrations()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+            childContainer.Register<TestClassEnumerableDependency>();
+
+            var result = childContainer.Resolve<TestClassEnumerableDependency>();
+
+            Assert.AreEqual(3, result.EnumerableCount);
+        }
+
+        [TestMethod]
+        public void Resolve_IEnumerableDependencyClassInChildContainerChildContainerHasRegistrationsParentContainerHasRegistrations_ReturnsAllRegistrations()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "4");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "5");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "6");
+            childContainer.Register<TestClassEnumerableDependency>();
+
+            var result = childContainer.Resolve<TestClassEnumerableDependency>();
+
+            Assert.AreEqual(6, result.EnumerableCount);
+        }
+
+        [TestMethod]
+        public void Resolve_IEnumerableDependencyClassInChildContainerChildContainerRegistrationsParentContainerNoRegistrations_ReturnsAllChildRegistrations()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+            childContainer.Register<TestClassEnumerableDependency>();
+
+            var result = childContainer.Resolve<TestClassEnumerableDependency>();
+
+            Assert.AreEqual(3, result.EnumerableCount);
+        }
+
+        [TestMethod]
+        public void Resolve_IEnumerableDependencyClassInChildContainerParentContainerMultiInstanceRegistrationWithDependencyInChildContainer_ReturnsRegistrationWithChildContainerDependencyInstance()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            var parentInstance = new TestClassDefaultCtor();
+            var childInstance = new TestClassDefaultCtor();
+            parentContainer.Register<ITestInterface2, TestClassWithInterfaceDependency>("1").AsMultiInstance();
+            parentContainer.Register<ITestInterface>(parentInstance);
+            childContainer.Register<ITestInterface2, TestClassWithInterfaceDependency>("2").AsMultiInstance();
+            childContainer.Register<ITestInterface>(childInstance);
+            childContainer.Register<TestClassEnumerableDependency2>();
+
+            var result = childContainer.Resolve<TestClassEnumerableDependency2>().Enumerable.ToArray();
+            var item1 = result[0] as TestClassWithInterfaceDependency;
+            var item2 = result[1] as TestClassWithInterfaceDependency;
+
+            Assert.IsNotNull(item1);
+            Assert.IsNotNull(item2);
+            Assert.IsFalse(object.ReferenceEquals(item1, item2), "items are same instance");
+            Assert.IsTrue(object.ReferenceEquals(item1.Dependency, childInstance), "item1 has wrong dependency");
+            Assert.IsTrue(object.ReferenceEquals(item2.Dependency, childInstance), "item2 has wrong dependency");
+        }
+
     }
 }
