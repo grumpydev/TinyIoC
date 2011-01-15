@@ -188,7 +188,6 @@ namespace TinyIoC.Tests.PlatformTestSuite
                 RegisterAndSpecifyConstructor,
 #endif
                 RegisterBoundGeneric,
-                RegisterUnboundGeneric,
 #if EXPRESSIONS
                 ResolveLazyFactory,
                 ResolveNamedLazyFactory,
@@ -354,15 +353,6 @@ namespace TinyIoC.Tests.PlatformTestSuite
             logger.WriteLine("RegisterBoundGeneric");
             container.Register<GenericClass<String>>();
             var output = container.Resolve<GenericClass<String>>();
-
-            return output is GenericClass<String>;
-        }
-
-        private bool RegisterUnboundGeneric(TinyIoCContainer container, ILogger logger)
-        {
-            logger.WriteLine("RegisterUnboundGeneric");
-            container.Register(typeof(GenericClass<>));
-            var output = container.Resolve<GenericClass<String>>(new ResolveOptions(){UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly});
 
             return output is GenericClass<String>;
         }
