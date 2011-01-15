@@ -13,6 +13,11 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 //===============================================================================
 
+// -- MONOTOUCH IMPORTANT -- //
+// If you are intending to use MonoTouch you *must* define MONOTOUCH or the code
+// will not compile.
+// -- MONOTOUCH IMPORTANT -- //
+
 #region Preprocessor Directives
 // Uncomment this line if you want the container to automatically
 // register the TinyMessenger messenger/event aggregator
@@ -27,7 +32,7 @@
 #define GETPARAMETERS_OPEN_GENERICS         // Platform supports GetParameters on open generics
 #define ASPNET                              // Adds ASP.Net pre-request singleton support
 
-// CompactFramework
+// CompactFramework / Windows Phone 7
 // By default does not support System.Linq.Expressions.
 // AppDomain object does not support enumerating all assemblies in the app domain.
 #if PocketPC || WINDOWS_PHONE
@@ -37,12 +42,18 @@
 #undef ASPNET
 #endif
 
+// PocketPC has a bizarre limitation on enumerating parameters on unbound generic methods.
+// We need to use a slower workaround in that case.
 #if PocketPC
 #undef GETPARAMETERS_OPEN_GENERICS
 #endif
 
 #if SILVERLIGHT
 #undef APPDOMAIN_GETASSEMBLIES
+#undef ASPNET
+#endif
+
+#if MONOTOUCH
 #undef ASPNET
 #endif
 #endregion
@@ -2888,12 +2899,25 @@ namespace TinyIoC
 #endif
         private object GetIEnumerableRequest(Type type)
         {
+#if GETPARAMETERS_OPEN_GENERICS
             // Using MakeGenericMethod (slow) because we need to
             // cast the IEnumerable or constructing the type wil fail.
             // We may as well use the ResolveAll<ResolveType> public
             // method to do this.
             var resolveAllMethod = this.GetType().GetMethod("ResolveAll", new Type[] { });
             var genericResolveAllMethod = resolveAllMethod.MakeGenericMethod(type.GetGenericArguments()[0]);
+#else
+            var resolveAllMethods =    from member in this.GetType().GetMembers()
+                                       where member.MemberType == MemberTypes.Method
+                                       where member.Name == "ResolveAll"
+                                       let method = member as MethodInfo
+                                       where method.IsGenericMethod
+                                       let genericMethod = method.MakeGenericMethod(type.GetGenericArguments()[0])
+                                       where genericMethod.GetParameters().Count() == 0
+                                       select genericMethod;
+
+            var genericResolveAllMethod = resolveAllMethods.First();
+#endif
             return genericResolveAllMethod.Invoke(this, new object[] { });
         }
 

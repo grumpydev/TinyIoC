@@ -51,7 +51,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
         {
         }
 
-        public class TestClassWithInterface2 : ITestInterface2
+        public class TestClassWithInterface2 : ITestInterface
         {
         }
 
@@ -195,6 +195,8 @@ namespace TinyIoC.Tests.PlatformTestSuite
 #endif
                 ResolveAll,
                 IEnumerableDependency,
+                RegisterMultiple,
+                NonGenericRegister,
             };
         }
 
@@ -410,6 +412,26 @@ namespace TinyIoC.Tests.PlatformTestSuite
             var result = container.Resolve<TestClassEnumerableDependency>();
 
             return (result.EnumerableCount == 3);
+        }
+
+        private bool RegisterMultiple(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("RegisterMultiple");
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassWithInterface), typeof(TestClassWithInterface2) });
+
+            var result = container.ResolveAll<ITestInterface>();
+
+            return (result.Count() == 2);
+        }
+
+        private bool NonGenericRegister(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("NonGenericRegister");
+            container.Register(typeof(ITestInterface), typeof(TestClassWithInterface));
+
+            var result = container.Resolve<ITestInterface>(ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            return true;
         }
     }
 }
