@@ -1718,7 +1718,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface2, TestClass2>();
             var input = new TestClassPropertyDependencies();
 
-            container.BuildUp(input, new TinyIoC.ResolveOptions());
+            container.BuildUp(input, new ResolveOptions());
 
             Assert.IsNotNull(input.Property1);
             Assert.IsNotNull(input.Property2);
@@ -1733,7 +1733,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface2, TestClass2>();
             var input = new TestClassPropertyDependencies();
 
-            container.BuildUp(input, new TinyIoC.ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+            container.BuildUp(input, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
 
             Assert.IsNotNull(input.Property1);
             Assert.IsNotNull(input.Property2);
@@ -2046,7 +2046,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>();
 
             ITestInterface output;
-            var result = container.TryResolve<ITestInterface>(new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<ITestInterface>(new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2058,7 +2058,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>();
 
             ITestInterface output;
-            var result = container.TryResolve<ITestInterface>(new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<ITestInterface>(new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(ITestInterface));
         }
@@ -2069,7 +2069,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             ITestInterface output;
-            var result = container.TryResolve<ITestInterface>(new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<ITestInterface>(new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2116,7 +2116,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
 
             ITestInterface output;
-            var result = container.TryResolve<ITestInterface>("Testing", new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<ITestInterface>("Testing", new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2128,7 +2128,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
 
             ITestInterface output;
-            container.TryResolve<ITestInterface>("Testing", new TinyIoC.ResolveOptions(), out output);
+            container.TryResolve<ITestInterface>("Testing", new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(ITestInterface));
         }
@@ -2139,7 +2139,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             ITestInterface output;
-            var result = container.TryResolve<ITestInterface>("Testing", new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<ITestInterface>("Testing", new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2221,7 +2221,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>();
 
             TestClassWithParameters output;
-            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2233,7 +2233,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>();
 
             TestClassWithParameters output;
-            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
         }
@@ -2244,7 +2244,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             TestClassWithParameters output;
-            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<TestClassWithParameters>(new NamedParameterOverloads() { { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2256,7 +2256,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>("Testing");
 
             TestClassWithParameters output;
-            var result = container.TryResolve<TestClassWithParameters>("Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<TestClassWithParameters>("Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2268,7 +2268,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>("Testing");
 
             TestClassWithParameters output;
-            var result = container.TryResolve<TestClassWithParameters>("Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<TestClassWithParameters>("Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
         }
@@ -2279,7 +2279,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             TestClassWithParameters output;
-            var result = container.TryResolve<TestClassWithParameters>("Testing", new NamedParameterOverloads() { { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve<TestClassWithParameters>("Testing", new NamedParameterOverloads() { { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2400,7 +2400,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>();
 
             object output;
-            var result = container.TryResolve(typeof(ITestInterface), new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(ITestInterface), new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2412,7 +2412,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>();
 
             object output;
-            var result = container.TryResolve(typeof(ITestInterface), new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(ITestInterface), new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(ITestInterface));
         }
@@ -2423,7 +2423,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             object output;
-            var result = container.TryResolve(typeof(ITestInterface), new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(ITestInterface), new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2470,7 +2470,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
 
             object output;
-            var result = container.TryResolve(typeof(ITestInterface), "Testing", new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(ITestInterface), "Testing", new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2482,7 +2482,7 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface, TestClassDefaultCtor>("Testing");
 
             object output;
-            container.TryResolve(typeof(ITestInterface), "Testing", new TinyIoC.ResolveOptions(), out output);
+            container.TryResolve(typeof(ITestInterface), "Testing", new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(ITestInterface));
         }
@@ -2493,7 +2493,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             object output;
-            var result = container.TryResolve(typeof(ITestInterface), "Testing", new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(ITestInterface), "Testing", new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2575,7 +2575,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>();
 
             object output;
-            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2587,7 +2587,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>();
 
             object output;
-            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
         }
@@ -2598,7 +2598,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             object output;
-            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(TestClassWithParameters), new NamedParameterOverloads() { { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2610,7 +2610,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>("Testing");
 
             object output;
-            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsTrue(result);
         }
@@ -2622,7 +2622,7 @@ namespace TinyIoC.Tests
             container.Register<TestClassWithParameters>("Testing");
 
             object output;
-            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "stringProperty", "test" }, { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
         }
@@ -2633,7 +2633,7 @@ namespace TinyIoC.Tests
             var container = UtilityMethods.GetContainer();
 
             object output;
-            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "intProperty", 2 } }, new TinyIoC.ResolveOptions(), out output);
+            var result = container.TryResolve(typeof(TestClassWithParameters), "Testing", new NamedParameterOverloads() { { "intProperty", 2 } }, new ResolveOptions(), out output);
 
             Assert.IsFalse(result);
         }
@@ -2793,7 +2793,7 @@ namespace TinyIoC.Tests
 
             var result = container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
 
-            Assert.IsInstanceOfType(result, typeof(TinyIoC.TinyIoCContainer.MultiRegisterOptions));
+            Assert.IsInstanceOfType(result, typeof(TinyIoCContainer.MultiRegisterOptions));
         }
 
         [TestMethod]
@@ -3063,5 +3063,132 @@ namespace TinyIoC.Tests
             Assert.IsTrue(object.ReferenceEquals(item2.Dependency, childInstance), "item2 has wrong dependency");
         }
 
+        [TestMethod]
+        public void ToCustomLifetimeProvider_NullInstance_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            try
+            {
+                TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(null, null, "");
+
+                Assert.Fail("Exception not thrown");
+            }
+            catch (ArgumentNullException)
+            {
+
+            }
+        }
+        
+        [TestMethod]
+        public void ToCustomLifetimeProvider_NullProvider_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+            var registration = container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            try
+            {
+                TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registration, null, "");
+
+                Assert.Fail("Exception not thrown");
+            }
+            catch (ArgumentNullException)
+            {
+                
+            }
+        }
+
+        [TestMethod]
+        public void ToCustomLifetimeProvider_NullErrorString_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+            var registration = container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            try
+            {
+                TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registration, new Fakes.FakeLifetimeProvider(), null);
+
+                Assert.Fail("Exception not thrown");
+            }
+            catch (ArgumentException)
+            {
+
+            }
+        }
+
+        [TestMethod]
+        public void ToCustomLifetimeProvider_EmptyErrorString_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+            var registration = container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            try
+            {
+                TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registration, new Fakes.FakeLifetimeProvider(), "");
+
+                Assert.Fail("Exception not thrown");
+            }
+            catch (ArgumentException)
+            {
+
+            }
+        }
+
+        [TestMethod]
+        public void CustomLifetimeProvider_WhenResolved_CallsGetObjectOnLifetimeProvider()
+        {
+            var container = UtilityMethods.GetContainer();
+            var providerMock = new Mock<TinyIoCContainer.ITinyIoCObjectLifetimeProvider>();
+            providerMock.Setup(p => p.GetObject()).Returns(new TestClassDefaultCtor());
+            var registration = container.Register<ITestInterface, TestClassDefaultCtor>();
+            TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registration, providerMock.Object, "Mock");
+
+            container.Resolve<ITestInterface>();
+
+            providerMock.Verify(p => p.GetObject(), Times.Once(), "not called");
+        }
+
+        [TestMethod]
+        public void CustomLifetimeProvider_GetObjectReturnsNull_CallsSetObjectOnProvider()
+        {
+            var container = UtilityMethods.GetContainer();
+            var providerMock = new Mock<TinyIoCContainer.ITinyIoCObjectLifetimeProvider>();
+            providerMock.Setup(p => p.GetObject()).Returns(null);
+            providerMock.Setup(p => p.SetObject(It.IsAny<object>())).Verifiable();
+            var registration = container.Register<ITestInterface, TestClassDefaultCtor>();
+            TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registration, providerMock.Object, "Mock");
+
+            container.Resolve<ITestInterface>();
+
+            providerMock.Verify(p => p.SetObject(It.IsAny<object>()), Times.Once(), "not called");
+        }
+
+        [TestMethod]
+        public void CustomLifetimeProvider_SwitchingToAnotherFactory_CallsReleaseObjectOnProvider()
+        {
+            var container = UtilityMethods.GetContainer();
+            var providerMock = new Mock<TinyIoCContainer.ITinyIoCObjectLifetimeProvider>();
+            providerMock.Setup(p => p.ReleaseObject()).Verifiable();
+            var registration = container.Register<ITestInterface, TestClassDefaultCtor>();
+            registration = TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registration, providerMock.Object, "Mock");
+
+            registration.AsSingleton();
+
+            providerMock.Verify(p => p.ReleaseObject(), Times.AtLeastOnce(), "not called");
+        }
+
+        [TestMethod]
+        public void CustomLifetimeProvider_ContainerDisposed_CallsReleaseObjectOnProvider()
+        {
+            var container = UtilityMethods.GetContainer();
+            var providerMock = new Mock<TinyIoCContainer.ITinyIoCObjectLifetimeProvider>();
+            providerMock.Setup(p => p.ReleaseObject()).Verifiable();
+            var registration = container.Register<ITestInterface, TestClassDefaultCtor>();
+            TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registration, providerMock.Object, "Mock");
+
+            container.Dispose();
+
+            providerMock.Verify(p => p.ReleaseObject(), Times.AtLeastOnce(), "not called");
+        }
     }
 }

@@ -69,6 +69,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TinyIoC.cs" />
+    <Compile Include="TinyIoCAspNetExtensions.cs" />
     <Compile Include="TinyMessenger.cs" />
   </ItemGroup>
   <ItemGroup>

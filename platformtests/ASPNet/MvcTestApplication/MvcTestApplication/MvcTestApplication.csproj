@@ -68,6 +68,9 @@
     <Compile Include="..\..\..\..\src\TinyIoC\TinyIoC.cs">
       <Link>TinyIoC\TinyIoC.cs</Link>
     </Compile>
+    <Compile Include="..\..\..\..\src\TinyIoC\TinyIoCAspNetExtensions.cs">
+      <Link>TinyIoC\TinyIoCAspNetExtensions.cs</Link>
+    </Compile>
     <Compile Include="ApplicationDependencyClass.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
