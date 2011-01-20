@@ -137,6 +137,29 @@ namespace TinyIoC
     #endregion
 
     #region Extensions
+    public static class AssemblyExtensions
+    {
+        public static Type[] SafeGetTypes(this Assembly assembly)
+        {
+            Type[] assemblies;
+
+            try
+            {
+                assemblies = assembly.GetTypes();
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                assemblies = new Type[] { };
+            }
+            catch (System.NotSupportedException)
+            {
+                assemblies = new Type[] { };
+            }
+
+            return assemblies;
+        }
+    }
+
     public static class TypeExtensions
     {
         /// <summary>
@@ -2531,7 +2554,7 @@ namespace TinyIoC
             {
                 var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                var types = assemblies.SelectMany(a => a.GetTypes()).Where(t => !IsIgnoredType(t)).ToList();
+                var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t)).ToList();
 
                 var concreteTypes = from type in types
                                     where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
