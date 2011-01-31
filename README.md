@@ -1,4 +1,4 @@
-## Welcome to TinyIoC / TinyMessenger ##
+## Welcome to TinyIoC
 
 ### Overview ###
 
