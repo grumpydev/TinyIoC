@@ -2344,7 +2344,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassEnumerableDependency>();
 
-            Assert.AreEqual(3, result.EnumerableCount);
+            Assert.AreEqual(2, result.EnumerableCount);
         }
 
         [TestMethod]
