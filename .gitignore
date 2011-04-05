@@ -6,7 +6,6 @@ syntax: glob
 # Ignore Visual Studio 2008 files
 *.csproj.orig
 *.obj
-*.exe
 *.pdb
 *.user
 *.aps
@@ -34,3 +33,4 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 [Bb]uild[Ll]og.*
 *.[Pp]ublish.xml
+build/
