@@ -13,11 +13,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC", "TinyIoC\TinyIoC.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC.Tests.ExternalTypes", "TinyIoC.Tests.ExternalTypes\TinyIoC.Tests.ExternalTypes.csproj", "{F6422C73-C40A-489A-A822-387E3098B2F1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC.Extensions.AspNet", "TinyIoC.Extensions.AspNet\TinyIoC.Extensions.AspNet.csproj", "{E0744C74-F878-4259-B3AF-D27005C2D92D}"
+EndProject
 Global
-	GlobalSection(SubversionScc) = preSolution
-		Svn-Managed = True
-		Manager = AnkhSVN - Subversion Support for Visual Studio
-	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = TinyIoC.vsmdi
 	EndGlobalSection
@@ -38,8 +36,16 @@ Global
 		{F6422C73-C40A-489A-A822-387E3098B2F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6422C73-C40A-489A-A822-387E3098B2F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6422C73-C40A-489A-A822-387E3098B2F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0744C74-F878-4259-B3AF-D27005C2D92D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0744C74-F878-4259-B3AF-D27005C2D92D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0744C74-F878-4259-B3AF-D27005C2D92D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0744C74-F878-4259-B3AF-D27005C2D92D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
 	EndGlobalSection
 EndGlobal
