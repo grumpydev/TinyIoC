@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>TinyIoC.AspNetExtensions</id>
+    <version>1.0</version>
+    <authors>Steven Robbins</authors>
+    <owners>Andy Sherwood,Steven Robbins</owners>
+    <licenseUrl>https://github.com/grumpydev/TinyIoC/blob/master/src/licence.txt</licenseUrl>
+    <projectUrl>https://github.com/grumpydev/TinyIoC</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>An easy to use, hassle free, Inversion of Control Container for small projects, libraries and beginners alike</description>
+    <tags>IoC,ASPNET</tags>
+    <dependencies>
+      <dependency id="TinyIoC" version="1.0"/>
+    </dependencies>
+  </metadata>
+</package>
