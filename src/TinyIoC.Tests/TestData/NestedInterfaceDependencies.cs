@@ -52,7 +52,12 @@ namespace TinyIoC.Tests.TestData
         {
         }
 
-        internal class RootClass
+        internal interface IRoot
+        {
+            
+        }
+
+        internal class RootClass : IRoot
         {
             IService1 service1;
             IService2 service2;

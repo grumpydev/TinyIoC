@@ -125,5 +125,48 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(mainView.LoadedView, typeof(SplashView));
         }
 
+        [TestMethod]
+        public void When_Unable_To_Resolve_Nested_Dependency_Should_Include_That_Type_In_The_Exception()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<NestedInterfaceDependencies.IService1, NestedInterfaceDependencies.Service1>();
+            container.Register<NestedInterfaceDependencies.IService2, NestedInterfaceDependencies.Service2>();
+            container.Register<NestedInterfaceDependencies.IRoot, NestedInterfaceDependencies.RootClass>();
+
+            TinyIoCResolutionException e = null;
+            try
+            {
+                container.Resolve<NestedInterfaceDependencies.IRoot>();
+            }
+            catch (TinyIoCResolutionException ex)
+            {
+                e = ex;
+            }
+
+            Assert.IsNotNull(e);
+            Assert.IsTrue(e.ToString().Contains("NestedInterfaceDependencies.IService3"));
+        }
+
+        [TestMethod]
+        public void When_Unable_To_Resolve_Non_Nested_Dependency_Should_Include_That_Type_In_The_Exception()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<NestedInterfaceDependencies.IService2, NestedInterfaceDependencies.Service2>();
+            container.Register<NestedInterfaceDependencies.IService3, NestedInterfaceDependencies.Service3>();
+            container.Register<NestedInterfaceDependencies.IRoot, NestedInterfaceDependencies.RootClass>();
+
+            TinyIoCResolutionException e = null;
+            try
+            {
+                container.Resolve<NestedInterfaceDependencies.IRoot>();
+            }
+            catch (TinyIoCResolutionException ex)
+            {
+                e = ex;
+            }
+
+            Assert.IsNotNull(e);
+            Assert.IsTrue(e.ToString().Contains("NestedInterfaceDependencies.IService1"));
+        }
     }
 }
