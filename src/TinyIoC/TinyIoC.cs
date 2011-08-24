@@ -3160,7 +3160,7 @@ namespace TinyIoC
                 var registrationType = genericParameterTypes[0];
                 var implementationType = genericParameterTypes[1];
 
-                if (genericParameterTypes.Length == 2)
+                if (genericParameterTypes.Length == 3)
                     implementationType = genericParameterTypes[2];
 
                 throw new TinyIoCRegistrationException(registrationType, implementationType, ex);
