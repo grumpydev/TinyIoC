@@ -34,3 +34,8 @@ _ReSharper*/
 [Bb]uild[Ll]og.*
 *.[Pp]ublish.xml
 build/
+
+#monotouch stuff
+*.pidb
+.DS_Store
+*.userprefs
