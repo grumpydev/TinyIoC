@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>TinyIoC</id>
-    <version>1.0</version>
+    <version>1.1.1</version>
     <authors>Steven Robbins</authors>
     <owners>Andy Sherwood,Steven Robbins</owners>
     <licenseUrl>https://github.com/grumpydev/TinyIoC/blob/master/src/licence.txt</licenseUrl>
