@@ -25,6 +25,7 @@ using Moq;
 using NestedInterfaceDependencies = TinyIoC.Tests.TestData.NestedInterfaceDependencies;
 using NestedClassDependencies = TinyIoC.Tests.TestData.NestedClassDependencies;
 using System.Linq.Expressions;
+using TinyIoC.Tests.Helpers;
 using System.Reflection;
 
 namespace TinyIoC.Tests
@@ -1417,14 +1418,14 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            container.AutoRegister(this.GetType().Assembly);
+            container.AutoRegister(new[] { this.GetType().Assembly });
         }
 
         [TestMethod]
         public void AutoRegister_TestAssembly_CanResolveInterface()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(this.GetType().Assembly);
+            container.AutoRegister(new[] { this.GetType().Assembly });
 
             var result = container.Resolve<ITestInterface>();
 
@@ -1435,7 +1436,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_TestAssembly_CanResolveAbstractBaseClass()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(this.GetType().Assembly);
+            container.AutoRegister(new[] { this.GetType().Assembly });
 
             var result = container.Resolve<TestClassBase>();
 
@@ -1447,7 +1448,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_TinyIoCAssembly_CannotResolveInternalTinyIoCClass()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(container.GetType().Assembly);
+            container.AutoRegister(new[] { container.GetType().Assembly });
 
             var output = container.Resolve<TinyIoCContainer.TypeRegistration>(new NamedParameterOverloads() { { "type", this.GetType() } }, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
 
@@ -1459,7 +1460,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_ThisAssemblySpecifiedIgnoreDuplicatesOff_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(this.GetType().Assembly, false);
+            container.AutoRegister(new[] { this.GetType().Assembly }, false);
             Assert.IsTrue(false);
         }
 
@@ -1467,7 +1468,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_TinyIoCAssemblySpecifiedIgnoreDuplicatesOff_NoErrors()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(typeof(TinyIoCContainer).Assembly, false);
+            container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly }, false);
         }
 
         [TestMethod]
@@ -3189,6 +3190,17 @@ namespace TinyIoC.Tests
             container.Dispose();
 
             providerMock.Verify(p => p.ReleaseObject(), Times.AtLeastOnce(), "not called");
+        }
+
+        [TestMethod]
+        public void AutoRegister_TypeExcludedViaPredicate_FailsToResolveType()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(new[] { this.GetType().Assembly }, t => t != typeof(ITestInterface));
+
+            var result = ExceptionHelper.Record(() => container.Resolve<ITestInterface>());
+
+            Assert.IsInstanceOfType(result, typeof(TinyIoCResolutionException));
         }
     }
 }

@@ -32,6 +32,13 @@ namespace TinyIoC.Tests.PlatformTestSuite
         void WriteLine(string text);
     }
 
+    public class NullLogger : ILogger
+    {
+        public void WriteLine(string text)
+        {
+        }
+    }
+
     public class PlatformTests
     {
         #region TestClasses
@@ -66,7 +73,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
 
             public TestClassWithConcreteDependency()
             {
-                
+
             }
         }
 
@@ -174,6 +181,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
             {
                 AutoRegisterAppDomain,
                 AutoRegisterAssemblySpecified,
+                AutoRegisterPredicateExclusion,
                 RegisterConcrete,
                 ResolveConcreteUnregisteredDefaultOptions,
                 ResolveConcreteRegisteredDefaultOptions,
@@ -215,7 +223,10 @@ namespace TinyIoC.Tests.PlatformTestSuite
                     if (test.Invoke(container, _Logger))
                         _TestsPassed++;
                     else
+                    {
                         _TestsFailed++;
+                        _Logger.WriteLine("Test Failed");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -245,7 +256,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterAssemblySpecified(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterAssemblySpecified");
-            container.AutoRegister(this.GetType().Assembly);
+            container.AutoRegister(new[] { this.GetType().Assembly });
             container.Resolve<ITestInterface>();
             return true;
         }
@@ -411,7 +422,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
 
             var result = container.Resolve<TestClassEnumerableDependency>();
 
-            return (result.EnumerableCount == 3);
+            return (result.EnumerableCount == 2);
         }
 
         private bool RegisterMultiple(TinyIoCContainer container, ILogger logger)
@@ -430,6 +441,23 @@ namespace TinyIoC.Tests.PlatformTestSuite
             container.Register(typeof(ITestInterface), typeof(TestClassWithInterface));
 
             var result = container.Resolve<ITestInterface>(ResolveOptions.FailUnregisteredAndNameNotFound);
+
+            return true;
+        }
+
+        private bool AutoRegisterPredicateExclusion(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("AutoRegisterPredicateExclusion");
+            container.AutoRegister(t => t != typeof(ITestInterface));
+
+            try
+            {
+                container.Resolve<ITestInterface>();
+                return false;
+            }
+            catch (TinyIoCResolutionException)
+            {
+            }
 
             return true;
         }
