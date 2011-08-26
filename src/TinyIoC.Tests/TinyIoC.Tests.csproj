@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Fakes\FakeLifetimeProvider.cs" />
+    <Compile Include="Helpers\ExceptionHelper.cs" />
     <Compile Include="PlatformTestSuite\PlatformTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">

@@ -101,7 +101,7 @@ namespace TinyIoC.Tests
         public void NestedInterfaceDependencies_JustAutoRegisterCalled_ResolvesRoot()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(this.GetType().Assembly);
+            container.AutoRegister(new[] { this.GetType().Assembly });
 
             var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
 
