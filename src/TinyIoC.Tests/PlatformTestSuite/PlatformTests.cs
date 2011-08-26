@@ -32,6 +32,13 @@ namespace TinyIoC.Tests.PlatformTestSuite
         void WriteLine(string text);
     }
 
+    public class NullLogger : ILogger
+    {
+        public void WriteLine(string text)
+        {
+        }
+    }
+
     public class PlatformTests
     {
         #region TestClasses

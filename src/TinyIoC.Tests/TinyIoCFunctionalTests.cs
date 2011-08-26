@@ -25,6 +25,8 @@ using NestedClassDependencies = TinyIoC.Tests.TestData.NestedClassDependencies;
 
 namespace TinyIoC.Tests
 {
+    using TinyIoC.Tests.PlatformTestSuite;
+
     [TestClass]
     public class TinyIoCFunctionalTests
     {
@@ -167,6 +169,19 @@ namespace TinyIoC.Tests
 
             Assert.IsNotNull(e);
             Assert.IsTrue(e.ToString().Contains("NestedInterfaceDependencies.IService1"));
+        }
+
+        [TestMethod]
+        public void Run_Platform_Tests()
+        {
+            var platformTests = new PlatformTestSuite.PlatformTests(new NullLogger());
+
+            int failed;
+            int run;
+            int passed;
+            platformTests.RunTests(out run, out passed, out failed);
+
+            Assert.AreEqual(0, failed);
         }
     }
 }
