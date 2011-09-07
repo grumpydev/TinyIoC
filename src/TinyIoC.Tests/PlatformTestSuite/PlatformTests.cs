@@ -44,10 +44,19 @@ namespace TinyIoC.Tests.PlatformTestSuite
         void WriteLine(string text);
     }
 
-    public class NullLogger : ILogger
+    public class StringLogger : ILogger
     {
+        private readonly StringBuilder builder = new StringBuilder();
+
+        public string Log
+        {
+            get { return builder.ToString(); }
+        }
+
+
         public void WriteLine(string text)
         {
+            builder.AppendLine(text);
         }
     }
 

@@ -176,14 +176,15 @@ namespace TinyIoC.Tests
         [TestMethod]
         public void Run_Platform_Tests()
         {
-            var platformTests = new PlatformTestSuite.PlatformTests(new NullLogger());
+            var logger = new StringLogger();
+            var platformTests = new PlatformTestSuite.PlatformTests(logger);
 
             int failed;
             int run;
             int passed;
             platformTests.RunTests(out run, out passed, out failed);
 
-            Assert.AreEqual(0, failed);
+            Assert.AreEqual(0, failed, logger.Log);
         }
 
         [TestMethod]
