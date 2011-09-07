@@ -9,6 +9,7 @@
 #define EXPRESSIONS                         // Platform supports System.Linq.Expressions
 #define APPDOMAIN_GETASSEMBLIES             // Platform supports getting all assemblies from the AppDomain object
 #define UNBOUND_GENERICS_GETCONSTRUCTORS    // Platform supports GetConstructors on unbound generic types
+#define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
 
 // CompactFramework
 // By default does not support System.Linq.Expressions.
@@ -17,6 +18,17 @@
 #undef EXPRESSIONS
 #undef APPDOMAIN_GETASSEMBLIES
 #undef UNBOUND_GENERICS_GETCONSTRUCTORS
+#endif
+
+// PocketPC has a bizarre limitation on enumerating parameters on unbound generic methods.
+// We need to use a slower workaround in that case.
+#if PocketPC
+#undef GETPARAMETERS_OPEN_GENERICS
+#undef RESOLVE_OPEN_GENERICS
+#endif
+
+#if SILVERLIGHT
+#undef APPDOMAIN_GETASSEMBLIES
 #endif
 #endregion
 
@@ -163,6 +175,19 @@ namespace TinyIoC.Tests.PlatformTestSuite
                 _Enumerable = enumerable;
             }
         }
+
+        public interface IThing<T> where T : new()
+        {
+            T Get();
+        }
+
+        public class DefaultThing<T> : IThing<T> where T : new()
+        {
+            public T Get()
+            {
+                return new T();
+            }
+        }
         #endregion
 
 
@@ -205,6 +230,10 @@ namespace TinyIoC.Tests.PlatformTestSuite
                 IEnumerableDependency,
                 RegisterMultiple,
                 NonGenericRegister,
+#if RESOLVE_OPEN_GENERICS
+                OpenGenericRegistration,
+                OpenGenericResolution,
+#endif
             };
         }
 
@@ -460,6 +489,26 @@ namespace TinyIoC.Tests.PlatformTestSuite
             }
 
             return true;
+        }
+
+        private bool OpenGenericRegistration(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("OpenGenericRegistration");
+
+            container.Register(typeof(IThing<>), typeof(DefaultThing<>));
+
+            return true;
+        }
+
+        private bool OpenGenericResolution(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("OpenGenericResolution");
+
+            container.Register(typeof(IThing<>), typeof(DefaultThing<>));
+
+            var result = container.Resolve<IThing<object>>();
+
+            return result != null && result.GetType() == typeof(DefaultThing<object>);
         }
     }
 }

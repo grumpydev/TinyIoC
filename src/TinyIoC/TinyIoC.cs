@@ -3132,6 +3132,8 @@ namespace TinyIoC
         private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             var typeToConstruct = implementationType;
+
+#if RESOLVE_OPEN_GENERICS
             if (implementationType.IsGenericTypeDefinition)
             {
                 if (requestedType == null || !requestedType.IsGenericType || !requestedType.GetGenericArguments().Any())
@@ -3139,6 +3141,7 @@ namespace TinyIoC
                  
                 typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GetGenericArguments());
             }
+#endif
 
             if (constructor == null)
             {
