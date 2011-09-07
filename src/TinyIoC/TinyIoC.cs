@@ -25,6 +25,7 @@
 #define APPDOMAIN_GETASSEMBLIES             // Platform supports getting all assemblies from the AppDomain object
 #define UNBOUND_GENERICS_GETCONSTRUCTORS    // Platform supports GetConstructors on unbound generic types
 #define GETPARAMETERS_OPEN_GENERICS         // Platform supports GetParameters on open generics
+#define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
 
 // CompactFramework / Windows Phone 7
 // By default does not support System.Linq.Expressions.
@@ -39,6 +40,7 @@
 // We need to use a slower workaround in that case.
 #if PocketPC
 #undef GETPARAMETERS_OPEN_GENERICS
+#undef RESOLVE_OPEN_GENERICS
 #endif
 
 #if SILVERLIGHT
@@ -793,7 +795,7 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType, Type registerImplementation)
         {
-            return ExecuteGenericRegister(new Type[] { registerType, registerImplementation }, new Type[] { }, null);
+            return this.RegisterInternal(registerType, String.Empty,GetDefaultObjectFactory(registerType, registerImplementation));
         }
 
         /// <summary>
@@ -2063,7 +2065,7 @@ namespace TinyIoC
                 if (registerImplementation.IsAbstract || registerImplementation.IsInterface)
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "MultiInstanceFactory");
 
-                if (!registerType.IsAssignableFrom(registerImplementation))
+                if (!IsValidAssignment(registerType, registerImplementation))
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "MultiInstanceFactory");
 
                 this.registerType = registerType;
@@ -2240,7 +2242,7 @@ namespace TinyIoC
 
             public InstanceFactory(Type registerType, Type registerImplementation, object instance)
             {
-                if (!registerType.IsAssignableFrom(registerImplementation))
+                if (!IsValidAssignment(registerType, registerImplementation))
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "InstanceFactory");
 
                 this.registerType = registerType;
@@ -2306,7 +2308,7 @@ namespace TinyIoC
 
             public WeakInstanceFactory(Type registerType, Type registerImplementation, object instance)
             {
-                if (!registerType.IsAssignableFrom(registerImplementation))
+                if (!IsValidAssignment(registerType, registerImplementation))
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "WeakInstanceFactory");
 
                 this.registerType = registerType;
@@ -2387,7 +2389,7 @@ namespace TinyIoC
                 if (registerImplementation.IsAbstract || registerImplementation.IsInterface)
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "SingletonFactory");
 
-                if (!registerType.IsAssignableFrom(registerImplementation))
+                if (!IsValidAssignment(registerType, registerImplementation))
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "SingletonFactory");
 
                 this.registerType = registerType;
@@ -2468,7 +2470,7 @@ namespace TinyIoC
                 if (lifetimeProvider == null)
                     throw new ArgumentNullException("lifetimeProvider", "lifetimeProvider is null.");
 
-                if (!registerType.IsAssignableFrom(registerImplementation))
+                if (!IsValidAssignment(registerType, registerImplementation))
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "SingletonFactory");
 
                 if (registerImplementation.IsAbstract || registerImplementation.IsInterface)
@@ -2623,8 +2625,6 @@ namespace TinyIoC
         {
             lock (_AutoRegisterLock)
             {
-                var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-
                 var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
 
                 var concreteTypes = from type in types
@@ -2633,11 +2633,9 @@ namespace TinyIoC
 
                 foreach (var type in concreteTypes)
                 {
-                    Type[] genericTypes = { type, type };
-                    var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
                     try
                     {
-                        RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                        RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, type));
                     }
                     catch (MethodAccessException)
                     {
@@ -2661,11 +2659,9 @@ namespace TinyIoC
                     var firstImplementation = implementations.FirstOrDefault();
                     if (firstImplementation != null)
                     {
-                        Type[] genericTypes = { type, firstImplementation };
-                        var genericDefaultFactoryMethod = defaultFactoryMethod.MakeGenericMethod(genericTypes);
                         try
                         {
-                            RegisterInternal(type, string.Empty, genericDefaultFactoryMethod.Invoke(this, null) as ObjectFactoryBase);
+                            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, firstImplementation));
                         }
                         catch (MethodAccessException)
                         {
@@ -3223,6 +3219,30 @@ namespace TinyIoC
                 throw new TinyIoCRegistrationException(registrationType, implementationType, ex);
             }
         }
+
+        private static bool IsValidAssignment(Type registerType, Type registerImplementation)
+        {
+            if (!registerType.IsGenericTypeDefinition)
+            {
+                if (!registerType.IsAssignableFrom(registerImplementation))
+                    return false;
+            }
+            else
+            {
+                if (registerType.IsInterface)
+                {
+                    if (!registerImplementation.FindInterfaces((t, o) => t.Name == registerType.Name, null).Any())
+                        return false;
+                }
+                else if (registerType.IsAbstract && registerImplementation.BaseType != registerType)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region IDisposable Members
