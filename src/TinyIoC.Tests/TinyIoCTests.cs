@@ -3202,5 +3202,24 @@ namespace TinyIoC.Tests
 
             Assert.IsInstanceOfType(result, typeof(TinyIoCResolutionException));
         }
+
+        [TestMethod]
+        public void Register_OpenGeneric_DoesNotThrow()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.Register(typeof(IThing<>), typeof(DefaultThing<>));
+        }
+
+        [TestMethod]
+        public void Resolve_RegisteredOpenGeneric_ReturnsInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(IThing<>), typeof(DefaultThing<>));
+
+            var result = container.Resolve<IThing<object>>();
+
+            Assert.IsInstanceOfType(result, typeof(DefaultThing<object>));
+        }
     }
 }

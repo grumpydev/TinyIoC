@@ -369,5 +369,17 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
+        public interface IThing<T> where T: new()
+        {
+            T Get();
+        }
+
+        public class DefaultThing<T> : IThing<T> where T : new()
+        {
+            public T Get()
+            {
+                return new T();
+            }
+        }
     }
 }
