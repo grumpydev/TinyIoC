@@ -971,7 +971,12 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), string.Empty, new DelegateFactory<RegisterType>(factory));
+            if (factory == null)
+            {
+                throw new ArgumentNullException("factory");
+            }
+            
+            return RegisterInternal(typeof(RegisterType), string.Empty, new DelegateFactory(typeof(RegisterType), (c,o) => factory(c, o)));
         }
 
         /// <summary>
@@ -984,7 +989,12 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory, string name)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), name, new DelegateFactory<RegisterType>(factory));
+            if (factory == null)
+            {
+                throw new ArgumentNullException("factory");
+            }
+
+            return RegisterInternal(typeof(RegisterType), name, new DelegateFactory(typeof(RegisterType), (c, o) => factory(c, o)));
         }
 
         /// <summary>
@@ -2109,15 +2119,15 @@ namespace TinyIoC
         /// <summary>
         /// IObjectFactory that invokes a specified delegate to construct the object
         /// </summary>
-        /// <typeparam name="RegisterType">Registered type to be constructed</typeparam>
-        private class DelegateFactory<RegisterType> : ObjectFactoryBase
-            where RegisterType : class
+        private class DelegateFactory : ObjectFactoryBase
         {
-            private Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> _factory;
+            private readonly Type registerType;
+
+            private Func<TinyIoCContainer, NamedParameterOverloads, object> _factory;
 
             public override bool AssumeConstruction { get { return true; } }
 
-            public override Type CreatesType { get { return typeof(RegisterType); } }
+            public override Type CreatesType { get { return this.registerType; } }
 
             public override object GetObject(Type requestedType, TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
@@ -2127,23 +2137,25 @@ namespace TinyIoC
                 }
                 catch (Exception ex)
                 {
-                    throw new TinyIoCResolutionException(typeof(RegisterType), ex);
+                    throw new TinyIoCResolutionException(this.registerType, ex);
                 }
             }
 
-            public DelegateFactory(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory)
+            public DelegateFactory( Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
 
                 _factory = factory;
+
+                this.registerType = registerType;
             }
 
             public override ObjectFactoryBase WeakReferenceVariant
             {
                 get
                 {
-                    return new WeakDelegateFactory<RegisterType>(_factory);
+                    return new WeakDelegateFactory(this.registerType, _factory);
                 }
             }
 
@@ -2165,22 +2177,22 @@ namespace TinyIoC
         /// IObjectFactory that invokes a specified delegate to construct the object
         /// Holds the delegate using a weak reference
         /// </summary>
-        /// <typeparam name="RegisterType">Registered type to be constructed</typeparam>
-        private class WeakDelegateFactory<RegisterType> : ObjectFactoryBase
-            where RegisterType : class
+        private class WeakDelegateFactory : ObjectFactoryBase
         {
+            private readonly Type registerType;
+
             private WeakReference _factory;
 
             public override bool AssumeConstruction { get { return true; } }
 
-            public override Type CreatesType { get { return typeof(RegisterType); } }
+            public override Type CreatesType { get { return this.registerType; } }
 
             public override object GetObject(Type requestedType, TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
-                var factory = _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, RegisterType>;
+                var factory = _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, object>;
 
                 if (factory == null)
-                    throw new TinyIoCWeakReferenceException(typeof(RegisterType));
+                    throw new TinyIoCWeakReferenceException(this.registerType);
 
                 try
                 {
@@ -2188,28 +2200,30 @@ namespace TinyIoC
                 }
                 catch (Exception ex)
                 {
-                    throw new TinyIoCResolutionException(typeof(RegisterType), ex);
+                    throw new TinyIoCResolutionException(this.registerType, ex);
                 }
             }
 
-            public WeakDelegateFactory(Func<TinyIoCContainer, NamedParameterOverloads, RegisterType> factory)
+            public WeakDelegateFactory(Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
 
                 _factory = new WeakReference(factory);
+
+                this.registerType = registerType;
             }
 
             public override ObjectFactoryBase StrongReferenceVariant
             {
                 get
                 {
-                    var factory = _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, RegisterType>;
+                    var factory = _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, object>;
 
                     if (factory == null)
-                        throw new TinyIoCWeakReferenceException(typeof(RegisterType));
+                        throw new TinyIoCWeakReferenceException(this.registerType);
 
-                    return new DelegateFactory<RegisterType>(factory);
+                    return new DelegateFactory(this.registerType, factory);
                 }
             }
 
