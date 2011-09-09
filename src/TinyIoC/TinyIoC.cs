@@ -1922,7 +1922,7 @@ namespace TinyIoC
         /// <returns>IEnumerable</returns>
         public IEnumerable<object> ResolveAll(Type resolveType, bool includeUnnamed)
         {
-            return ResolveAllInternal(resolveType, includeUnnamed).Select(o => o);
+            return ResolveAllInternal(resolveType, includeUnnamed);
         }
 
         /// <summary>
@@ -1944,10 +1944,7 @@ namespace TinyIoC
         public IEnumerable<ResolveType> ResolveAll<ResolveType>(bool includeUnnamed)
             where ResolveType : class
         {
-            foreach (var resolvedType in ResolveAll(typeof(ResolveType), includeUnnamed))
-            {
-                yield return resolvedType as ResolveType;
-            }
+            return this.ResolveAll(typeof(ResolveType), includeUnnamed).Cast<ResolveType>();
         }
 
         /// <summary>
@@ -3270,26 +3267,6 @@ namespace TinyIoC
             foreach (var registration in registrations)
             {
                 yield return ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default);
-            }
-        }
-
-        private RegisterOptions ExecuteGenericRegister(Type[] genericParameterTypes, Type[] methodParameterTypes, object[] methodParameters)
-        {
-            try
-            {
-                var method = this.GetType().GetGenericMethod(BindingFlags.Instance | BindingFlags.Public, "Register", genericParameterTypes, methodParameterTypes);
-
-                return (RegisterOptions)method.Invoke(this, methodParameters);
-            }
-            catch (ArgumentException ex)
-            {
-                var registrationType = genericParameterTypes[0];
-                var implementationType = genericParameterTypes[1];
-
-                if (genericParameterTypes.Length == 2)
-                    implementationType = genericParameterTypes[2];
-
-                throw new TinyIoCRegistrationException(registrationType, implementationType, ex);
             }
         }
 
