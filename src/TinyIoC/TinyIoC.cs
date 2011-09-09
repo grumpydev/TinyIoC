@@ -769,22 +769,23 @@ namespace TinyIoC
         /// <summary>
         /// Creates/replaces a container class registration with default options.
         /// </summary>
-        /// <param name="registerImplementation">Type to register</param>
+        /// <param name="registerType">Type to register</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register(Type registerImplementation)
+        public RegisterOptions Register(Type registerType)
         {
-            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { }, null);
+            return RegisterInternal(registerType, string.Empty, GetDefaultObjectFactory(registerType, registerType));
         }
 
         /// <summary>
         /// Creates/replaces a named container class registration with default options.
         /// </summary>
-        /// <param name="registerImplementation">Type to register</param>
+        /// <param name="registerType">Type to register</param>
         /// <param name="name">Name of registration</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register(Type registerImplementation, string name)
+        public RegisterOptions Register(Type registerType, string name)
         {
-            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { typeof(string) }, new object[] { name });
+            return RegisterInternal(registerType, name, GetDefaultObjectFactory(registerType, registerType));
+
         }
 
         /// <summary>
@@ -795,7 +796,7 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType, Type registerImplementation)
         {
-            return this.RegisterInternal(registerType, String.Empty,GetDefaultObjectFactory(registerType, registerImplementation));
+            return this.RegisterInternal(registerType, string.Empty, GetDefaultObjectFactory(registerType, registerImplementation));
         }
 
         /// <summary>
@@ -807,30 +808,30 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType, Type registerImplementation, string name)
         {
-            return ExecuteGenericRegister(new Type[] { registerType, registerImplementation }, new Type[] { typeof(string) }, new object[] { name });
+            return this.RegisterInternal(registerType, name, GetDefaultObjectFactory(registerType, registerImplementation));
         }
 
         /// <summary>
         /// Creates/replaces a container class registration with a specific, strong referenced, instance.
         /// </summary>
-        /// <param name="registerImplementation">Type to register</param>
+        /// <param name="registerType">Type to register</param>
         /// <param name="instance">Instance of RegisterType to register</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register(Type registerImplementation, object instance)
+        public RegisterOptions Register(Type registerType, object instance)
         {
-            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { registerImplementation }, new object[] { instance });
+            return RegisterInternal(registerType, string.Empty, new InstanceFactory(registerType, registerType, instance));
         }
 
         /// <summary>
         /// Creates/replaces a named container class registration with a specific, strong referenced, instance.
         /// </summary>
-        /// <param name="registerImplementation">Type to register</param>
+        /// <param name="registerType">Type to register</param>
         /// <param name="instance">Instance of RegisterType to register</param>
         /// <param name="name">Name of registration</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register(Type registerImplementation, object instance, string name)
+        public RegisterOptions Register(Type registerType, object instance, string name)
         {
-            return ExecuteGenericRegister(new Type[] { registerImplementation }, new Type[] { registerImplementation, typeof(string) }, new object[] { instance, name });
+            return RegisterInternal(registerType, name, new InstanceFactory(registerType, registerType, instance));
         }
 
         /// <summary>
@@ -840,9 +841,9 @@ namespace TinyIoC
         /// <param name="registerImplementation">Type of instance to register that implements RegisterType</param>
         /// <param name="instance">Instance of RegisterImplementation to register</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register(Type registerType, Type implementationType, object instance)
+        public RegisterOptions Register(Type registerType, Type registerImplementation, object instance)
         {
-            return ExecuteGenericRegister(new Type[] { registerType, implementationType }, new Type[] { implementationType }, new object[] { instance });
+            return RegisterInternal(registerType, string.Empty, new InstanceFactory(registerType, registerImplementation, instance));
         }
 
         /// <summary>
@@ -853,9 +854,32 @@ namespace TinyIoC
         /// <param name="instance">Instance of RegisterImplementation to register</param>
         /// <param name="name">Name of registration</param>
         /// <returns>RegisterOptions for fluent API</returns>
-        public RegisterOptions Register(Type registerType, Type implementationType, object instance, string name)
+        public RegisterOptions Register(Type registerType, Type registerImplementation, object instance, string name)
         {
-            return ExecuteGenericRegister(new Type[] { registerType, implementationType }, new Type[] { implementationType, typeof(string) }, new object[] { instance, name });
+            return RegisterInternal(registerType, name, new InstanceFactory(registerType, registerImplementation, instance));
+        }
+
+        /// <summary>
+        /// Creates/replaces a container class registration with a user specified factory
+        /// </summary>
+        /// <param name="registerType">Type to register</param>
+        /// <param name="factory">Factory/lambda that returns an instance of RegisterType</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
+        {
+            return RegisterInternal(registerType, string.Empty, new DelegateFactory(registerType, factory));
+        }
+
+        /// <summary>
+        /// Creates/replaces a container class registration with a user specified factory
+        /// </summary>
+        /// <param name="registerType">Type to register</param>
+        /// <param name="factory">Factory/lambda that returns an instance of RegisterType</param>
+        /// <param name="name">Name of registation</param>
+        /// <returns>RegisterOptions for fluent API</returns>
+        public RegisterOptions Register(Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory, string name)
+        {
+            return RegisterInternal(registerType, name, new DelegateFactory(registerType, factory));
         }
 
         /// <summary>
@@ -866,7 +890,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>()
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), string.Empty, GetDefaultObjectFactory(typeof(RegisterType), typeof(RegisterType)));
+            return this.Register(typeof(RegisterType));
         }
 
         /// <summary>
@@ -878,7 +902,7 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(string name)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), name, GetDefaultObjectFactory(typeof(RegisterType), typeof(RegisterType)));
+            return this.Register(typeof(RegisterType), name);
         }
 
         /// <summary>
@@ -891,7 +915,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), string.Empty, GetDefaultObjectFactory(typeof(RegisterType), typeof(RegisterImplementation)));
+            return this.Register(typeof(RegisterType), typeof(RegisterImplementation));
         }
 
         /// <summary>
@@ -905,7 +929,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), name, GetDefaultObjectFactory(typeof(RegisterType), typeof(RegisterImplementation)));
+            return this.Register(typeof(RegisterType), typeof(RegisterImplementation), name);
         }
 
         /// <summary>
@@ -917,20 +941,20 @@ namespace TinyIoC
         public RegisterOptions Register<RegisterType>(RegisterType instance)
            where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), string.Empty, new InstanceFactory(typeof(RegisterType), typeof(RegisterType), instance));
+            return this.Register(typeof(RegisterType), instance);
         }
 
         /// <summary>
         /// Creates/replaces a named container class registration with a specific, strong referenced, instance.
         /// </summary>
-        /// <typeparam name="RegisterTypee">Type to register</typeparam>
+        /// <typeparam name="RegisterType">Type to register</typeparam>
         /// <param name="instance">Instance of RegisterType to register</param>
         /// <param name="name">Name of registration</param>
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register<RegisterType>(RegisterType instance, string name)
             where RegisterType : class
         {
-            return RegisterInternal(typeof(RegisterType), name, new InstanceFactory(typeof(RegisterType), typeof(RegisterType), instance));
+            return this.Register(typeof(RegisterType), instance, name);
         }
 
         /// <summary>
@@ -944,7 +968,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), string.Empty, new InstanceFactory(typeof(RegisterType), typeof(RegisterImplementation), instance));
+            return this.Register(typeof(RegisterType), typeof(RegisterImplementation), instance);
         }
 
         /// <summary>
@@ -959,7 +983,7 @@ namespace TinyIoC
             where RegisterType : class
             where RegisterImplementation : class, RegisterType
         {
-            return RegisterInternal(typeof(RegisterType), name, new InstanceFactory(typeof(RegisterType), typeof(RegisterImplementation), instance));
+            return this.Register(typeof(RegisterType), typeof(RegisterImplementation), instance, name);
         }
 
         /// <summary>
@@ -975,8 +999,8 @@ namespace TinyIoC
             {
                 throw new ArgumentNullException("factory");
             }
-            
-            return RegisterInternal(typeof(RegisterType), string.Empty, new DelegateFactory(typeof(RegisterType), (c,o) => factory(c, o)));
+
+            return this.Register(typeof(RegisterType), (c, o) => factory(c, o));
         }
 
         /// <summary>
@@ -994,7 +1018,7 @@ namespace TinyIoC
                 throw new ArgumentNullException("factory");
             }
 
-            return RegisterInternal(typeof(RegisterType), name, new DelegateFactory(typeof(RegisterType), (c, o) => factory(c, o)));
+            return this.Register(typeof(RegisterType), (c, o) => factory(c, o), name);
         }
 
         /// <summary>
