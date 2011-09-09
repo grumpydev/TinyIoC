@@ -3193,7 +3193,8 @@ namespace TinyIoC
         {
             try
             {
-                var method = this.GetType().GetGenericMethod(BindingFlags.Instance | BindingFlags.Public, "Register", genericParameterTypes, methodParameterTypes);
+                var type = this.GetType();
+                var method = GenericRegisterMethodCache.GetGenericRegisterMethod(type, genericParameterTypes, methodParameterTypes);
 
                 return (RegisterOptions)method.Invoke(this, methodParameters);
             }
@@ -3206,6 +3207,94 @@ namespace TinyIoC
                     implementationType = genericParameterTypes[2];
 
                 throw new TinyIoCRegistrationException(registrationType, implementationType, ex);
+            }
+        }
+
+        /// <summary>
+        /// A cache of generic Register() methods.
+        ///
+        /// This allows for bypassing of the slow GetGenericMethod() reflection call.
+        /// </summary>
+        private static class GenericRegisterMethodCache
+        {
+            private static SafeDictionary<GenericRegisterMethodCacheKey, MethodInfo> _genericRegisterMethodCache = new SafeDictionary<GenericRegisterMethodCacheKey, MethodInfo>();
+
+            public static MethodInfo GetGenericRegisterMethod(Type containerType, Type[] genericParameterTypes, Type[] methodParameterTypes)
+            {
+                var cacheKey = new GenericRegisterMethodCacheKey(containerType, genericParameterTypes, methodParameterTypes);
+
+                MethodInfo method = null;
+                if (_genericRegisterMethodCache.TryGetValue(cacheKey, out method) == false)
+                {
+                    method = containerType.GetGenericMethod(BindingFlags.Instance | BindingFlags.Public, "Register", genericParameterTypes, methodParameterTypes);
+                    _genericRegisterMethodCache[cacheKey] = method;
+                }
+                return method;
+            }
+
+            private class GenericRegisterMethodCacheKey
+            {
+                Type _containerType;
+                Type[] _genericParameterTypes;
+                Type[] _methodParameterTypes;
+
+                int? _hashCode;
+
+                public GenericRegisterMethodCacheKey(Type containerType, Type[] genericParameterTypes, Type[] methodParameterTypes)
+                {
+                    _containerType = containerType;
+                    _genericParameterTypes = genericParameterTypes;
+                    _methodParameterTypes = methodParameterTypes;
+                }
+
+                public override int GetHashCode()
+                {
+                    if (_hashCode.HasValue)
+                        return _hashCode.Value;
+
+                    unchecked
+                    {
+                        var result = _containerType.GetHashCode();
+                        for (int i = 0; i < _genericParameterTypes.Length; ++i)
+                        {
+                            result = (result * 397) ^ _genericParameterTypes[i].GetHashCode();
+                        }
+                        for (int i = 0; i < _methodParameterTypes.Length; ++i)
+                        {
+                            result = (result * 397) ^ _methodParameterTypes[i].GetHashCode();
+                        }
+                        _hashCode = result;
+                        return result;
+                    }
+                }
+
+                public override bool Equals(object obj)
+                {
+                    GenericRegisterMethodCacheKey cacheKey = obj as GenericRegisterMethodCacheKey;
+                    if (cacheKey == null)
+                        return false;
+
+                    if (_containerType != cacheKey._containerType)
+                        return false;
+
+                    if (_genericParameterTypes.Length != cacheKey._genericParameterTypes.Length)
+                        return false;
+                    if (_methodParameterTypes.Length != cacheKey._methodParameterTypes.Length)
+                        return false;
+
+                    for (int i = 0; i < _genericParameterTypes.Length; ++i)
+                    {
+                        if (_genericParameterTypes[i] != cacheKey._genericParameterTypes[i])
+                            return false;
+                    }
+                    for (int i = 0; i < _methodParameterTypes.Length; ++i)
+                    {
+                        if (_methodParameterTypes[i] != cacheKey._methodParameterTypes[i])
+                            return false;
+                    }
+
+                    return true;
+                }
             }
         }
         #endregion
