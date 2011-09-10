@@ -2598,6 +2598,8 @@ namespace TinyIoC
         #region Type Registrations
         public sealed class TypeRegistration
         {
+            private int? _hashCode;
+
             public Type Type { get; private set; }
             public string Name { get; private set; }
 
@@ -2630,7 +2632,11 @@ namespace TinyIoC
 
             public override int GetHashCode()
             {
-                return String.Format("{0}|{1}", Type.FullName, Name).GetHashCode();
+                if (_hashCode != null)
+                    return _hashCode.Value;
+
+                _hashCode = String.Concat(Type.FullName, "|", Name).GetHashCode();
+                return _hashCode.Value;
             }
         }
         private readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
