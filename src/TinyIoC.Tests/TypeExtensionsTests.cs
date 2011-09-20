@@ -15,6 +15,11 @@ namespace TinyIoC.Tests.TypeExtensions
     {
     }
 
+    public class AnotherClassImplementingITestInterface : ITestInterface
+    {
+        
+    }
+
     public class ClassNotImplementingITestInterface
     {
     }
@@ -60,6 +65,39 @@ namespace TinyIoC.Tests.TypeExtensions
             Assert.AreEqual(2, method.GetGenericArguments().Length);
             Assert.AreEqual(firstGenericParameter, method.GetGenericArguments()[0]);
             Assert.AreEqual(secondGenericParameter, method.GetGenericArguments()[1]);
+        }
+
+        [TestMethod]
+        public void GetGenericMethod_TwiceWithDifferentGenericParamters_ReturnsCorrectMethods()
+        {
+            var methodOneFirstGenericParameter = typeof(ITestInterface);
+            var methodOneSecondGenericParameter = typeof(ClassImplementingITestInterface);
+            var methodTwoFirstGenericParameter = typeof(ITestInterface);
+            var methodTwoSecondGenericParameter = typeof(AnotherClassImplementingITestInterface);
+
+            var methodOne = typeof(TinyIoCContainer).GetGenericMethod(
+                BindingFlags.Public | BindingFlags.Instance,
+                "Register",
+                new Type[] { methodOneFirstGenericParameter, methodOneSecondGenericParameter },
+                new Type[] { });
+            var methodTwo = typeof(TinyIoCContainer).GetGenericMethod(
+                BindingFlags.Public | BindingFlags.Instance,
+                "Register",
+                new Type[] { methodTwoFirstGenericParameter, methodTwoSecondGenericParameter },
+                new Type[] { });
+
+            Assert.IsInstanceOfType(methodOne, typeof(MethodInfo));
+            Assert.IsTrue(methodOne.IsGenericMethod);
+            Assert.AreEqual(0, methodOne.GetParameters().Length);
+            Assert.AreEqual(2, methodOne.GetGenericArguments().Length);
+            Assert.AreEqual(methodOneFirstGenericParameter, methodOne.GetGenericArguments()[0]);
+            Assert.AreEqual(methodOneSecondGenericParameter, methodOne.GetGenericArguments()[1]);
+            Assert.IsInstanceOfType(methodTwo, typeof(MethodInfo));
+            Assert.IsTrue(methodTwo.IsGenericMethod);
+            Assert.AreEqual(0, methodTwo.GetParameters().Length);
+            Assert.AreEqual(2, methodTwo.GetGenericArguments().Length);
+            Assert.AreEqual(methodTwoFirstGenericParameter, methodTwo.GetGenericArguments()[0]);
+            Assert.AreEqual(methodTwoSecondGenericParameter, methodTwo.GetGenericArguments()[1]);
         }
 
         [TestMethod]

@@ -168,6 +168,13 @@ namespace TinyIoC
 
     public static class TypeExtensions
     {
+        private static SafeDictionary<GenericMethodCacheKey, MethodInfo> _genericMethodCache;
+
+        static TypeExtensions()
+        {
+            _genericMethodCache = new SafeDictionary<GenericMethodCacheKey, MethodInfo>();
+        }
+
         /// <summary>
         /// Gets a generic method from a type given the method name, binding flags, generic types and parameter types
         /// </summary>
@@ -181,15 +188,31 @@ namespace TinyIoC
         /// <exception cref="System.ArgumentException"/>
         public static MethodInfo GetGenericMethod(this Type sourceType, System.Reflection.BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
         {
+            MethodInfo method;
+            var cacheKey = new GenericMethodCacheKey(sourceType, methodName, genericTypes, parameterTypes);
+
+            // Shouldn't need any additional locking
+            // we don't care if we do the method info generation
+            // more than once before it gets cached.
+            if (!_genericMethodCache.TryGetValue(cacheKey, out method))
+            {
+                method = GetMethod(sourceType, bindingFlags, methodName, genericTypes, parameterTypes);
+                _genericMethodCache[cacheKey] = method;
+            }
+
+            return method;
+        }
+
+        private static MethodInfo GetMethod(Type sourceType, BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
+        {
 #if GETPARAMETERS_OPEN_GENERICS
-            var methods = sourceType.GetMethods(bindingFlags)
-                .Where(mi => string.Equals(methodName, mi.Name, StringComparison.InvariantCulture))
-                .Where(mi => mi.ContainsGenericParameters)
-                .Where(mi => mi.GetGenericArguments().Length == genericTypes.Length)
-                .Where(mi => mi.GetParameters().Length == parameterTypes.Length)
-                .Select(mi => mi.MakeGenericMethod(genericTypes))
-                .Where(mi => mi.GetParameters().Select(pi => pi.ParameterType).SequenceEqual(parameterTypes))
-                .ToList();
+            var methods =
+                sourceType.GetMethods(bindingFlags).Where(
+                    mi => string.Equals(methodName, mi.Name, StringComparison.InvariantCulture)).Where(
+                        mi => mi.ContainsGenericParameters).Where(mi => mi.GetGenericArguments().Length == genericTypes.Length).
+                    Where(mi => mi.GetParameters().Length == parameterTypes.Length).Select(
+                        mi => mi.MakeGenericMethod(genericTypes)).Where(
+                            mi => mi.GetParameters().Select(pi => pi.ParameterType).SequenceEqual(parameterTypes)).ToList();
 #else
             var validMethods =  from method in sourceType.GetMethods(bindingFlags)
                                 where method.Name == methodName
@@ -203,11 +226,93 @@ namespace TinyIoC
             var methods = validMethods.ToList();
 #endif
             if (methods.Count > 1)
+            {
                 throw new AmbiguousMatchException();
+            }
 
-            var actualMethod = methods.FirstOrDefault();
+            return methods.FirstOrDefault();
+        }
 
-            return actualMethod;
+        private sealed class GenericMethodCacheKey
+        {
+            private readonly Type _sourceType;
+
+            private readonly string _methodName;
+
+            private readonly Type[] _genericTypes;
+
+            private readonly Type[] _parameterTypes;
+
+            private readonly int _hashCode;
+
+            public GenericMethodCacheKey(Type sourceType, string methodName, Type[] genericTypes, Type[] parameterTypes)
+            {
+                _sourceType = sourceType;
+                _methodName = methodName;
+                _genericTypes = genericTypes;
+                _parameterTypes = parameterTypes;
+                _hashCode = GenerateHashCode();
+            }
+
+            public override bool Equals(object obj)
+            {
+                var cacheKey = obj as GenericMethodCacheKey;
+                if (cacheKey == null)
+                    return false;
+
+                if (_sourceType != cacheKey._sourceType)
+                    return false;
+
+                if (!String.Equals(_methodName, cacheKey._methodName, StringComparison.InvariantCulture))
+                    return false;
+
+                if (_genericTypes.Length != cacheKey._genericTypes.Length)
+                    return false;
+
+                if (_parameterTypes.Length != cacheKey._parameterTypes.Length)
+                    return false;
+
+                for (int i = 0; i < _genericTypes.Length; ++i)
+                {
+                    if (_genericTypes[i] != cacheKey._genericTypes[i])
+                        return false;
+                }
+
+                for (int i = 0; i < _parameterTypes.Length; ++i)
+                {
+                    if (_parameterTypes[i] != cacheKey._parameterTypes[i])
+                        return false;
+                }
+
+                return true;
+            }
+
+            public override int GetHashCode()
+            {
+                return _hashCode;
+            }
+
+            private int GenerateHashCode()
+            {
+                unchecked
+                {
+                    var result = _sourceType.GetHashCode();
+
+                    result = (result * 397) ^ _methodName.GetHashCode();
+
+                    for (int i = 0; i < _genericTypes.Length; ++i)
+                    {
+                        result = (result * 397) ^ _genericTypes[i].GetHashCode();
+                    }
+
+                    for (int i = 0; i < _parameterTypes.Length; ++i)
+                    {
+                        result = (result * 397) ^ _parameterTypes[i].GetHashCode();
+                    }
+
+                    return result;
+                }
+            }
         }
     }
     #endregion
@@ -463,7 +568,7 @@ namespace TinyIoC
     }
     #endregion
 
-    public sealed class TinyIoCContainer : IDisposable
+    public sealed partial class TinyIoCContainer : IDisposable
     {
         #region "Fluent" API
         /// <summary>
@@ -3085,25 +3190,6 @@ namespace TinyIoC
         {
             var genericResolveAllMethod = this.GetType().GetGenericMethod(BindingFlags.Public | BindingFlags.Instance, "ResolveAll", type.GetGenericArguments(), new[] { typeof(bool) });
 
-//#if GETPARAMETERS_OPEN_GENERICS
-//            // Using MakeGenericMethod (slow) because we need to
-//            // cast the IEnumerable or constructing the type wil fail.
-//            // We may as well use the ResolveAll<ResolveType> public
-//            // method to do this.
-//            var resolveAllMethod = this.GetType().GetMethod("ResolveAll", new Type[] { });
-//            var genericResolveAllMethod = resolveAllMethod.MakeGenericMethod(type.GetGenericArguments()[0]);
-//#else
-//            var resolveAllMethods =    from member in this.GetType().GetMembers()
-//                                       where member.MemberType == MemberTypes.Method
-//                                       where member.Name == "ResolveAll"
-//                                       let method = member as MethodInfo
-//                                       where method.IsGenericMethod
-//                                       let genericMethod = method.MakeGenericMethod(type.GetGenericArguments()[0])
-//                                       where genericMethod.GetParameters().Count() == 0
-//                                       select genericMethod;
-
-//            var genericResolveAllMethod = resolveAllMethods.First();
-//#endif
             return genericResolveAllMethod.Invoke(this, new object[] { false });
         }
 
@@ -3268,10 +3354,7 @@ namespace TinyIoC
             if (!includeUnnamed)
                 registrations = registrations.Where(tr => tr.Name != string.Empty);
 
-            foreach (var registration in registrations)
-            {
-                yield return ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default);
-            }
+            return registrations.Select(registration => this.ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default));
         }
 
         private static bool IsValidAssignment(Type registerType, Type registerImplementation)
