@@ -36,6 +36,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+#if WINRT
+using System.Reflection;
+#endif
 
 namespace TinyIoC.Tests.PlatformTestSuite
 {
@@ -294,7 +297,11 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterAssemblySpecified(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterAssemblySpecified");
+#if WINRT
+            container.AutoRegister(new[] { this.GetType().GetTypeInfo().Assembly });
+#else
             container.AutoRegister(new[] { this.GetType().Assembly });
+#endif
             container.Resolve<ITestInterface>();
             return true;
         }

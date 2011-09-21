@@ -27,6 +27,10 @@
 #define GETPARAMETERS_OPEN_GENERICS         // Platform supports GetParameters on open generics
 #define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
 
+// WinRT
+#if WINRT
+#endif
+
 // CompactFramework / Windows Phone 7
 // By default does not support System.Linq.Expressions.
 // AppDomain object does not support enumerating all assemblies in the app domain.
@@ -147,7 +151,11 @@ namespace TinyIoC
 
             try
             {
+#if WINRT
+                assemblies = assembly.ExportedTypes.ToArray();
+#else
                 assemblies = assembly.GetTypes();
+#endif
             }
             catch (System.IO.FileNotFoundException)
             {
@@ -157,11 +165,12 @@ namespace TinyIoC
             {
                 assemblies = new Type[] { };
             }
+#if !WINRT
             catch (ReflectionTypeLoadException)
             {
                 assemblies = new Type[] { };
             }
-
+#endif
             return assemblies;
         }
     }
@@ -175,6 +184,34 @@ namespace TinyIoC
             _genericMethodCache = new SafeDictionary<GenericMethodCacheKey, MethodInfo>();
         }
 
+#if WINRT
+        /// <summary>
+        /// Gets a generic method from a type given the method name, generic types and parameter types
+        /// </summary>
+        /// <param name="sourceType">Source type</param>
+        /// <param name="methodName">Name of the method</param>
+        /// <param name="genericTypes">Generic types to use to make the method generic</param>
+        /// <param name="parameterTypes">Method parameters</param>
+        /// <returns>MethodInfo or null if no matches found</returns>
+        /// <exception cref="System.Reflection.AmbiguousMatchException"/>
+        /// <exception cref="System.ArgumentException"/>
+        public static MethodInfo GetGenericMethod(this Type sourceType, string methodName, Type[] genericTypes, Type[] parameterTypes)
+        {
+            MethodInfo method;
+            var cacheKey = new GenericMethodCacheKey(sourceType, methodName, genericTypes, parameterTypes);
+
+            // Shouldn't need any additional locking
+            // we don't care if we do the method info generation
+            // more than once before it gets cached.
+            if (!_genericMethodCache.TryGetValue(cacheKey, out method))
+            {
+                method = GetMethod(sourceType, methodName, genericTypes, parameterTypes);
+                _genericMethodCache[cacheKey] = method;
+            }
+
+            return method;
+        }
+#else
         /// <summary>
         /// Gets a generic method from a type given the method name, binding flags, generic types and parameter types
         /// </summary>
@@ -202,13 +239,33 @@ namespace TinyIoC
 
             return method;
         }
+#endif
 
+#if WINRT
+        private static MethodInfo GetMethod(Type sourceType, string methodName, Type[] genericTypes, Type[] parameterTypes)
+        {
+            var methods =
+                sourceType.GetTypeInfo().DeclaredMethods.Where(
+                    mi => string.Equals(methodName, mi.Name, StringComparison.Ordinal)).Where(
+                        mi => mi.ContainsGenericParameters).Where(mi => mi.GetGenericArguments().Length == genericTypes.Length).
+                    Where(mi => mi.GetParameters().Length == parameterTypes.Length).Select(
+                        mi => mi.MakeGenericMethod(genericTypes)).Where(
+                            mi => mi.GetParameters().Select(pi => pi.ParameterType).SequenceEqual(parameterTypes)).ToList();
+
+            if (methods.Count > 1)
+            {
+                throw new AmbiguousMatchException();
+            }
+
+            return methods.FirstOrDefault();
+        }
+#else
         private static MethodInfo GetMethod(Type sourceType, BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
         {
 #if GETPARAMETERS_OPEN_GENERICS
             var methods =
                 sourceType.GetMethods(bindingFlags).Where(
-                    mi => string.Equals(methodName, mi.Name, StringComparison.InvariantCulture)).Where(
+                    mi => string.Equals(methodName, mi.Name, StringComparison.Ordinal)).Where(
                         mi => mi.ContainsGenericParameters).Where(mi => mi.GetGenericArguments().Length == genericTypes.Length).
                     Where(mi => mi.GetParameters().Length == parameterTypes.Length).Select(
                         mi => mi.MakeGenericMethod(genericTypes)).Where(
@@ -232,6 +289,7 @@ namespace TinyIoC
 
             return methods.FirstOrDefault();
         }
+#endif
 
         private sealed class GenericMethodCacheKey
         {
@@ -263,7 +321,7 @@ namespace TinyIoC
                 if (_sourceType != cacheKey._sourceType)
                     return false;
 
-                if (!String.Equals(_methodName, cacheKey._methodName, StringComparison.InvariantCulture))
+                if (!String.Equals(_methodName, cacheKey._methodName, StringComparison.Ordinal))
                     return false;
 
                 if (_genericTypes.Length != cacheKey._genericTypes.Length)
@@ -1153,7 +1211,7 @@ namespace TinyIoC
                 throw new ArgumentNullException("types", "types is null.");
 
             foreach (var type in implementationTypes)
-                if (!registrationType.IsAssignableFrom(type))
+                if (!registrationType.GetTypeInfo().IsAssignableFrom(type.GetTypeInfo()))
                     throw new ArgumentException(String.Format("types: The type {0} is not assignable from {1}", registrationType.FullName, type.FullName));
 
             if (implementationTypes.Count() != implementationTypes.Distinct().Count())
@@ -2198,9 +2256,13 @@ namespace TinyIoC
 
             public MultiInstanceFactory(Type registerType, Type registerImplementation)
             {
+#if WINRT
+                if (registerImplementation.GetTypeInfo().IsAbstract || registerImplementation.GetTypeInfo().IsInterface)
+                    throw new TinyIoCRegistrationTypeException(registerImplementation, "MultiInstanceFactory");
+#else
                 if (registerImplementation.IsAbstract || registerImplementation.IsInterface)
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "MultiInstanceFactory");
-
+#endif
                 if (!IsValidAssignment(registerType, registerImplementation))
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "MultiInstanceFactory");
 
@@ -2819,13 +2881,13 @@ namespace TinyIoC
             // TODO - find a better way to remove "system" assemblies from the auto registration
             var ignoreChecks = new List<Func<Assembly, bool>>()
             {
-                asm => asm.FullName.StartsWith("Microsoft.", StringComparison.InvariantCulture),
-                asm => asm.FullName.StartsWith("System.", StringComparison.InvariantCulture),
-                asm => asm.FullName.StartsWith("System,", StringComparison.InvariantCulture),
-                asm => asm.FullName.StartsWith("CR_ExtUnitTest", StringComparison.InvariantCulture),
-                asm => asm.FullName.StartsWith("mscorlib,", StringComparison.InvariantCulture),
-                asm => asm.FullName.StartsWith("CR_VSTest", StringComparison.InvariantCulture),
-                asm => asm.FullName.StartsWith("DevExpress.CodeRush", StringComparison.InvariantCulture),
+                asm => asm.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
+                asm => asm.FullName.StartsWith("System.", StringComparison.Ordinal),
+                asm => asm.FullName.StartsWith("System,", StringComparison.Ordinal),
+                asm => asm.FullName.StartsWith("CR_ExtUnitTest", StringComparison.Ordinal),
+                asm => asm.FullName.StartsWith("mscorlib,", StringComparison.Ordinal),
+                asm => asm.FullName.StartsWith("CR_VSTest", StringComparison.Ordinal),
+                asm => asm.FullName.StartsWith("DevExpress.CodeRush", StringComparison.Ordinal),
             };
 
             foreach (var check in ignoreChecks)
@@ -2842,8 +2904,8 @@ namespace TinyIoC
             // TODO - find a better way to remove "system" types from the auto registration
             var ignoreChecks = new List<Func<Type, bool>>()
             {
-                t => t.FullName.StartsWith("System.", StringComparison.InvariantCulture),
-                t => t.FullName.StartsWith("Microsoft.", StringComparison.InvariantCulture),
+                t => t.FullName.StartsWith("System.", StringComparison.Ordinal),
+                t => t.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
                 t => t.IsPrimitive,
 #if !UNBOUND_GENERICS_GETCONSTRUCTORS
                 t => t.IsGenericTypeDefinition,
