@@ -628,8 +628,12 @@ namespace TinyIoC
 
     public sealed partial class TinyIoCContainer : IDisposable
     {
-        #region AppDomain Fake WinRT Class
+        #region Fake WinRT Classes
 #if WINRT
+        private sealed class MethodAccessException : Exception
+        {
+        }
+
         private sealed class AppDomain
         {
             public static AppDomain CurrentDomain { get; private set; }
@@ -2627,7 +2631,11 @@ namespace TinyIoC
 
             public SingletonFactory(Type registerType, Type registerImplementation)
             {
+#if WINRT
+                if (registerImplementation.GetTypeInfo().IsAbstract || registerImplementation.GetTypeInfo().IsInterface)
+#else
                 if (registerImplementation.IsAbstract || registerImplementation.IsInterface)
+#endif
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "SingletonFactory");
 
                 if (!IsValidAssignment(registerType, registerImplementation))
@@ -2714,7 +2722,11 @@ namespace TinyIoC
                 if (!IsValidAssignment(registerType, registerImplementation))
                     throw new TinyIoCRegistrationTypeException(registerImplementation, "SingletonFactory");
 
+#if WINRT
+                if (registerImplementation.GetTypeInfo().IsAbstract || registerImplementation.GetTypeInfo().IsInterface)
+#else
                 if (registerImplementation.IsAbstract || registerImplementation.IsInterface)
+#endif
                     throw new TinyIoCRegistrationTypeException(registerImplementation, errorMessage);
 
                 this.registerType = registerType;
@@ -2873,7 +2885,11 @@ namespace TinyIoC
                 var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
 
                 var concreteTypes = from type in types
+#if WINRT
+                                    where (type.GetTypeInfo().IsClass == true) && (type.GetTypeInfo().IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+#else
                                     where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+#endif
                                     select type;
 
                 foreach (var type in concreteTypes)
@@ -2889,13 +2905,21 @@ namespace TinyIoC
                 }
 
                 var abstractInterfaceTypes = from type in types
+#if WINRT
+                                             where ((type.GetTypeInfo().IsInterface == true || type.GetTypeInfo().IsAbstract == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+#else
                                              where ((type.IsInterface == true || type.IsAbstract == true) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
+#endif
                                              select type;
 
                 foreach (var type in abstractInterfaceTypes)
                 {
                     var implementations = from implementationType in concreteTypes
+#if WINRT
+                                          where implementationType.GetTypeInfo().ImplementedInterfaces.Contains(type) || implementationType.GetTypeInfo().BaseType == type
+#else
                                           where implementationType.GetInterfaces().Contains(type) || implementationType.BaseType == type
+#endif
                                           select implementationType;
 
                     if (!ignoreDuplicateImplementations && implementations.Count() > 1)
@@ -3009,7 +3033,11 @@ namespace TinyIoC
 
         private ObjectFactoryBase GetDefaultObjectFactory(Type registerType, Type registerImplementation)
         {
+#if WINRT
+            if (registerType.GetTypeInfo().IsInterface || registerType.GetTypeInfo().IsAbstract)
+#else
             if (registerType.IsInterface || registerType.IsAbstract)
+#endif
                 return new SingletonFactory(registerType, registerImplementation);
 
             return new MultiInstanceFactory(registerType, registerImplementation);
@@ -3097,11 +3125,19 @@ namespace TinyIoC
                 return true;
 
             // 2 parameter func with string as first parameter (name)
+#if WINRT
+            if ((genericType == typeof(Func<,>) && type.GetTypeInfo().GenericTypeArguments[0] == typeof(string)))
+#else
             if ((genericType == typeof(Func<,>) && type.GetGenericArguments()[0] == typeof(string)))
+#endif
                 return true;
 
             // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
+#if WINRT
+            if ((genericType == typeof(Func<,,>) && type.GetTypeInfo().GenericTypeArguments[0] == typeof(string) && type.GetTypeInfo().GenericTypeArguments[1] == typeof(IDictionary<String, object>)))
+#else
             if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<String, object>)))
+#endif
                 return true;
 
             return false;
@@ -3220,7 +3256,11 @@ namespace TinyIoC
             // Attempt unregistered construction if possible and requested
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (registration.Type.IsGenericType && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
             {
+#if WINRT
+                if (!registration.Type.GetTypeInfo().IsAbstract && !registration.Type.GetTypeInfo().IsInterface)
+#else
                 if (!registration.Type.IsAbstract && !registration.Type.IsInterface)
+#endif
                     return ConstructType(null, registration.Type, parameters, options);
             }
 
@@ -3420,9 +3460,15 @@ namespace TinyIoC
 
         private void BuildUpInternal(object input, ResolveOptions resolveOptions)
         {
+#if WINRT
+            var properties = from property in input.GetType().GetTypeInfo().DeclaredProperties
+                             where (property.GetMethod != null) && (property.SetMethod != null) && !property.PropertyType.GetTypeInfo().IsValueType
+                             select property;
+#else
             var properties = from property in input.GetType().GetProperties()
                              where (property.GetGetMethod() != null) && (property.GetSetMethod() != null) && !property.PropertyType.IsValueType
                              select property;
+#endif
 
             foreach (var property in properties)
             {
@@ -3462,6 +3508,28 @@ namespace TinyIoC
 
         private static bool IsValidAssignment(Type registerType, Type registerImplementation)
         {
+#if WINRT
+            var registerTypeDef = registerType.GetTypeInfo();
+            var registerImplementationDef = registerImplementation.GetTypeInfo();
+
+            if (!registerTypeDef.IsGenericTypeDefinition)
+            {
+                if (!registerTypeDef.IsAssignableFrom(registerImplementationDef))
+                    return false;
+            }
+            else
+            {
+                if (registerTypeDef.IsInterface)
+                {
+                    if (!registerImplementationDef.ImplementedInterfaces.Any(t => t.GetTypeInfo().Name == registerTypeDef.Name))
+                        return false;
+                }
+                else if (registerTypeDef.IsAbstract && registerImplementationDef.BaseType != registerType)
+                {
+                    return false;
+                }
+            }
+#else
             if (!registerType.IsGenericTypeDefinition)
             {
                 if (!registerType.IsAssignableFrom(registerImplementation))
@@ -3479,7 +3547,7 @@ namespace TinyIoC
                     return false;
                 }
             }
-
+#endif
             return true;
         }
 
