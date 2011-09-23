@@ -18,7 +18,7 @@
             <TextBlock x:Name="Results"/>
         </StackPanel>
         
-        <TextBox Grid.Column="1" x:Name="ResultsBox" />
+        <TextBox Grid.Column="1" x:Name="ResultsBox" AcceptsReturn="True" />
     </Grid>
     
 </UserControl>

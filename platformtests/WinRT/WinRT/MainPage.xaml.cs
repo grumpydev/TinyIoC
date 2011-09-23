@@ -24,6 +24,7 @@ namespace WinRT
             int testsRun, testsPassed, testsFailed;
             tests.RunTests(out testsRun, out testsPassed, out testsFailed);
             Results.Text = String.Format("{0} Run, {1} Passed, {2} Failed", testsRun, testsPassed, testsFailed);
+            ResultsBox.Text = logger.Log;
         }
 
         private void ExitButton_Click(object sender, RoutedEventArgs e)

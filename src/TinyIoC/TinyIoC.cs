@@ -60,6 +60,8 @@ namespace TinyIoC
     using System.Reflection;
 #if EXPRESSIONS
     using System.Linq.Expressions;
+    using Windows.Storage.Search;
+    using Windows.Storage;
 #endif
 
     #region SafeDictionary
@@ -645,15 +647,18 @@ namespace TinyIoC
 
             public Assembly[] GetAssemblies()
             {
-                return GetAssemblyListAsync().Result.ToArray();
+                return GetAssemblyList().ToArray();
             }
 
-            private async System.Threading.Tasks.Task<IEnumerable<Assembly>> GetAssemblyListAsync()
+            private IEnumerable<Assembly> GetAssemblyList()
             {
                 var folder = Windows.ApplicationModel.Package.Current.InstalledLocation;
 
                 List<Assembly> assemblies = new List<Assembly>();
-                foreach (Windows.Storage.StorageFile file in await folder.GetFilesAsync())
+
+                var results = folder.GetFilesAsync().GetResults();
+
+                foreach (StorageFile file in results)
                 {
                     if (file.FileType == ".dll" || file.FileType == ".exe")
                     {
