@@ -15,6 +15,7 @@
         <StackPanel Orientation="Vertical">
             <Button x:Name="GoButton" Click="GoButton_Click">GO!</Button>
             <Button x:Name="ExitButton" Click="ExitButton_Click">Quit</Button>
+            <TextBlock x:Name="Results"/>
         </StackPanel>
         
         <TextBox Grid.Column="1" x:Name="ResultsBox" />

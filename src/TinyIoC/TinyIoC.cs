@@ -2971,11 +2971,19 @@ namespace TinyIoC
             {
                 t => t.FullName.StartsWith("System.", StringComparison.Ordinal),
                 t => t.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
+#if WINRT
+                t => t.GetTypeInfo().IsPrimitive,
+#else
                 t => t.IsPrimitive,
+#endif
 #if !UNBOUND_GENERICS_GETCONSTRUCTORS
                 t => t.IsGenericTypeDefinition,
 #endif
+#if WINRT
+                t => (!t.GetTypeInfo().DeclaredConstructors.Any()) && !(t.GetTypeInfo().IsInterface || t.GetTypeInfo().IsAbstract),
+#else
                 t => (t.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(t.IsInterface || t.IsAbstract),
+#endif
             };
 
             if (registrationPredicate != null)
@@ -3275,14 +3283,22 @@ namespace TinyIoC
                 return null;
 
             Type genericType = type.GetGenericTypeDefinition();
+#if WINRT
+            Type[] genericArguments = type.GetTypeInfo().GenericTypeArguments.ToArray();
+#else
             Type[] genericArguments = type.GetGenericArguments();
+#endif
 
             // Just a func
             if (genericType == typeof(Func<>))
             {
                 Type returnType = genericArguments[0];
 
+#if WINRT
+                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => !mi.GetParameters().Any());
+#else
                 MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { });
+#endif
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
                 var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);
@@ -3297,7 +3313,11 @@ namespace TinyIoC
             {
                 Type returnType = genericArguments[1];
 
+#if WINRT
+                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 1 && mi.GetParameters()[0].GetType() == typeof(String));
+#else
                 MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String) });
+#endif
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
                 ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name") };
@@ -3309,14 +3329,22 @@ namespace TinyIoC
             }
 
             // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
+#if WINRT
+            if ((genericType == typeof(Func<,,>) && type.GenericTypeArguments[0] == typeof(string) && type.GenericTypeArguments[1] == typeof(IDictionary<string, object>)))
+#else
             if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<string, object>)))
+#endif
             {
                 Type returnType = genericArguments[2];
 
                 var name = Expression.Parameter(typeof(string), "name");
                 var parameters = Expression.Parameter(typeof(IDictionary<string, object>), "parameters");
 
+#if WINRT
+                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 2 && mi.GetParameters()[0].GetType() == typeof(String) && mi.GetParameters()[1].GetType() == typeof(NamedParameterOverloads));
+#else
                 MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String), typeof(NamedParameterOverloads) });
+#endif
                 resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
                 var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, name, Expression.Call(typeof(NamedParameterOverloads), "FromIDictionary", null, parameters));
@@ -3331,7 +3359,11 @@ namespace TinyIoC
 #endif
         private object GetIEnumerableRequest(Type type)
         {
+#if WINRT
+            var genericResolveAllMethod = this.GetType().GetGenericMethod("ResolveAll", type.GenericTypeArguments, new[] { typeof(bool) });
+#else
             var genericResolveAllMethod = this.GetType().GetGenericMethod(BindingFlags.Public | BindingFlags.Instance, "ResolveAll", type.GetGenericArguments(), new[] { typeof(bool) });
+#endif
 
             return genericResolveAllMethod.Invoke(this, new object[] { false });
         }
@@ -3348,7 +3380,11 @@ namespace TinyIoC
 
                 var isParameterOverload = parameters.ContainsKey(parameter.Name);
 
+#if WINRT                
+                if (parameter.ParameterType.GetTypeInfo().IsPrimitive && !isParameterOverload)
+#else
                 if (parameter.ParameterType.IsPrimitive && !isParameterOverload)
+#endif
                     return false;
 
                 if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options))
@@ -3363,7 +3399,11 @@ namespace TinyIoC
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
 
+#if WINRT
+            if (type.GetTypeInfo().IsValueType)
+#else
             if (type.IsValueType)
+#endif
                 return null;
 
             // Get constructors in reverse order based on the number of parameters
@@ -3375,7 +3415,11 @@ namespace TinyIoC
 
         private IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
         {
+#if WINRT
+            return type.GetTypeInfo().DeclaredConstructors.OrderByDescending(ctor => ctor.GetParameters().Count());
+#else
             return type.GetConstructors().OrderByDescending(ctor => ctor.GetParameters().Count());
+#endif
         }
 
         private object ConstructType(Type requestedType, Type implementationType, ResolveOptions options)
@@ -3400,10 +3444,18 @@ namespace TinyIoC
 #if RESOLVE_OPEN_GENERICS
             if (implementationType.IsGenericTypeDefinition)
             {
+#if WINRT
+                if (requestedType == null || !requestedType.IsGenericType || !requestedType.GenericTypeArguments.Any())
+#else
                 if (requestedType == null || !requestedType.IsGenericType || !requestedType.GetGenericArguments().Any())
+#endif
                     throw new TinyIoCResolutionException(typeToConstruct);
                  
+#if WINRT
+                typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GenericTypeArguments);
+#else
                 typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GetGenericArguments());
+#endif
             }
 #endif
 
