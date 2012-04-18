@@ -27,10 +27,10 @@
 #define GETPARAMETERS_OPEN_GENERICS         // Platform supports GetParameters on open generics
 #define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
 
-// CompactFramework / Windows Phone 7
+// CompactFramework
 // By default does not support System.Linq.Expressions.
 // AppDomain object does not support enumerating all assemblies in the app domain.
-#if PocketPC || WINDOWS_PHONE
+#if PocketPC
 #undef EXPRESSIONS
 #undef APPDOMAIN_GETASSEMBLIES
 #undef UNBOUND_GENERICS_GETCONSTRUCTORS
@@ -2267,7 +2267,7 @@ namespace TinyIoC
                 }
             }
 
-            public DelegateFactory( Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
+            public DelegateFactory(Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
             {
                 if (factory == null)
                     throw new ArgumentNullException("factory");
@@ -2583,7 +2583,7 @@ namespace TinyIoC
 
             public void Dispose()
             {
-                if (this._Current == null) 
+                if (this._Current == null)
                     return;
 
                 var disposable = this._Current as IDisposable;
@@ -2855,7 +2855,7 @@ namespace TinyIoC
 
             if (registrationPredicate != null)
             {
-                ignoreChecks.Add(t => !registrationPredicate(t));    
+                ignoreChecks.Add(t => !registrationPredicate(t));
             }
 
             foreach (var check in ignoreChecks)
@@ -3261,7 +3261,7 @@ namespace TinyIoC
             {
                 if (requestedType == null || !requestedType.IsGenericType || !requestedType.GetGenericArguments().Any())
                     throw new TinyIoCResolutionException(typeToConstruct);
-                 
+
                 typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GetGenericArguments());
             }
 #endif
@@ -3290,8 +3290,8 @@ namespace TinyIoC
                     args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? 
                                             parameters[currentParam.Name] : 
                                             ResolveInternal(
-                                                new TypeRegistration(currentParam.ParameterType), 
-                                                NamedParameterOverloads.Default, 
+                                                new TypeRegistration(currentParam.ParameterType),
+                                                NamedParameterOverloads.Default,
                                                 options);
                 }
                 catch (TinyIoCResolutionException ex)
