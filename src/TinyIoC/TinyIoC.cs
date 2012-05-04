@@ -2986,8 +2986,12 @@ namespace TinyIoC
 
         private bool IsAutomaticLazyFactoryRequest(Type type)
         {
+            var isDelegate = typeof (Delegate).IsAssignableFrom(type);
+
             if (!type.IsGenericType)
-                return false;
+            {
+                return isDelegate;
+            }
 
             Type genericType = type.GetGenericTypeDefinition();
 
@@ -3001,6 +3005,9 @@ namespace TinyIoC
 
             // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
             if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<String, object>)))
+                return true;
+
+            if (isDelegate)
                 return true;
 
             return false;
@@ -3130,8 +3137,14 @@ namespace TinyIoC
 #if EXPRESSIONS
         private object GetLazyAutomaticFactoryRequest(Type type)
         {
+            var isDelegate = typeof(Delegate).IsAssignableFrom(type);
+
             if (!type.IsGenericType)
-                return null;
+            {
+                return isDelegate 
+                    ? factoryDelegateBuilder.BuildFactory(type, this) 
+                    : null;
+            }
 
             Type genericType = type.GetGenericTypeDefinition();
             Type[] genericArguments = type.GetGenericArguments();
@@ -3183,6 +3196,12 @@ namespace TinyIoC
                 var resolveLambda = Expression.Lambda(resolveCall, name, parameters).Compile();
 
                 return resolveLambda;
+            }
+
+            // Any other type of delegate.
+            if (isDelegate)
+            {
+                return factoryDelegateBuilder.BuildFactory(type, this);
             }
 
             throw new TinyIoCResolutionException(type);
@@ -3398,6 +3417,115 @@ namespace TinyIoC
             }
         }
 
+        #endregion
+
+        #region Automatic factory delegate builder
+
+        // Example: 
+        // A class where only some constructor arguments should be resolved by the container.
+        // Add a public factory delegate.
+        //
+        // public class Logger
+        // {
+        //     public delegate Logger Factory(int indent);
+        //
+        //     public Logger(int indent, IOutput output)
+        //     {
+        //         ...
+        //     }
+        // }
+        //
+        // We can now resolve the factory delegate.
+        // var loggerFactory = container.Resolve<Logger.Factory>();
+        // var logger = loggerFactory(4);
+        // The created Logger instance will have indent=4 and output={whatever the container provided}.
+
+#if EXPRESSIONS
+        readonly FactoryDelegateBuilder factoryDelegateBuilder = new FactoryDelegateBuilder();
+
+        class FactoryDelegateBuilder
+        {
+            static readonly MethodInfo genericResolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new[] { typeof(NamedParameterOverloads) });
+            static readonly MethodInfo addMethod = typeof(NamedParameterOverloads).GetMethod("Add");
+            static readonly ConstructorInfo namedParameterOverloadsConstructor = typeof(NamedParameterOverloads).GetConstructor(new Type[0]);
+
+            readonly Dictionary<Type, Delegate> delegateCache = new Dictionary<Type, Delegate>();
+
+            public object BuildFactory(Type delegateType, TinyIoCContainer container)
+            {
+                lock (delegateCache)
+                {
+                    Delegate factory;
+                    if (!delegateCache.TryGetValue(delegateType, out factory))
+                    {
+                        factory = CreateFactoryDelegate(delegateType, container);
+                        delegateCache[delegateType] = factory;
+                    }
+                    return factory;
+                }
+            }
+
+            Delegate CreateFactoryDelegate(Type delegateType, object container)
+            {
+                // Create a delegate like this:
+                // (p1, p2, ...) => container.Resolve<T>(new NamedParameterOverloads() {
+                //     { "p1", p1 },
+                //     { "p2", p2 },
+                //     ...
+                // })
+
+                // So any T constructor parameters not matching factory delegate parameters will be 
+                // resolved from the container.
+
+                var delegateInvokeMethod = delegateType.GetMethod("Invoke");
+                var parameters = CreateParameters(delegateInvokeMethod);
+                var resolveCall = CreateResolveCallExpression(delegateInvokeMethod.ReturnType, parameters, container);
+
+                var lambdaExpression = Expression.Lambda(delegateType, resolveCall, parameters);
+
+                return lambdaExpression.Compile();
+            }
+
+            MethodCallExpression CreateResolveCallExpression(Type returnType, IEnumerable<ParameterExpression> parameters, object container)
+            {
+                var resolveMethod = genericResolveMethod.MakeGenericMethod(returnType);
+                var namedParameterOverloads = CreateNamedParameterOverloadsInitializerExpression(parameters);
+                // container.Resolve<returnType>(namedParameterOverloads);
+                return Expression.Call(
+                    Expression.Constant(container),
+                    resolveMethod,
+                    namedParameterOverloads
+                );
+            }
+
+            ListInitExpression CreateNamedParameterOverloadsInitializerExpression(IEnumerable<ParameterExpression> parameters)
+            {
+                // new NamedParameterOverloads { { "p1", p1 }, { "p2", p2 }, ... }
+                return Expression.ListInit(
+                    Expression.New(namedParameterOverloadsConstructor),
+                    parameters.Select(CreateElementInit)
+                );
+            }
+
+            ElementInit CreateElementInit(ParameterExpression parameter)
+            {
+                // .Add("parameterName", parameterValue)
+                return Expression.ElementInit(
+                    addMethod,
+                    Expression.Constant(parameter.Name),
+                    Expression.Convert(parameter, typeof(object))
+                );
+            }
+
+            static ParameterExpression[] CreateParameters(MethodInfo delegateInvokeMethod)
+            {
+                return delegateInvokeMethod
+                    .GetParameters()
+                    .Select(p => Expression.Parameter(p.ParameterType, p.Name))
+                    .ToArray();
+            }
+        }
+#endif
         #endregion
     }
 }

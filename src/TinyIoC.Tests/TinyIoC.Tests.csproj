@@ -77,6 +77,7 @@
     <Compile Include="TestData\NestedInterfaceDependencies.cs" />
     <Compile Include="TestData\TinyMessengerTestData.cs" />
     <Compile Include="TestData\UtilityMethods.cs" />
+    <Compile Include="TinyIoCResolveFactoryDelegateTests.cs" />
     <Compile Include="TinyIoCFunctionalTests.cs" />
     <Compile Include="TinyIoCTests.cs" />
     <Compile Include="TinyMessageSubscriptionTokenTests.cs" />
