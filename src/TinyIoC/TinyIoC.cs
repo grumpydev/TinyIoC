@@ -3231,11 +3231,6 @@ namespace TinyIoC
             return type.GetConstructors().OrderByDescending(ctor => ctor.GetParameters().Count());
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, ResolveOptions options)
-        {
-            return ConstructType(requestedType, implementationType, null, NamedParameterOverloads.Default, options);
-        }
-
         private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, ResolveOptions options)
         {
             return ConstructType(requestedType, implementationType, constructor, NamedParameterOverloads.Default, options);
