@@ -1150,7 +1150,7 @@ namespace TinyIoC
         public MultiRegisterOptions RegisterMultiple(Type registrationType, IEnumerable<Type> implementationTypes)
         {
             if (implementationTypes == null)
-                throw new ArgumentNullException("types", "types is null.");
+                throw new ArgumentNullException("implementationTypes", "implementationTypes is null.");
 
             foreach (var type in implementationTypes)
                 if (!registrationType.IsAssignableFrom(type))
