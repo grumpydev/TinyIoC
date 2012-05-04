@@ -2895,11 +2895,6 @@ namespace TinyIoC
             return new RegisterOptions(this, typeRegistration);
         }
 
-        private void RemoveRegistration(TypeRegistration typeRegistration)
-        {
-            _RegisteredTypes.Remove(typeRegistration);
-        }
-
         private ObjectFactoryBase GetDefaultObjectFactory(Type registerType, Type registerImplementation)
         {
             if (registerType.IsInterface || registerType.IsAbstract)
