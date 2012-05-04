@@ -2697,7 +2697,7 @@ namespace TinyIoC
         #region Type Registrations
         public sealed class TypeRegistration
         {
-            private int _hashCode;
+            private readonly int _hashCode;
 
             public Type Type { get; private set; }
             public string Name { get; private set; }
