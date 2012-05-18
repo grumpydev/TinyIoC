@@ -17,7 +17,7 @@ In addition to this, TinyIoC's "simplified inclusion" makes it useful for provid
 ### Key Features ###
 
 * Simple inclusion - just add the CS file (or VB file coming soon!) and off you go.
-* Wide platform support - actively tested on Windows, Mono, MonoTouch, PocketPC and Windows Phone 7. Also works just fine on MonoDroid.
+* Wide platform support - actively tested on Windows (including Windows 8 WinRT), Mono, MonoTouch, PocketPC and Windows Phone 7. Also works just fine on MonoDroid.
 * Simple API for Register, Resolve, CanResolve and TryResolve.
 * Supports constructor injection and property injection. Constructors are selected automatically but can be overridden using a "fluent" API.
 * Lifetime management - including singletons, multi-instance and ASP.Net per-request singletons.
