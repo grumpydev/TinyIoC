@@ -1023,14 +1023,10 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
-        public void Register_FactoryToSingletonFluent_ThrowsException()
+        public void Register_FactoryToSingletonFluent_Registers()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsSingleton();
-
-            // Should have thrown by now
-            Assert.IsTrue(false);
+            container.Register((c, p) => new TestClassDefaultCtor()).AsSingleton();
         }
 
         [TestMethod]
