@@ -3143,7 +3143,7 @@ namespace TinyIoC
             return new MultiInstanceFactory(registerType, registerImplementation);
         }
 
-        private bool CanResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
+        private bool CanResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options, IList<Type> circularTypes = null)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -3158,9 +3158,8 @@ namespace TinyIoC
                     return true;
 
                 if (factory.Constructor == null)
-                    return (GetBestConstructor(factory.CreatesType, parameters, options) != null) ? true : false;
-                else
-                    return CanConstruct(factory.Constructor, parameters, options);
+                    return GetBestConstructor(factory.CreatesType, parameters, options, circularTypes) != null;
+                return CanConstruct(factory.Constructor, parameters, options);
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
@@ -3424,7 +3423,7 @@ namespace TinyIoC
             return genericResolveAllMethod.Invoke(this, new object[] { false });
         }
 
-        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
+        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options, IList<Type> circularTypes = null)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -3439,14 +3438,18 @@ namespace TinyIoC
                 if (parameter.ParameterType.IsPrimitive() && !isParameterOverload)
                     return false;
 
-                if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options))
+                if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options, circularTypes))
                     return false;
             }
 
             return true;
         }
 
-        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters, ResolveOptions options)
+        /// <summary>
+        /// If circularTypes parameter is not null the method prevents from circular type resolutions
+        /// by returning null when the circularTypes list contains the specified type.
+        /// </summary>
+        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters, ResolveOptions options, IList<Type> circularTypes = null)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -3454,11 +3457,19 @@ namespace TinyIoC
             if (type.IsValueType())
                 return null;
 
+            if (circularTypes != null)
+            {
+                if (circularTypes.Contains(type))
+                    return null;
+                circularTypes = circularTypes.ToList();
+                circularTypes.Add(type);
+            }
+
             // Get constructors in reverse order based on the number of parameters
             // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
             var ctors = this.GetTypeConstructors(type);
 
-            return ctors.FirstOrDefault(ctor => this.CanConstruct(ctor, parameters, options));
+            return ctors.FirstOrDefault(ctor => this.CanConstruct(ctor, parameters, options, circularTypes));
         }
 
         private IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
@@ -3501,7 +3512,12 @@ namespace TinyIoC
                 // if we can't construct any then get the constructor
                 // with the least number of parameters so we can throw a meaningful
                 // resolve exception
-                constructor = GetBestConstructor(typeToConstruct, parameters, options) ?? GetTypeConstructors(typeToConstruct).LastOrDefault();
+
+                IList<Type> circularTypes = null;
+#if DEBUG
+                circularTypes = new List<Type>();
+#endif
+                constructor = GetBestConstructor(typeToConstruct, parameters, options, circularTypes) ?? GetTypeConstructors(typeToConstruct).LastOrDefault();
             }
 
             if (constructor == null)
