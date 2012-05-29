@@ -1489,7 +1489,18 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        //[ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        public void AutoRegister_SpecifiedRegisterMultiple_RegistersMultipleImplementations()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(new[] { this.GetType().Assembly }, true, true);
+            
+            var results = container.ResolveAll<ITestInterface>();
+
+            Assert.IsInstanceOfType(results.First(), typeof(TestClassDefaultCtor));
+            Assert.IsInstanceOfType(results.ElementAt(1), typeof(DisposableTestClassWithInterface));
+        }
+
+        [TestMethod]
         public void Register_ConstructorSpecifiedForDelegateFactory_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
