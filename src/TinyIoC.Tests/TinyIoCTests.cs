@@ -1457,25 +1457,25 @@ namespace TinyIoC.Tests
 
         [TestMethod]
         [ExpectedException(typeof(TinyIoCAutoRegistrationException))]
-        public void AutoRegister_ThisAssemblySpecifiedIgnoreDuplicatesOff_ThrowsException()
+        public void AutoRegister_ThisAssemblySpecifiedDuplicateActionFail_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly }, false);
+            container.AutoRegister(new[] { this.GetType().Assembly }, DuplicateImplementationActions.Fail);
             Assert.IsTrue(false);
         }
 
         [TestMethod]
-        public void AutoRegister_TinyIoCAssemblySpecifiedIgnoreDuplicatesOff_NoErrors()
+        public void AutoRegister_TinyIoCAssemblySpecifiedDuplicateActionFail_NoErrors()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly }, false);
+            container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly }, DuplicateImplementationActions.Fail);
         }
 
         [TestMethod]
-        public void AutoRegister_SpecifiedRegisterMultiple_RegistersMultipleImplementations()
+        public void AutoRegister_SpecifiedDuplicateActionRegisterMultiple_RegistersMultipleImplementations()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly }, true, true);
+            container.AutoRegister(new[] { this.GetType().Assembly }, DuplicateImplementationActions.RegisterMultiple);
             
             var results = container.ResolveAll<ITestInterface>();
 
