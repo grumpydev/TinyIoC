@@ -30,12 +30,19 @@
 #if SILVERLIGHT
 #undef APPDOMAIN_GETASSEMBLIES
 #endif
+
+#if NETFX_CORE
+#undef APPDOMAIN_GETASSEMBLIES
+#undef RESOLVE_OPEN_GENERICS
+#endif
+
 #endregion
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 
 namespace TinyIoC.Tests.PlatformTestSuite
 {
@@ -213,7 +220,9 @@ namespace TinyIoC.Tests.PlatformTestSuite
 
             _Tests = new List<Func<TinyIoC.TinyIoCContainer, ILogger, bool>>()
             {
+#if APPDOMAIN_GETASSEMBLIES
                 AutoRegisterAppDomain,
+#endif
                 AutoRegisterAssemblySpecified,
                 AutoRegisterPredicateExclusion,
                 RegisterConcrete,
@@ -239,7 +248,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
                 IEnumerableDependency,
                 RegisterMultiple,
                 NonGenericRegister,
-#if RESOLVE_OPEN_GENERICS
+#if RESOLVE_OPEN_GENERICS 
                 OpenGenericRegistration,
                 OpenGenericResolution,
 #endif
@@ -294,7 +303,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterAssemblySpecified(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterAssemblySpecified");
-            container.AutoRegister(new[] { this.GetType().Assembly });
+            container.AutoRegister(new[] { this.GetType().Assembly() });
             container.Resolve<ITestInterface>();
             return true;
         }

@@ -17,11 +17,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
 using TinyIoC.Tests.TestData;
 using TinyIoC.Tests.TestData.BasicClasses;
 using NestedInterfaceDependencies = TinyIoC.Tests.TestData.NestedInterfaceDependencies;
 using NestedClassDependencies = TinyIoC.Tests.TestData.NestedClassDependencies;
+
+#if !NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 
 namespace TinyIoC.Tests
 {
@@ -47,7 +53,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void NestedInterfaceDependencies_MissingIService3Registration_ThrowsExceptionWithDefaultSettings()
         {
             var container = UtilityMethods.GetContainer();
@@ -55,9 +61,9 @@ namespace TinyIoC.Tests
             container.Register<NestedInterfaceDependencies.IService2, NestedInterfaceDependencies.Service2>();
             container.Register<NestedInterfaceDependencies.RootClass>();
 
-            var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<NestedInterfaceDependencies.RootClass>());
 
-            Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
+            //Assert.IsInstanceOfType(result, typeof(NestedInterfaceDependencies.RootClass));
         }
 
         [TestMethod]
@@ -88,7 +94,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void NestedClassDependencies_MissingService3RegistrationAndUnRegisteredResolutionOff_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
@@ -96,16 +102,16 @@ namespace TinyIoC.Tests
             container.Register<NestedClassDependencies.Service2>();
             container.Register<NestedClassDependencies.RootClass>();
 
-            var result = container.Resolve<NestedClassDependencies.RootClass>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<NestedClassDependencies.RootClass>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail }));
 
-            Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
+            //Assert.IsInstanceOfType(result, typeof(NestedClassDependencies.RootClass));
         }
 
         [TestMethod]
         public void NestedInterfaceDependencies_JustAutoRegisterCalled_ResolvesRoot()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly });
+            container.AutoRegister(new[] { this.GetType().Assembly() });
 
             var result = container.Resolve<NestedInterfaceDependencies.RootClass>();
 
