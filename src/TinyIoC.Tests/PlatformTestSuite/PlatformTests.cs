@@ -32,6 +32,7 @@
 #endif
 
 #if NETFX_CORE
+#undef APPDOMAIN_GETASSEMBLIES
 #undef RESOLVE_OPEN_GENERICS
 #endif
 
@@ -219,7 +220,9 @@ namespace TinyIoC.Tests.PlatformTestSuite
 
             _Tests = new List<Func<TinyIoC.TinyIoCContainer, ILogger, bool>>()
             {
+#if APPDOMAIN_GETASSEMBLIES
                 AutoRegisterAppDomain,
+#endif
                 AutoRegisterAssemblySpecified,
                 AutoRegisterPredicateExclusion,
                 RegisterConcrete,
@@ -292,14 +295,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterAppDomain(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterAppDomain");
-
-#if !NETFX_CORE
             container.AutoRegister();
-#else
-            var task = container.AutoRegisterAsync();
-            task.Wait();
-#endif
-
             container.Resolve<ITestInterface>();
             return true;
         }
@@ -499,13 +495,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterPredicateExclusion(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterPredicateExclusion");
-
-#if !NETFX_CORE
             container.AutoRegister(t => t != typeof(ITestInterface));
-#else
-            var task = container.AutoRegisterAsync(t => t != typeof(ITestInterface));
-            task.Wait();
-#endif
 
             try
             {

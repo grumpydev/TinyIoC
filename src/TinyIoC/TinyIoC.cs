@@ -52,6 +52,7 @@
 #endif
 
 #if NETFX_CORE
+#undef APPDOMAIN_GETASSEMBLIES
 #undef RESOLVE_OPEN_GENERICS
 #endif
 
@@ -62,9 +63,11 @@ namespace TinyIoC
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+
 #if EXPRESSIONS
     using System.Linq.Expressions;
 #endif
+
 #if NETFX_CORE
 	using System.Threading.Tasks;
 	using Windows.Storage.Search;
@@ -890,62 +893,12 @@ namespace TinyIoC
         /// If more than one class implements an interface then only one implementation will be registered
         /// although no error will be thrown.
         /// </summary>
-
-// @mbrit - 2012-05-30 - in WinRT, this has be done async to be in-tune with async file access...
-#if NETFX_CORE
-
-		public async Task AutoRegisterAsync()
-		{
-			var asms = await AppDomain.CurrentDomain.GetAssembliesAsync();
-			AutoRegisterInternal(asms.Where(a => !IsIgnoredAssembly(a)), true, null);
-		}
-
-		/// <summary>
-		/// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
-		/// Types will only be registered if they pass the supplied registration predicate.
-		/// 
-		/// If more than one class implements an interface then only one implementation will be registered
-		/// although no error will be thrown.
-		/// </summary>
-		/// <param name="registrationPredicate">Predicate to determine if a particular type should be registered</param>
-		public async Task AutoRegisterAsync(Func<Type, bool> registrationPredicate)
-		{
-			var asms = await AppDomain.CurrentDomain.GetAssembliesAsync();
-			AutoRegisterInternal(asms.Where(a => !IsIgnoredAssembly(a)), true, registrationPredicate);
-		}
-
-		/// <summary>
-		/// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
-		/// </summary>
-		/// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
-		/// <exception cref="TinyIoCAutoRegistrationException"/>
-		public async Task AutoRegisterAsync(bool ignoreDuplicateImplementations)
-		{
-			var asms = await AppDomain.CurrentDomain.GetAssembliesAsync();
-			AutoRegisterInternal(asms.Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations, null);
-		}
-
-		/// <summary>
-		/// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
-		/// Types will only be registered if they pass the supplied registration predicate.
-		/// </summary>
-		/// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
-		/// <param name="registrationPredicate">Predicate to determine if a particular type should be registered</param>
-		/// <exception cref="TinyIoCAutoRegistrationException"/>
-		public async Task AutoRegisterAsync(bool ignoreDuplicateImplementations, Func<Type, bool> registrationPredicate)
-		{
-			var asms = await AppDomain.CurrentDomain.GetAssembliesAsync();
-			AutoRegisterInternal(asms.Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations, registrationPredicate);
-		}
-
-#else
-
         public void AutoRegister()
         {
 #if APPDOMAIN_GETASSEMBLIES
 			AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), true, null);
 #else
-            AutoRegisterInternal(new Assembly[] {this.GetType().GetAssembly()}, true, null);
+            AutoRegisterInternal(new Assembly[] {this.GetType().Assembly()}, true, null);
 #endif
         }
 
@@ -962,7 +915,7 @@ namespace TinyIoC
 #if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), true, registrationPredicate);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().GetAssembly()}, true, registrationPredicate);
+            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly()}, true, registrationPredicate);
 #endif
         }
 
@@ -976,7 +929,7 @@ namespace TinyIoC
 #if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations, null);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().GetAssembly() }, ignoreDuplicateImplementations, null);
+            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly() }, ignoreDuplicateImplementations, null);
 #endif
         }
 
@@ -992,11 +945,9 @@ namespace TinyIoC
 #if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations, registrationPredicate);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().GetAssembly() }, ignoreDuplicateImplementations, registrationPredicate);
+            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly() }, ignoreDuplicateImplementations, registrationPredicate);
 #endif
         }
-
-#endif
 
 		/// <summary>
         /// Attempt to automatically register all non-generic classes and interfaces in the specified assemblies

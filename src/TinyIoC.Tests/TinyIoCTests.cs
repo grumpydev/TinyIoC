@@ -1427,13 +1427,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_NoParameters_ReturnsNoErrors()
         {
             var container = UtilityMethods.GetContainer();
-
-#if NETFX_CORE
-			var task = container.AutoRegisterAsync();
-			task.Wait();
-#else
             container.AutoRegister();
-#endif
         }
 
         [TestMethod]
@@ -1873,17 +1867,12 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result2, typeof(ExternalTypes.IExternalTestInterface));
         }
 
+#if APPDOMAIN_GETASSEMBLIES
         [TestMethod]
         public void AutoRegister_NoParameters_TypesFromDifferentAssembliesInAppDomainResolve()
         {
             var container = UtilityMethods.GetContainer();
-
-#if NETFX_CORE
-			var task = container.AutoRegisterAsync();
-			task.Wait();
-#else
             container.AutoRegister();
-#endif
 
             var result1 = container.Resolve<ITestInterface>();
             var result2 = container.Resolve<ExternalTypes.IExternalTestInterface>();
@@ -1891,6 +1880,7 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result1, typeof(ITestInterface));
             Assert.IsInstanceOfType(result2, typeof(ExternalTypes.IExternalTestInterface));
         }
+#endif
 
         [TestMethod]
         public void GetChildContainer_NoParameters_ReturnsContainerInstance()
