@@ -30,12 +30,18 @@
 #if SILVERLIGHT
 #undef APPDOMAIN_GETASSEMBLIES
 #endif
+
+#if NETFX_CORE
+#undef RESOLVE_OPEN_GENERICS
+#endif
+
 #endregion
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 
 namespace TinyIoC.Tests.PlatformTestSuite
 {
@@ -239,7 +245,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
                 IEnumerableDependency,
                 RegisterMultiple,
                 NonGenericRegister,
-#if RESOLVE_OPEN_GENERICS
+#if RESOLVE_OPEN_GENERICS 
                 OpenGenericRegistration,
                 OpenGenericResolution,
 #endif
@@ -286,7 +292,14 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterAppDomain(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterAppDomain");
+
+#if !NETFX_CORE
             container.AutoRegister();
+#else
+            var task = container.AutoRegisterAsync();
+            task.Wait();
+#endif
+
             container.Resolve<ITestInterface>();
             return true;
         }
@@ -294,7 +307,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterAssemblySpecified(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterAssemblySpecified");
-            container.AutoRegister(new[] { this.GetType().Assembly });
+            container.AutoRegister(new[] { this.GetType().Assembly() });
             container.Resolve<ITestInterface>();
             return true;
         }
@@ -486,7 +499,13 @@ namespace TinyIoC.Tests.PlatformTestSuite
         private bool AutoRegisterPredicateExclusion(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("AutoRegisterPredicateExclusion");
+
+#if !NETFX_CORE
             container.AutoRegister(t => t != typeof(ITestInterface));
+#else
+            var task = container.AutoRegisterAsync(t => t != typeof(ITestInterface));
+            task.Wait();
+#endif
 
             try
             {

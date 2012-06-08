@@ -16,17 +16,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text.RegularExpressions;
+using System.Reflection;
 using TinyIoC.Tests.TestData;
 using TinyIoC.Tests.TestData.BasicClasses;
-using Moq;
 using NestedInterfaceDependencies = TinyIoC.Tests.TestData.NestedInterfaceDependencies;
 using NestedClassDependencies = TinyIoC.Tests.TestData.NestedClassDependencies;
-using System.Linq.Expressions;
-using TinyIoC.Tests.Helpers;
-using System.Reflection;
+
+#if !NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+#else
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 
 namespace TinyIoC.Tests
 {
@@ -164,47 +168,47 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_UnregisteredInterface_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            var output = container.Resolve<ITestInterface>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<ITestInterface>());
 
-            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+            //Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor)));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_UnregisteredClassWithUnregisteredInterfaceDependencies_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            var output = container.Resolve<TestClassWithInterfaceDependency>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassWithInterfaceDependency>());
 
-            Assert.IsInstanceOfType(output, typeof(TestClassWithInterfaceDependency));
+            //Assert.IsInstanceOfType(output, typeof(TestClassWithInterfaceDependency)));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_RegisteredClassWithUnregisteredInterfaceDependencies_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassWithInterfaceDependency>();
 
-            var output = container.Resolve<TestClassWithInterfaceDependency>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassWithInterfaceDependency>());
 
-            Assert.IsInstanceOfType(output, typeof(TestClassWithInterfaceDependency));
+            //Assert.IsInstanceOfType(output, typeof(TestClassWithInterfaceDependency)));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_RegisteredInterfaceWithUnregisteredInterfaceDependencies_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface2, TestClassWithInterfaceDependency>();
 
-            var output = container.Resolve<ITestInterface2>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<ITestInterface2>());
 
-            Assert.IsInstanceOfType(output, typeof(TestClassWithInterfaceDependency));
+            //Assert.IsInstanceOfType(output, typeof(TestClassWithInterfaceDependency)));
         }
 
         [TestMethod]
@@ -321,16 +325,16 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_RegisteredTypeWithRegisteredDependenciesAndIncorrectParameters_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
             container.Register<TestClassWithDependencyAndParameters>();
 
-            var result = container.Resolve<TestClassWithDependencyAndParameters>(new NamedParameterOverloads { { "wrongparam1", 12 }, { "wrongparam2", "Testing" } });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassWithDependencyAndParameters>(new NamedParameterOverloads { { "wrongparam1", 12 }, { "wrongparam2", "Testing" } }));
 
-            Assert.IsInstanceOfType(result, typeof(TestClassWithDependencyAndParameters));
+            //Assert.IsInstanceOfType(result, typeof(TestClassWithDependencyAndParameters));
         }
 
         [TestMethod]
@@ -356,28 +360,28 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_FactoryRegisteredTypeThatThrows_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface>((c, p) => { throw new NotImplementedException(); });
 
-            var result = container.Resolve<ITestInterface>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<ITestInterface>());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void Register_NullFactory_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
             Func<TinyIoCContainer, NamedParameterOverloads, ITestInterface> factory = null;
-            container.Register<ITestInterface>(factory);
+            AssertHelper.ThrowsException<ArgumentNullException>(() => container.Register<ITestInterface>(factory));
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -439,6 +443,7 @@ namespace TinyIoC.Tests
             Assert.ReferenceEquals(item, result);
         }
 
+#if MOQ
         [TestMethod]
         public void Dispose_RegisteredDisposableInstance_CallsDispose()
         {
@@ -453,7 +458,9 @@ namespace TinyIoC.Tests
 
             item.VerifyAll();
         }
+#endif
 
+#if MOQ
         [TestMethod]
         public void Dispose_RegisteredDisposableInstanceWithInterface_CallsDispose()
         {
@@ -468,6 +475,7 @@ namespace TinyIoC.Tests
 
             item.VerifyAll();
         }
+#endif
 
         [TestMethod]
         public void Resolve_RegisteredTypeWithFluentSingletonCall_ReturnsSingleton()
@@ -693,27 +701,27 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_NoNameButOnlyNamedRegistered_ThrowsExceptionWithNoAttemptResolve()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>("Testing");
 
-            var output = container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail }));
 
-            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+            //Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_NamedButOnlyUnnamedRegistered_ThrowsExceptionWithNoFallback()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
 
-            var output = container.Resolve<TestClassDefaultCtor>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassDefaultCtor>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail }));
 
-            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+            //Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
 
         [TestMethod]
@@ -728,17 +736,17 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_CorrectlyRegisteredSpecifyingMistypedParameters_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassWithParameters>();
 
-            var output = container.Resolve<TestClassWithParameters>(
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassWithParameters>(
                     new NamedParameterOverloads { { "StringProperty", "Testing" }, { "IntProperty", 12 } }
-                );
+                ));
 
-            Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
+            //Assert.IsInstanceOfType(output, typeof(TestClassWithParameters));
         }
 
         [TestMethod]
@@ -916,40 +924,40 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_ClassWithNoPublicConstructor_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassPrivateCtor>();
 
-            var result = container.Resolve<TestClassPrivateCtor>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassPrivateCtor>());
 
-            Assert.IsInstanceOfType(result, typeof(TestClassPrivateCtor));
+            //Assert.IsInstanceOfType(result, typeof(TestClassPrivateCtor));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_RegisteredSingletonWithParameters_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>();
 
-            var output = container.Resolve<ITestInterface>(new NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<ITestInterface>(new NamedParameterOverloads { { "stringProperty", "Testing" }, { "intProperty", 12 } }));
 
-            Assert.IsInstanceOfType(output, typeof(ITestInterface));
+            //Assert.IsInstanceOfType(output, typeof(ITestInterface));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_WithNullParameters_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassDefaultCtor>();
             NamedParameterOverloads parameters = null;
 
-            var output = container.Resolve<TestClassDefaultCtor>(parameters);
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassDefaultCtor>(parameters));
 
-            Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
+            //Assert.IsInstanceOfType(output, typeof(TestClassDefaultCtor));
         }
 
 
@@ -968,22 +976,22 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_MultiInstanceWithStrongReference_Throws()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<TestClassDefaultCtor>().WithStrongReference();
+            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>().WithStrongReference());
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_MultiInstanceWithWeakReference_Throws()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<TestClassDefaultCtor>().WithWeakReference();
+            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>().WithWeakReference());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1001,47 +1009,47 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_SingletonWithStrongReference_Throws()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<ITestInterface, TestClassDefaultCtor>().WithStrongReference();
+            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<ITestInterface, TestClassDefaultCtor>().WithStrongReference());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_SingletonWithWeakReference_Throws()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<ITestInterface, TestClassDefaultCtor>().WithWeakReference();
+            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<ITestInterface, TestClassDefaultCtor>().WithWeakReference());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_FactoryToSingletonFluent_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsSingleton();
+            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsSingleton());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_FactoryToMultiInstanceFluent_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsMultiInstance();
+            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsMultiInstance());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1059,11 +1067,11 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationException))]
         public void Register_InstanceToSingletonFluent_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).AsSingleton();
+            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).AsSingleton());
         }
 
         [TestMethod]
@@ -1087,6 +1095,8 @@ namespace TinyIoC.Tests
             container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithWeakReference();
         }
 
+// @mbrit - 2012-05-22 - forced GC not supported in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         public void Resolve_OutOfScopeStrongReferencedInstance_ResolvesCorrectly()
         {
@@ -1099,8 +1109,10 @@ namespace TinyIoC.Tests
             var result = container.Resolve<TestClassDefaultCtor>();
             Assert.AreEqual("Testing", result.Prop1);
         }
+#endif
 
-
+// @mbrit - 2012-05-22 - forced GC not supported in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         [ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_OutOfScopeWeakReferencedInstance_ThrowsCorrectException()
@@ -1114,7 +1126,10 @@ namespace TinyIoC.Tests
             var result = container.Resolve<TestClassDefaultCtor>();
             Assert.AreEqual("Testing", result.Prop1);
         }
+#endif
 
+// @mbrit - 2012-05-22 - forced GC not supported in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         public void Resolve_OutOfScopeStrongReferencedFactory_ResolvesCorrectly()
         {
@@ -1127,8 +1142,10 @@ namespace TinyIoC.Tests
             var result = container.Resolve<TestClassDefaultCtor>();
             Assert.AreEqual("Testing", result.Prop1);
         }
+#endif
 
-
+// @mbrit - 2012-05-22 - forced GC not supported in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         [ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_OutOfScopeWeakReferencedFactory_ThrowsCorrectException()
@@ -1142,6 +1159,7 @@ namespace TinyIoC.Tests
             var result = container.Resolve<TestClassDefaultCtor>();
             Assert.AreEqual("Testing", result.Prop1);
         }
+#endif
 
         [TestMethod]
         public void Register_InterfaceAndImplementationWithInstance_Registers()
@@ -1198,23 +1216,23 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_BoundGenericTypeWithoutRegistered_FailsWithUnRegisteredFallbackOff()
         {
             var container = UtilityMethods.GetContainer();
 
-            var testing = container.Resolve<GenericClassWithInterface<int, string>>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<GenericClassWithInterface<int, string>>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail }));
 
-            Assert.IsInstanceOfType(testing, typeof(GenericClassWithInterface<int, string>));
+            //Assert.IsInstanceOfType(testing, typeof(GenericClassWithInterface<int, string>));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_NormalUnregisteredType_FailsWithUnregisteredFallbackSetToGenericsOnly()
         {
             var container = UtilityMethods.GetContainer();
 
-            var testing = container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly }));
         }
 
         [TestMethod]
@@ -1258,14 +1276,14 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_UnRegisteredNonGenericType_FailsWithOptionsSetToGenericOnly()
         {
             var container = UtilityMethods.GetContainer();
 
-            var result = container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassDefaultCtor>(new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.GenericsOnly }));
 
-            Assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
+            //assert.IsInstanceOfType(result, typeof(TestClassDefaultCtor));
         }
 
         [TestMethod]
@@ -1290,14 +1308,14 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_BoundGenericTypeWithFailedDependenciesWithoutRegistered_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
 
-            var testing = container.Resolve<GenericClassWithParametersAndDependencies<int, string>>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<GenericClassWithParametersAndDependencies<int, string>>());
 
-            Assert.IsInstanceOfType(testing, typeof(GenericClassWithParametersAndDependencies<int, string>));
+            //Assert.IsInstanceOfType(testing, typeof(GenericClassWithParametersAndDependencies<int, string>));
         }
 
         [TestMethod]
@@ -1410,7 +1428,12 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
+#if NETFX_CORE
+			var task = container.AutoRegisterAsync();
+			task.Wait();
+#else
             container.AutoRegister();
+#endif
         }
 
         [TestMethod]
@@ -1418,14 +1441,14 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            container.AutoRegister(new[] { this.GetType().Assembly });
+            container.AutoRegister(new[] { this.GetType().Assembly() });
         }
 
         [TestMethod]
         public void AutoRegister_TestAssembly_CanResolveInterface()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly });
+            container.AutoRegister(new[] { this.GetType().Assembly() });
 
             var result = container.Resolve<ITestInterface>();
 
@@ -1436,7 +1459,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_TestAssembly_CanResolveAbstractBaseClass()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly });
+            container.AutoRegister(new[] { this.GetType().Assembly() });
 
             var result = container.Resolve<TestClassBase>();
 
@@ -1444,79 +1467,79 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void AutoRegister_TinyIoCAssembly_CannotResolveInternalTinyIoCClass()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { container.GetType().Assembly });
+            container.AutoRegister(new[] { container.GetType().Assembly() });
 
-            var output = container.Resolve<TinyIoCContainer.TypeRegistration>(new NamedParameterOverloads() { { "type", this.GetType() } }, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TinyIoCContainer.TypeRegistration>(new NamedParameterOverloads() { { "type", this.GetType() } }, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail }));
 
-            Assert.IsInstanceOfType(output, typeof(TinyIoCContainer.TypeRegistration));
+            //Assert.IsInstanceOfType(output, typeof(TinyIoCContainer.TypeRegistration));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCAutoRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCAutoRegistrationException))]
         public void AutoRegister_ThisAssemblySpecifiedIgnoreDuplicatesOff_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly }, false);
-            Assert.IsTrue(false);
+            AssertHelper.ThrowsException<TinyIoCAutoRegistrationException>(() => container.AutoRegister(new[] { this.GetType().Assembly() }, false));
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
         public void AutoRegister_TinyIoCAssemblySpecifiedIgnoreDuplicatesOff_NoErrors()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly }, false);
+            container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly() }, false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        //[ExpectedException(typeof(TinyIoCConstructorResolutionException))]
         public void Register_ConstructorSpecifiedForDelegateFactory_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
 
-            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor());
+            AssertHelper.ThrowsException<TinyIoCConstructorResolutionException>(() => container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor()));
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        //[ExpectedException(typeof(TinyIoCConstructorResolutionException))]
         public void Register_ConstructorSpecifiedForWeakDelegateFactory_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
 
-            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor());
+            AssertHelper.ThrowsException<TinyIoCConstructorResolutionException>(() => container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor()));
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        //[ExpectedException(typeof(TinyIoCConstructorResolutionException))]
         public void Register_ConstructorSpecifiedForInstanceFactory_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
 
-            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor());
+            AssertHelper.ThrowsException<TinyIoCConstructorResolutionException>(() => container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).UsingConstructor(() => new TestClassDefaultCtor()));
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        //[ExpectedException(typeof(TinyIoCConstructorResolutionException))]
         public void Register_ConstructorSpecifiedForWeakInstanceFactory_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
 
-            container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor());
+            AssertHelper.ThrowsException<TinyIoCConstructorResolutionException>(() => container.Register<TestClassDefaultCtor>(new TestClassDefaultCtor()).WithWeakReference().UsingConstructor(() => new TestClassDefaultCtor()));
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1584,17 +1607,17 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_ConstructorSpecifiedThatRequiresParametersButNonePassed_FailsToResolve()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<ITestInterface, TestClassDefaultCtor>();
             container.Register<TestClassWithInterfaceDependency>().UsingConstructor(() => new TestClassWithInterfaceDependency(null as ITestInterface, 27, "Testing"));
 
-            var result = container.Resolve<TestClassWithInterfaceDependency>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassWithInterfaceDependency>());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1634,66 +1657,66 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_ConstructorThrowsException_ThrowsTinyIoCException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassConstructorFailure>();
 
-            var result = container.Resolve<TestClassConstructorFailure>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassConstructorFailure>());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_DelegateFactoryThrowsException_ThrowsTinyIoCException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassConstructorFailure>((c, p) => { throw new NotImplementedException(); });
 
-            var result = container.Resolve<TestClassConstructorFailure>();
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassConstructorFailure>());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCResolutionException))]
+        //[ExpectedException(typeof(TinyIoCResolutionException))]
         public void Resolve_DelegateFactoryResolvedWithUnnamedFallbackThrowsException_ThrowsTinyIoCException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassConstructorFailure>((c, p) => { throw new NotImplementedException(); });
 
-            var result = container.Resolve<TestClassConstructorFailure>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassConstructorFailure>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution }));
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationTypeException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationTypeException))]
         public void Register_AbstractClassWithNoImplementation_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
 
-            container.Register<TestClassBase>();
+            AssertHelper.ThrowsException<TinyIoCRegistrationTypeException>(() => container.Register<TestClassBase>());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCRegistrationTypeException))]
+        //[ExpectedException(typeof(TinyIoCRegistrationTypeException))]
         public void Register_InterfaceWithNoImplementation_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
 
-            container.Register<ITestInterface>();
+            AssertHelper.ThrowsException<TinyIoCRegistrationTypeException>(() => container.Register<ITestInterface>());
 
             // Should have thrown by now
-            Assert.IsTrue(false);
+            //Assert.IsTrue(false);
         }
 
         [TestMethod]
@@ -1830,7 +1853,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_IEnumerableAssemblies_DoesNotThrow()
         {
             var container = UtilityMethods.GetContainer();
-            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly, typeof(ExternalTypes.IExternalTestInterface).Assembly };
+            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly(), typeof(ExternalTypes.IExternalTestInterface).Assembly() };
 
             container.AutoRegister(assemblies);
         }
@@ -1839,7 +1862,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_IEnumerableAssemblies_TypesFromBothAssembliesResolve()
         {
             var container = UtilityMethods.GetContainer();
-            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly, typeof(ExternalTypes.IExternalTestInterface).Assembly };
+            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly(), typeof(ExternalTypes.IExternalTestInterface).Assembly() };
 
             container.AutoRegister(assemblies);
 
@@ -1854,7 +1877,13 @@ namespace TinyIoC.Tests
         public void AutoRegister_NoParameters_TypesFromDifferentAssembliesInAppDomainResolve()
         {
             var container = UtilityMethods.GetContainer();
+
+#if NETFX_CORE
+			var task = container.AutoRegisterAsync();
+			task.Wait();
+#else
             container.AutoRegister();
+#endif
 
             var result1 = container.Resolve<ITestInterface>();
             var result2 = container.Resolve<ExternalTypes.IExternalTestInterface>();
@@ -3135,6 +3164,7 @@ namespace TinyIoC.Tests
             }
         }
 
+#if MOQ
         [TestMethod]
         public void CustomLifetimeProvider_WhenResolved_CallsGetObjectOnLifetimeProvider()
         {
@@ -3148,7 +3178,9 @@ namespace TinyIoC.Tests
 
             providerMock.Verify(p => p.GetObject(), Times.Once(), "not called");
         }
+#endif
 
+#if MOQ
         [TestMethod]
         public void CustomLifetimeProvider_GetObjectReturnsNull_CallsSetObjectOnProvider()
         {
@@ -3163,7 +3195,9 @@ namespace TinyIoC.Tests
 
             providerMock.Verify(p => p.SetObject(It.IsAny<object>()), Times.Once(), "not called");
         }
+#endif
 
+#if MOQ
         [TestMethod]
         public void CustomLifetimeProvider_SwitchingToAnotherFactory_CallsReleaseObjectOnProvider()
         {
@@ -3177,7 +3211,9 @@ namespace TinyIoC.Tests
 
             providerMock.Verify(p => p.ReleaseObject(), Times.AtLeastOnce(), "not called");
         }
+#endif
 
+#if MOQ
         [TestMethod]
         public void CustomLifetimeProvider_ContainerDisposed_CallsReleaseObjectOnProvider()
         {
@@ -3191,18 +3227,20 @@ namespace TinyIoC.Tests
 
             providerMock.Verify(p => p.ReleaseObject(), Times.AtLeastOnce(), "not called");
         }
+#endif
 
         [TestMethod]
         public void AutoRegister_TypeExcludedViaPredicate_FailsToResolveType()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly }, t => t != typeof(ITestInterface));
+            container.AutoRegister(new[] { this.GetType().Assembly() }, t => t != typeof(ITestInterface));
 
-            var result = ExceptionHelper.Record(() => container.Resolve<ITestInterface>());
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<ITestInterface>());
 
-            Assert.IsInstanceOfType(result, typeof(TinyIoCResolutionException));
+            //Assert.IsInstanceOfType(result, typeof(TinyIoCResolutionException));
         }
 
+#if RESOLVE_OPEN_GENERICS
         [TestMethod]
         public void Register_OpenGeneric_DoesNotThrow()
         {
@@ -3210,7 +3248,9 @@ namespace TinyIoC.Tests
 
             container.Register(typeof(IThing<>), typeof(DefaultThing<>));
         }
+#endif
 
+#if RESOLVE_OPEN_GENERICS
         [TestMethod]
         public void Resolve_RegisteredOpenGeneric_ReturnsInstance()
         {
@@ -3221,5 +3261,6 @@ namespace TinyIoC.Tests
 
             Assert.IsInstanceOfType(result, typeof(DefaultThing<object>));
         }
+#endif
     }
 }

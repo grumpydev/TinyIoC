@@ -2,10 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TinyIoC.Tests.TestData;
 using TinyMessenger;
 using System.Threading;
+
+#if !NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 
 namespace TinyIoC.Tests
 {
@@ -54,39 +59,39 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void Subscribe_NullDeliveryAction_Throws()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(null, new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>));
+            AssertHelper.ThrowsException<ArgumentNullException>(() => messenger.Subscribe<TestMessage>(null, new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>)));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void Subscribe_NullFilter_Throws()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), null, new TestProxy());
+            AssertHelper.ThrowsException<ArgumentNullException>(() => messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), null, new TestProxy()));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void Subscribe_NullProxy_Throws()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>), null);
+            AssertHelper.ThrowsException<ArgumentNullException>(() => messenger.Subscribe<TestMessage>(new Action<TestMessage>(UtilityMethods.FakeDeliveryAction<TestMessage>), new Func<TestMessage, bool>(UtilityMethods.FakeMessageFilter<TestMessage>), null));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void Unsubscribe_NullSubscriptionObject_Throws()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Unsubscribe<TestMessage>(null);
+            AssertHelper.ThrowsException<ArgumentNullException>(() => messenger.Unsubscribe<TestMessage>(null));
         }
 
         [TestMethod]
@@ -197,12 +202,12 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void Publish_NullMessage_Throws()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            messenger.Publish<TestMessage>(null);
+            AssertHelper.ThrowsException<ArgumentNullException>(() => messenger.Publish<TestMessage>(null));
         }
 
         [TestMethod]
@@ -315,6 +320,8 @@ namespace TinyIoC.Tests
             messenger.PublishAsync(new TestMessage(this));
         }
 
+// can't Thread.Sleep in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         public void PublishAsync_NoCallback_PublishesMessage()
         {
@@ -333,6 +340,7 @@ namespace TinyIoC.Tests
             }
             Assert.IsTrue(received);
         }
+#endif
 
         [TestMethod]
         public void PublishAsync_Callback_DoesNotThrow()
@@ -343,6 +351,8 @@ namespace TinyIoC.Tests
 #pragma warning restore 219
         }
 
+// can't Thread.Sleep in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         public void PublishAsync_Callback_PublishesMessage()
         {
@@ -363,7 +373,10 @@ namespace TinyIoC.Tests
             }
             Assert.IsTrue(received);
         }
+#endif
 
+// can't Thread.Sleep in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         public void PublishAsync_Callback_CallsCallback()
         {
@@ -383,6 +396,7 @@ namespace TinyIoC.Tests
             }
             Assert.IsTrue(received);
         }
+#endif
 
         [TestMethod]
         public void CancellableGenericTinyMessage_Publish_DoesNotThrow()
@@ -394,11 +408,11 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void CancellableGenericTinyMessage_PublishWithNullAction_Throws()
         {
             var messenger = UtilityMethods.GetMessenger();
-            messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", null));
+            AssertHelper.ThrowsException<ArgumentNullException>(() => messenger.Publish<CancellableGenericTinyMessage<string>>(new CancellableGenericTinyMessage<string>(this, "Testing", null)));
         }
 
         [TestMethod]
