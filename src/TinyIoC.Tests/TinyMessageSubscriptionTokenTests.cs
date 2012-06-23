@@ -2,15 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TinyIoC.Tests.TestData;
 using TinyMessenger;
+
+#if !NETFX_CORE
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#else
+using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+#endif
 
 namespace TinyIoC.Tests
 {
     [TestClass]
     public class TinyMessageSubscriptionTokenTests
     {
+#if MOQ
         [TestMethod]
         public void Dispose_WithValidHubReference_UnregistersWithHub()
         {
@@ -22,7 +28,10 @@ namespace TinyIoC.Tests
 
             messengerMock.VerifyAll();
         }
+#endif
 
+// can't do GC.WaitForFullGCComplete in WinRT...
+#if !NETFX_CORE
         [TestMethod]
         public void Dispose_WithInvalidHubReference_DoesNotThrow()
         {
@@ -32,23 +41,24 @@ namespace TinyIoC.Tests
 
             token.Dispose();
         }
+#endif
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        //[ExpectedException(typeof(ArgumentNullException))]
         public void Ctor_NullHub_ThrowsArgumentNullException()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            var token = new TinyMessageSubscriptionToken(null, typeof(ITinyMessage));
+            AssertHelper.ThrowsException<ArgumentNullException>(() => new TinyMessageSubscriptionToken(null, typeof(ITinyMessage)));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        //[ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void Ctor_InvalidMessageType_ThrowsArgumentOutOfRangeException()
         {
             var messenger = UtilityMethods.GetMessenger();
 
-            var token = new TinyMessageSubscriptionToken(messenger, typeof(object));
+            AssertHelper.ThrowsException<ArgumentOutOfRangeException>(() => new TinyMessageSubscriptionToken(messenger, typeof(object)));
         }
 
         [TestMethod]
