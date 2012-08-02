@@ -175,9 +175,9 @@ namespace TinyIoC
                 assemblies = new Type[] { };
             }
 #if !NETFX_CORE
-            catch (ReflectionTypeLoadException)
+            catch (ReflectionTypeLoadException e)
             {
-                assemblies = new Type[] { };
+                assemblies = e.Types.Where(t => t != null).ToArray();
             }
 #endif
             return assemblies;
