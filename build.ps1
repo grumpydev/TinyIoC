@@ -16,7 +16,7 @@ copy .\src\TinyIoC\TinyIoC.cs $coreOutputDir
 copy .\src\TinyIoC\TinyIoCAspNetExtensions.cs $aspnetOutputDir
 copy .\src\TinyIoC.MetroStyle\TypeExtender.cs $winrtOutputDir
 copy .\src\TinyIoC\TinyMessenger.cs $messengerOutputDir
-.\Tools\nuget\NuGet.exe pack .\TinyIoC.nuspec -b $coreDir -o $coreDir
-.\Tools\nuget\NuGet.exe pack .\TinyIoCAspNetExtensions.nuspec -b $aspnetDir -o $aspnetDir
-.\Tools\nuget\NuGet.exe pack .\TinyIoCWinRT.nuspec -b $winrtDir -o $winrtDir
-.\Tools\nuget\NuGet.exe pack .\TinyMessenger.nuspec -b $messengerDir -o $messengerDir
+.\Tools\nuget\NuGet.exe pack .\TinyIoC.nuspec -basepath $coreDir -o $coreDir
+.\Tools\nuget\NuGet.exe pack .\TinyIoCAspNetExtensions.nuspec -basepath $aspnetDir -o $aspnetDir
+.\Tools\nuget\NuGet.exe pack .\TinyIoCWinRT.nuspec -basepath $winrtDir -o $winrtDir
+.\Tools\nuget\NuGet.exe pack .\TinyMessenger.nuspec -basepath $messengerDir -o $messengerDir
