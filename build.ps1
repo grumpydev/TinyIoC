@@ -2,6 +2,7 @@ $buildDir = ".\build"
 $coreDir = $buildDir + "\Core"
 $aspnetDir = $buildDir + "\AspNet"
 $messengerDir = $buildDir + "\Messenger"
+$winrtDir = $buildDir + "\WinRT"
 $coreOutputDir = $coreDir + "\Content"
 $aspnetOutputDir = $aspnetDir + "\Content"
 $messengerOutputDir = $messengerDir + "\Content"
@@ -10,8 +11,10 @@ mkdir $coreOutputDir | out-null
 mkdir $aspnetOutputDir | out-null
 mkdir $messengerOutputDir | out-null
 copy .\src\TinyIoC\TinyIoC.cs $coreOutputDir
+copy .\src\TinyIoC.MetroStyle\TypeExtender.cs $winrtDir
 copy .\src\TinyIoC\TinyIoCAspNetExtensions.cs $aspnetOutputDir
 copy .\src\TinyIoC\TinyMessenger.cs $messengerOutputDir
 .\Tools\nuget\NuGet.exe pack .\TinyIoC.nuspec -b $coreDir -o $coreDir
+.\Tools\nuget\NuGet.exe pack .\TinyIoCWinRT.nuspec -b $winrtDir -o $winrtDir
 .\Tools\nuget\NuGet.exe pack .\TinyIoCAspNetExtensions.nuspec -b $aspnetDir -o $aspnetDir
 .\Tools\nuget\NuGet.exe pack .\TinyMessenger.nuspec -b $messengerDir -o $messengerDir
