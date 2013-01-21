@@ -35,5 +35,5 @@ _ReSharper*/
 [Bb]uild[Ll]og.*
 *.[Pp]ublish.xml
 build/
-*.crunchproject.*
-*.crunchsolution.*
+*.ncrunchproject
+*.ncrunchsolution
