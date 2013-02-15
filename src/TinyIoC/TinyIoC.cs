@@ -31,10 +31,10 @@
 //#if NETFX_CORE
 //#endif
 
-// CompactFramework / Windows Phone 7
+// CompactFramework
 // By default does not support System.Linq.Expressions.
 // AppDomain object does not support enumerating all assemblies in the app domain.
-#if PocketPC || WINDOWS_PHONE
+#if PocketPC
 #undef EXPRESSIONS
 #undef APPDOMAIN_GETASSEMBLIES
 #undef UNBOUND_GENERICS_GETCONSTRUCTORS
@@ -47,7 +47,7 @@
 #undef RESOLVE_OPEN_GENERICS
 #endif
 
-#if SILVERLIGHT
+#if SILVERLIGHT || PORTABLE
 #undef APPDOMAIN_GETASSEMBLIES
 #endif
 
@@ -650,13 +650,17 @@ namespace TinyIoC
     #endregion
 
     public sealed partial class TinyIoCContainer : IDisposable
-    {
-        #region Fake NETFX_CORE Classes
-#if NETFX_CORE
-        private sealed class MethodAccessException : Exception
-        {
-        }
+	{
+		#region Include exception txpe for PCL
+#if PORTABLE
+		private sealed class MethodAccessException : Exception
+		{
+		}
+#endif
+		#endregion
 
+		#region Fake NETFX_CORE Classes
+#if NETFX_CORE
         private sealed class AppDomain
         {
             public static AppDomain CurrentDomain { get; private set; }
@@ -696,10 +700,10 @@ namespace TinyIoC
             }
         }
 #endif
-        #endregion
+		#endregion
 
-        #region "Fluent" API
-        /// <summary>
+		#region "Fluent" API
+		/// <summary>
         /// Registration options for "fluent" API
         /// </summary>
         public sealed class RegisterOptions
@@ -3606,8 +3610,13 @@ namespace TinyIoC
             {
                 if (registerType.IsInterface())
                 {
+#if PORTABLE
+	                if(!registerImplementation.GetInterfaces().Any(t => t.Name == registerType.Name))
+		                return false;
+#else
                     if (!registerImplementation.FindInterfaces((t, o) => t.Name == registerType.Name, null).Any())
                         return false;
+#endif
                 }
                 else if (registerType.IsAbstract() && registerImplementation.BaseType() != registerType)
                 {
