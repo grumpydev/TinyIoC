@@ -22,6 +22,7 @@
 // depending on platform features. If the platform has an appropriate
 // #DEFINE then these should be set automatically below.
 #define EXPRESSIONS                         // Platform supports System.Linq.Expressions
+#define COMPILED_EXPRESSIONS                // Platform supports compiling expressions
 #define APPDOMAIN_GETASSEMBLIES             // Platform supports getting all assemblies from the AppDomain object
 #define UNBOUND_GENERICS_GETCONSTRUCTORS    // Platform supports GetConstructors on unbound generic types
 #define GETPARAMETERS_OPEN_GENERICS         // Platform supports GetParameters on open generics
@@ -36,6 +37,7 @@
 // AppDomain object does not support enumerating all assemblies in the app domain.
 #if PocketPC || WINDOWS_PHONE
 #undef EXPRESSIONS
+#undef COMPILED_EXPRESSIONS
 #undef APPDOMAIN_GETASSEMBLIES
 #undef UNBOUND_GENERICS_GETCONSTRUCTORS
 #endif
@@ -54,6 +56,10 @@
 #if NETFX_CORE
 #undef APPDOMAIN_GETASSEMBLIES
 #undef RESOLVE_OPEN_GENERICS
+#endif
+
+#if COMPILED_EXPRESSIONS
+#define USE_OBJECT_CONSTRUCTOR
 #endif
 
 #endregion
@@ -2897,6 +2903,10 @@ namespace TinyIoC
             }
         }
         private readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
+#if USE_OBJECT_CONSTRUCTOR 
+        private delegate object ObjectConstructor(params object[] parameters);
+        private static readonly SafeDictionary<ConstructorInfo, ObjectConstructor> _ObjectConstructorCache = new SafeDictionary<ConstructorInfo, ObjectConstructor>();
+#endif
         #endregion
 
         #region Constructors
@@ -3459,21 +3469,12 @@ namespace TinyIoC
 #if RESOLVE_OPEN_GENERICS
             if (implementationType.IsGenericTypeDefinition())
             {
-//#if NETFX_CORE
-//				if (requestedType == null || !requestedType.IsGenericType() || !requestedType.GenericTypeArguments.Any())
-//#else
                 if (requestedType == null || !requestedType.IsGenericType() || !requestedType.GetGenericArguments().Any())
-//#endif
                     throw new TinyIoCResolutionException(typeToConstruct);
                  
-//#if NETFX_CORE
-//				typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GenericTypeArguments);
-//#else
                 typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GetGenericArguments());
-//#endif
             }
 #endif
-
             if (constructor == null)
             {
                 // Try and get the best constructor that we can construct
@@ -3517,13 +3518,51 @@ namespace TinyIoC
 
             try
             {
+#if USE_OBJECT_CONSTRUCTOR
+                var constructionDelegate = CreateObjectConstructionDelegateWithCache(constructor);
+                return constructionDelegate.Invoke(args);
+#else
                 return constructor.Invoke(args);
+#endif
             }
             catch (Exception ex)
             {
                 throw new TinyIoCResolutionException(typeToConstruct, ex);
             }
         }
+
+#if USE_OBJECT_CONSTRUCTOR 
+        private static ObjectConstructor CreateObjectConstructionDelegateWithCache(ConstructorInfo constructor)
+        {
+            ObjectConstructor objectConstructor;
+            if (_ObjectConstructorCache.TryGetValue(constructor, out objectConstructor))
+                return objectConstructor;
+
+            // We could lock the cache here, but there's no real side
+            // effect to two threads creating the same ObjectConstructor
+            // at the same time, compared to the cost of a lock for 
+            // every creation.
+            var constructorParams = constructor.GetParameters();
+            var lambdaParams = Expression.Parameter(typeof(object[]), "parameters");
+            var newParams = new Expression[constructorParams.Length];
+
+            for (int i = 0; i < constructorParams.Length; i++)
+            {
+                var paramsParameter = Expression.ArrayIndex(lambdaParams, Expression.Constant(i));
+
+                newParams[i] = Expression.Convert(paramsParameter, constructorParams[i].ParameterType);
+            }
+
+            var newExpression = Expression.New(constructor, newParams);
+
+            var constructionLambda = Expression.Lambda(typeof(ObjectConstructor), newExpression, lambdaParams);
+
+            objectConstructor = (ObjectConstructor)constructionLambda.Compile();
+
+            _ObjectConstructorCache[constructor] = objectConstructor;
+            return objectConstructor;
+        }
+#endif
 
         private void BuildUpInternal(object input, ResolveOptions resolveOptions)
         {
