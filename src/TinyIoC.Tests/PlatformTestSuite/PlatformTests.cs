@@ -3,39 +3,12 @@
 // register the TinyMessenger messenger/event aggregator
 //#define TINYMESSENGER
 
-// Preprocessor directives for enabling/disabling functionality
-// depending on platform features. If the platform has an appropriate
-// #DEFINE then these should be set automatically below.
-#define EXPRESSIONS                         // Platform supports System.Linq.Expressions
-#define APPDOMAIN_GETASSEMBLIES             // Platform supports getting all assemblies from the AppDomain object
-#define UNBOUND_GENERICS_GETCONSTRUCTORS    // Platform supports GetConstructors on unbound generic types
-#define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
-
-// CompactFramework
-// By default does not support System.Linq.Expressions.
-// AppDomain object does not support enumerating all assemblies in the app domain.
-#if PocketPC || WINDOWS_PHONE
-#undef EXPRESSIONS
-#undef APPDOMAIN_GETASSEMBLIES
-#undef UNBOUND_GENERICS_GETCONSTRUCTORS
-#endif
-
-// PocketPC has a bizarre limitation on enumerating parameters on unbound generic methods.
-// We need to use a slower workaround in that case.
-#if PocketPC
-#undef GETPARAMETERS_OPEN_GENERICS
-#undef RESOLVE_OPEN_GENERICS
-#endif
-
-#if SILVERLIGHT
-#undef APPDOMAIN_GETASSEMBLIES
-#endif
-
-#if NETFX_CORE
-#undef APPDOMAIN_GETASSEMBLIES
-#undef RESOLVE_OPEN_GENERICS
-#endif
-
+// PCL profile supports System.Linq.Expressions
+// PCL profile supports compiling expressions
+// PCL profile does not support getting all assemblies from the AppDomain object 
+// PCL profile supports GetConstructors on unbound generic types  
+// PCL profile supports GetParameters on open generics      
+// PCL profile supports resolving open generics
 #endregion
 
 using System;
@@ -220,9 +193,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
 
             _Tests = new List<Func<TinyIoC.TinyIoCContainer, ILogger, bool>>()
             {
-#if APPDOMAIN_GETASSEMBLIES
-                AutoRegisterAppDomain,
-#endif
+				AutoRegisterAppDomain,
                 AutoRegisterAssemblySpecified,
                 AutoRegisterPredicateExclusion,
                 RegisterConcrete,
@@ -235,23 +206,17 @@ namespace TinyIoC.Tests.PlatformTestSuite
                 RegisterStrongRef,
                 RegisterWeakRef,
                 RegisterFactory,
-#if EXPRESSIONS
                 RegisterAndSpecifyConstructor,
-#endif
                 RegisterBoundGeneric,
-#if EXPRESSIONS
                 ResolveLazyFactory,
                 ResolveNamedLazyFactory,
                 ResolveNamedAndParamsLazyFactory,
-#endif
                 ResolveAll,
                 IEnumerableDependency,
                 RegisterMultiple,
                 NonGenericRegister,
-#if RESOLVE_OPEN_GENERICS 
                 OpenGenericRegistration,
                 OpenGenericResolution,
-#endif
             };
         }
 
@@ -397,7 +362,6 @@ namespace TinyIoC.Tests.PlatformTestSuite
             return output is TestClassNoInterface;
         }
 
-#if EXPRESSIONS
         private bool RegisterAndSpecifyConstructor(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("RegisterAndSpecifyConstructor");
@@ -406,7 +370,6 @@ namespace TinyIoC.Tests.PlatformTestSuite
 
             return output is TestClassWithConcreteDependency;
         }
-#endif
 
         private bool RegisterBoundGeneric(TinyIoCContainer container, ILogger logger)
         {
@@ -417,7 +380,6 @@ namespace TinyIoC.Tests.PlatformTestSuite
             return output is GenericClass<String>;
         }
 
-#if EXPRESSIONS
         private bool ResolveLazyFactory(TinyIoCContainer container, ILogger logger)
         {
             logger.WriteLine("ResolveLazyFactory");
@@ -444,8 +406,6 @@ namespace TinyIoC.Tests.PlatformTestSuite
             var output = container.Resolve<TestclassWithNameAndParamsLazyFactory>();
             return (output.Prop1 != null);
         }
-
-#endif
 
         private bool ResolveAll(TinyIoCContainer container, ILogger logger)
         {
