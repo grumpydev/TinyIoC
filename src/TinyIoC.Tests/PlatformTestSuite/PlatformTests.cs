@@ -4,11 +4,22 @@
 //#define TINYMESSENGER
 
 // PCL profile supports System.Linq.Expressions
-// PCL profile supports compiling expressions
+// PCL profile does not support compiling expressions (due to restriction in MonoTouch)
 // PCL profile does not support getting all assemblies from the AppDomain object 
 // PCL profile supports GetConstructors on unbound generic types  
 // PCL profile supports GetParameters on open generics      
 // PCL profile supports resolving open generics
+
+// MonoTouch does not support compiled exceptions due to the restriction on Reflection.Emit
+// (http://docs.xamarin.com/guides/ios/advanced_topics/limitations#No_Dynamic_Code_Generation)
+// Note: This restriction is not enforced on the emulator (at the moment), but on the device.
+// Note: Comment out the next line to compile a version that can be used with MonoTouch.
+#define COMPILED_EXPRESSIONS
+
+#if MONO_TOUCH
+#undef COMPILED_EXPRESSIONS
+#endif
+
 #endregion
 
 using System;

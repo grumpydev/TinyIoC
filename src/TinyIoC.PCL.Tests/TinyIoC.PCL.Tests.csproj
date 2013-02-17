@@ -96,6 +96,9 @@
     <Compile Include="..\TinyIoC.Tests\TypeExtensionsTests.cs">
       <Link>TypeExtensionsTests.cs</Link>
     </Compile>
+    <Compile Include="..\TinyIoC\TinyIoC.cs">
+      <Link>TinyIoC.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -104,10 +107,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TinyIoC.PCL\TinyIoC.PCL.csproj">
-      <Project>{0f8e6405-cf2b-4800-abdd-843c0fc5d1e6}</Project>
-      <Name>TinyIoC.PCL</Name>
-    </ProjectReference>
     <ProjectReference Include="..\TinyIoC.Tests.ExternalTypes\TinyIoC.Tests.ExternalTypes.csproj">
       <Project>{F6422C73-C40A-489A-A822-387E3098B2F1}</Project>
       <Name>TinyIoC.Tests.ExternalTypes</Name>
