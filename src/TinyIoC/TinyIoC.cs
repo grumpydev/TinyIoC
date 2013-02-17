@@ -22,10 +22,12 @@
 // depending on platform features. If the platform has an appropriate
 // #DEFINE then these should be set automatically below.
 #define EXPRESSIONS                         // Platform supports System.Linq.Expressions
+#define COMPILED_EXPRESSIONS                // Platform supports compiling expressions
 #define APPDOMAIN_GETASSEMBLIES             // Platform supports getting all assemblies from the AppDomain object
 #define UNBOUND_GENERICS_GETCONSTRUCTORS    // Platform supports GetConstructors on unbound generic types
 #define GETPARAMETERS_OPEN_GENERICS         // Platform supports GetParameters on open generics
 #define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
+#define READER_WRITER_LOCK_SLIM             // Platform supports ReaderWriterLockSlim
 
 //// NETFX_CORE
 //#if NETFX_CORE
@@ -36,6 +38,7 @@
 // AppDomain object does not support enumerating all assemblies in the app domain.
 #if PocketPC
 #undef EXPRESSIONS
+#undef COMPILED_EXPRESSIONS
 #undef APPDOMAIN_GETASSEMBLIES
 #undef UNBOUND_GENERICS_GETCONSTRUCTORS
 #endif
@@ -45,6 +48,7 @@
 #if PocketPC
 #undef GETPARAMETERS_OPEN_GENERICS
 #undef RESOLVE_OPEN_GENERICS
+#undef READER_WRITER_LOCK_SLIM
 #endif
 
 #if SILVERLIGHT || PORTABLE
@@ -56,16 +60,23 @@
 #undef RESOLVE_OPEN_GENERICS
 #endif
 
+#if COMPILED_EXPRESSIONS
+#define USE_OBJECT_CONSTRUCTOR
+#endif
+
 #endregion
 namespace TinyIoC
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Linq;
     using System.Reflection;
 
 #if EXPRESSIONS
     using System.Linq.Expressions;
+    using System.Threading;
+
 #endif
 
 #if NETFX_CORE
@@ -76,6 +87,121 @@ namespace TinyIoC
 #endif
 
     #region SafeDictionary
+#if READER_WRITER_LOCK_SLIM
+    public class SafeDictionary<TKey, TValue> : IDisposable
+    {
+        private readonly ReaderWriterLockSlim _padlock = new ReaderWriterLockSlim();
+        private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
+
+        public TValue this[TKey key]
+        {
+            set
+            {
+                _padlock.EnterWriteLock();
+
+                try
+                {
+                    TValue current;
+                    if (_Dictionary.TryGetValue(key, out current))
+                    {
+                        var disposable = current as IDisposable;
+
+                        if (disposable != null)
+                            disposable.Dispose();
+                    }
+
+                    _Dictionary[key] = value;
+                }
+                finally
+                {
+                    _padlock.ExitWriteLock();
+                }
+            }
+        }
+
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            _padlock.EnterReadLock();
+            try
+            {
+                return _Dictionary.TryGetValue(key, out value);
+            }
+            finally
+            {
+                _padlock.ExitReadLock();
+            }
+        }
+
+        public bool Remove(TKey key)
+        {
+            _padlock.EnterWriteLock();
+            try
+            {
+                return _Dictionary.Remove(key);
+            }
+            finally
+            {
+                _padlock.ExitWriteLock();
+            }
+        }
+
+        public void Clear()
+        {
+            _padlock.EnterWriteLock();
+            try
+            {
+                _Dictionary.Clear();
+            }
+            finally
+            {
+                _padlock.ExitWriteLock();
+            }
+        }
+
+        public IEnumerable<TKey> Keys
+        {
+            get
+            {
+                _padlock.EnterReadLock();
+                try
+                {
+                    return new List<TKey>(_Dictionary.Keys);
+                }
+                finally
+                {
+                    _padlock.ExitReadLock();
+                }
+            }
+        }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            _padlock.EnterWriteLock();
+
+            try
+            {
+                var disposableItems = from item in _Dictionary.Values
+                                      where item is IDisposable
+                                      select item as IDisposable;
+
+                foreach (var item in disposableItems)
+                {
+                    item.Dispose();
+                }
+            }
+            finally
+            {
+                _padlock.ExitWriteLock();
+            }
+
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
+    }
+#else
     public class SafeDictionary<TKey, TValue> : IDisposable
     {
         private readonly object _Padlock = new object();
@@ -153,6 +279,7 @@ namespace TinyIoC
 
         #endregion
     }
+#endif
     #endregion
 
     #region Extensions
@@ -2901,6 +3028,10 @@ namespace TinyIoC
             }
         }
         private readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
+#if USE_OBJECT_CONSTRUCTOR 
+        private delegate object ObjectConstructor(params object[] parameters);
+        private static readonly SafeDictionary<ConstructorInfo, ObjectConstructor> _ObjectConstructorCache = new SafeDictionary<ConstructorInfo, ObjectConstructor>();
+#endif
         #endregion
 
         #region Constructors
@@ -3429,7 +3560,13 @@ namespace TinyIoC
             // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
             var ctors = this.GetTypeConstructors(type);
 
-            return ctors.FirstOrDefault(ctor => this.CanConstruct(ctor, parameters, options));
+            foreach (var ctor in ctors)
+            {
+                if (this.CanConstruct(ctor, parameters, options))
+                    return ctor;
+            }
+
+            return null;
         }
 
         private IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
@@ -3463,21 +3600,12 @@ namespace TinyIoC
 #if RESOLVE_OPEN_GENERICS
             if (implementationType.IsGenericTypeDefinition())
             {
-//#if NETFX_CORE
-//				if (requestedType == null || !requestedType.IsGenericType() || !requestedType.GenericTypeArguments.Any())
-//#else
                 if (requestedType == null || !requestedType.IsGenericType() || !requestedType.GetGenericArguments().Any())
-//#endif
                     throw new TinyIoCResolutionException(typeToConstruct);
                  
-//#if NETFX_CORE
-//				typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GenericTypeArguments);
-//#else
                 typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GetGenericArguments());
-//#endif
             }
 #endif
-
             if (constructor == null)
             {
                 // Try and get the best constructor that we can construct
@@ -3521,13 +3649,51 @@ namespace TinyIoC
 
             try
             {
+#if USE_OBJECT_CONSTRUCTOR
+                var constructionDelegate = CreateObjectConstructionDelegateWithCache(constructor);
+                return constructionDelegate.Invoke(args);
+#else
                 return constructor.Invoke(args);
+#endif
             }
             catch (Exception ex)
             {
                 throw new TinyIoCResolutionException(typeToConstruct, ex);
             }
         }
+
+#if USE_OBJECT_CONSTRUCTOR 
+        private static ObjectConstructor CreateObjectConstructionDelegateWithCache(ConstructorInfo constructor)
+        {
+            ObjectConstructor objectConstructor;
+            if (_ObjectConstructorCache.TryGetValue(constructor, out objectConstructor))
+                return objectConstructor;
+
+            // We could lock the cache here, but there's no real side
+            // effect to two threads creating the same ObjectConstructor
+            // at the same time, compared to the cost of a lock for 
+            // every creation.
+            var constructorParams = constructor.GetParameters();
+            var lambdaParams = Expression.Parameter(typeof(object[]), "parameters");
+            var newParams = new Expression[constructorParams.Length];
+
+            for (int i = 0; i < constructorParams.Length; i++)
+            {
+                var paramsParameter = Expression.ArrayIndex(lambdaParams, Expression.Constant(i));
+
+                newParams[i] = Expression.Convert(paramsParameter, constructorParams[i].ParameterType);
+            }
+
+            var newExpression = Expression.New(constructor, newParams);
+
+            var constructionLambda = Expression.Lambda(typeof(ObjectConstructor), newExpression, lambdaParams);
+
+            objectConstructor = (ObjectConstructor)constructionLambda.Compile();
+
+            _ObjectConstructorCache[constructor] = objectConstructor;
+            return objectConstructor;
+        }
+#endif
 
         private void BuildUpInternal(object input, ResolveOptions resolveOptions)
         {
