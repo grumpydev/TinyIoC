@@ -19,11 +19,18 @@
 //#define TINYMESSENGER
                     
 // PCL profile supports System.Linq.Expressions
-// PCL profile supports compiling expressions
+// PCL profile does not support compiling expressions (due to restriction in MonoTouch)
 // PCL profile does not support getting all assemblies from the AppDomain object 
 // PCL profile supports GetConstructors on unbound generic types  
 // PCL profile supports GetParameters on open generics      
 // PCL profile supports resolving open generics
+
+// MonoTouch does not support compiled exceptions due to the restriction on Reflection.Emit
+// (http://docs.xamarin.com/guides/ios/advanced_topics/limitations#No_Dynamic_Code_Generation)
+// Note: This restriction is not enforced on the emulator (at the moment), but on the device.
+// Note: Comment out the next line to compile a version tht can be used with MonoTouch.
+#define COMPILED_EXPRESSIONS
+
 #endregion
 
 namespace TinyIoC
@@ -2706,12 +2713,14 @@ namespace TinyIoC
             }
         }
         private readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
+#if COMPILED_EXPRESSIONS
         private delegate object ObjectConstructor(params object[] parameters);
         private static readonly SafeDictionary<ConstructorInfo, ObjectConstructor> _ObjectConstructorCache = new SafeDictionary<ConstructorInfo, ObjectConstructor>();
-        #endregion
+#endif
+		#endregion
 
-        #region Constructors
-        public TinyIoCContainer()
+		#region Constructors
+		public TinyIoCContainer()
         {
             _RegisteredTypes = new SafeDictionary<TypeRegistration, ObjectFactoryBase>();
 
@@ -3065,12 +3074,12 @@ namespace TinyIoC
                     }
                 }
             }
-
+#if COMPILED_EXPRESSIONS
             // Attempt to construct an automatic lazy factory if possible
             if (IsAutomaticLazyFactoryRequest(registration.Type))
                 return GetLazyAutomaticFactoryRequest(registration.Type);
-
-            if (IsIEnumerableRequest(registration.Type))
+#endif
+			if (IsIEnumerableRequest(registration.Type))
                 return GetIEnumerableRequest(registration.Type);
 
             // Attempt unregistered construction if possible and requested
@@ -3084,6 +3093,7 @@ namespace TinyIoC
             throw new TinyIoCResolutionException(registration.Type);
         }
 
+#if COMPILED_EXPRESSIONS
         private object GetLazyAutomaticFactoryRequest(Type type)
         {
             if (!type.IsGenericType())
@@ -3146,8 +3156,9 @@ namespace TinyIoC
 
             throw new TinyIoCResolutionException(type);
         }
+#endif
 
-        private object GetIEnumerableRequest(Type type)
+		private object GetIEnumerableRequest(Type type)
         {
             var genericResolveAllMethod = this.GetType().GetGenericMethod(BindingFlags.Public | BindingFlags.Instance, "ResolveAll", type.GetGenericArguments(), new[] { typeof(bool) });
 
@@ -3272,16 +3283,20 @@ namespace TinyIoC
 
             try
             {
+#if COMPILED_EXPRESSIONS
                 var constructionDelegate = CreateObjectConstructionDelegateWithCache(constructor);
                 return constructionDelegate.Invoke(args);
-            }
+#else
+				return constructor.Invoke(args);
+#endif
+			}
             catch (Exception ex)
             {
                 throw new TinyIoCResolutionException(typeToConstruct, ex);
             }
         }
-
-        private static ObjectConstructor CreateObjectConstructionDelegateWithCache(ConstructorInfo constructor)
+#if COMPILED_EXPRESSIONS
+		private static ObjectConstructor CreateObjectConstructionDelegateWithCache(ConstructorInfo constructor)
         {
             ObjectConstructor objectConstructor;
             if (_ObjectConstructorCache.TryGetValue(constructor, out objectConstructor))
@@ -3311,8 +3326,8 @@ namespace TinyIoC
             _ObjectConstructorCache[constructor] = objectConstructor;
             return objectConstructor;
         }
-
-        private void BuildUpInternal(object input, ResolveOptions resolveOptions)
+#endif
+		private void BuildUpInternal(object input, ResolveOptions resolveOptions)
         {
             var properties = from property in input.GetType().GetProperties()
                              where (property.GetGetMethod() != null) && (property.GetSetMethod() != null) && !property.PropertyType.IsValueType()
