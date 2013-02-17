@@ -13,10 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC", "TinyIoC\TinyIoC.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC.Tests.ExternalTypes", "TinyIoC.Tests.ExternalTypes\TinyIoC.Tests.ExternalTypes.csproj", "{F6422C73-C40A-489A-A822-387E3098B2F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC.PCL", "TinyIoC.PCL\TinyIoC.PCL.csproj", "{0F8E6405-CF2B-4800-ABDD-843C0FC5D1E6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TinyIoC.PCL.Tests", "TinyIoC.PCL.Tests\TinyIoC.PCL.Tests.csproj", "{5688CA97-65A1-4A83-954F-D8D3DEC5A4EF}"
-EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = TinyIoC.vsmdi
@@ -38,14 +34,6 @@ Global
 		{F6422C73-C40A-489A-A822-387E3098B2F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6422C73-C40A-489A-A822-387E3098B2F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6422C73-C40A-489A-A822-387E3098B2F1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0F8E6405-CF2B-4800-ABDD-843C0FC5D1E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0F8E6405-CF2B-4800-ABDD-843C0FC5D1E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0F8E6405-CF2B-4800-ABDD-843C0FC5D1E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0F8E6405-CF2B-4800-ABDD-843C0FC5D1E6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5688CA97-65A1-4A83-954F-D8D3DEC5A4EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5688CA97-65A1-4A83-954F-D8D3DEC5A4EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5688CA97-65A1-4A83-954F-D8D3DEC5A4EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5688CA97-65A1-4A83-954F-D8D3DEC5A4EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
