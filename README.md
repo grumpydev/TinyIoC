@@ -24,3 +24,6 @@ In addition to this, TinyIoC's "simplified inclusion" makes it useful for provid
 * Automatic lazy factories - a Func<T> dependency will automatically create a factory.
 * RegisterMultiple/ResolveAll/IEnumerable<T> support - multiple implementations of an interface can be registered and resolved to an IEnumerable using ResolveAll, or taking a dependency on IEnumerable<T>.
 * Child containers - lifetime can be managed using child containers, with automatic "bubbling" of resolving to parent containers where required.
+
+### Licence ###
+[Microsoft Public License (Ms-PL)](src/licence.txt)
