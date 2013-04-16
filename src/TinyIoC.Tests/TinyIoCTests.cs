@@ -1031,25 +1031,28 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        //[ExpectedException(typeof(TinyIoCRegistrationException))]
-        public void Register_FactoryToSingletonFluent_ThrowsException()
+        public void Register_FactoryToSingletonFluent_Registers()
         {
             var container = UtilityMethods.GetContainer();
-            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsSingleton());
-
-            // Should have thrown by now
-            //Assert.IsTrue(false);
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsSingleton();
+            //works
         }
 
         [TestMethod]
-        //[ExpectedException(typeof(TinyIoCRegistrationException))]
-        public void Register_FactoryToMultiInstanceFluent_ThrowsException()
+        public void Register_FactoryToMultiInstanceFluent_Registers()
         {
             var container = UtilityMethods.GetContainer();
-            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsMultiInstance());
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsMultiInstance();
 
-            // Should have thrown by now
-            //Assert.IsTrue(false);
+            //works
+        }
+
+        [TestMethod]
+        public void Register_FactoryToCustomLifetime_Registers()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsPerRequestSingleton();
+            //works
         }
 
         [TestMethod]

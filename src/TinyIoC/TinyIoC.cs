@@ -2515,14 +2515,139 @@ namespace TinyIoC
             }
         }
 
+
+        /// <summary>
+        /// A factory that offloads lifetime to an external lifetime provider
+        /// </summary>
+        private class DelegateCustomObjectLifetimeFactory : DelegateFactory, IDisposable
+        {
+            private readonly object SingletonLock = new object();
+            private readonly ITinyIoCObjectLifetimeProvider _LifetimeProvider;
+
+            public DelegateCustomObjectLifetimeFactory(Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory, ITinyIoCObjectLifetimeProvider lifetimeProvider, string errorMessage)
+                : base(registerType, factory)
+            {
+                if (lifetimeProvider == null)
+                    throw new ArgumentNullException("lifetimeProvider", "lifetimeProvider is null.");
+
+                _LifetimeProvider = lifetimeProvider;
+            }
+
+            public override Type CreatesType
+            {
+                get { return registerType; }
+            }
+
+            public override object GetObject(Type requestedType, TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
+            {
+                object current;
+
+                lock (SingletonLock)
+                {
+                    current = _LifetimeProvider.GetObject();
+                    if (current == null)
+                    {
+                        current = base.GetObject(requestedType, container, parameters, options);
+                        _LifetimeProvider.SetObject(current);
+                    }
+                }
+
+                return current;
+            }
+
+            public override ObjectFactoryBase SingletonVariant
+            {
+                get
+                {
+                    _LifetimeProvider.ReleaseObject();
+                    return new SingletonDelegateFactory(registerType, _factory);
+                }
+            }
+
+            public override ObjectFactoryBase MultiInstanceVariant
+            {
+                get
+                {
+                    _LifetimeProvider.ReleaseObject();
+                    return new DelegateFactory(registerType, _factory);
+                }
+            }
+
+            public override ObjectFactoryBase GetCustomObjectLifetimeVariant(ITinyIoCObjectLifetimeProvider lifetimeProvider, string errorString)
+            {
+                _LifetimeProvider.ReleaseObject();
+                return new DelegateCustomObjectLifetimeFactory(registerType, _factory, lifetimeProvider, errorString);
+            }
+
+            public override ObjectFactoryBase GetFactoryForChildContainer(Type type, TinyIoCContainer parent, TinyIoCContainer child)
+            {
+                // We make sure that the singleton is constructed before the child container takes the factory.
+                // Otherwise the results would vary depending on whether or not the parent container had resolved
+                // the type before the child container does.
+                GetObject(type, parent, NamedParameterOverloads.Default, ResolveOptions.Default);
+                return this;
+            }
+
+            public void Dispose()
+            {
+                _LifetimeProvider.ReleaseObject();
+            }
+        }
+
+        private class SingletonDelegateFactory : DelegateFactory
+        {
+            public SingletonDelegateFactory(Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
+                : base(registerType, factory)
+            {
+            }
+
+            private readonly object SingletonLock = new object();
+            private object _Current;
+
+
+            public override object GetObject(Type requestedType, TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
+            {
+                if (parameters.Count != 0)
+                    throw new ArgumentException("Cannot specify parameters for singleton types");
+
+                lock (SingletonLock)
+                    if (_Current == null)
+                        _Current = _factory.Invoke(container, parameters);
+
+                return _Current;
+            }
+
+            public override ObjectFactoryBase SingletonVariant
+            {
+                get
+                {
+                    return this;
+                }
+            }
+
+            public override ObjectFactoryBase MultiInstanceVariant
+            {
+                get
+                {
+                    return new DelegateFactory(registerType, _factory);
+                }
+            }
+
+            public override ObjectFactoryBase GetCustomObjectLifetimeVariant(ITinyIoCObjectLifetimeProvider lifetimeProvider, string errorString)
+            {
+                return new DelegateCustomObjectLifetimeFactory(registerType, _factory, lifetimeProvider, errorString);
+            }
+        }
+
+
         /// <summary>
         /// IObjectFactory that invokes a specified delegate to construct the object
         /// </summary>
         private class DelegateFactory : ObjectFactoryBase
         {
-            private readonly Type registerType;
+            protected readonly Type registerType;
 
-            private Func<TinyIoCContainer, NamedParameterOverloads, object> _factory;
+            protected readonly Func<TinyIoCContainer, NamedParameterOverloads, object> _factory;
 
             public override bool AssumeConstruction { get { return true; } }
 
@@ -2550,12 +2675,30 @@ namespace TinyIoC
                 this.registerType = registerType;
             }
 
+            public override ObjectFactoryBase SingletonVariant
+            {
+                get
+                {
+                    return new SingletonDelegateFactory(registerType, _factory);
+                }
+            }
+
+            public override ObjectFactoryBase MultiInstanceVariant
+            {
+                get { return this; }
+            }
+
             public override ObjectFactoryBase WeakReferenceVariant
             {
                 get
                 {
-                    return new WeakDelegateFactory(this.registerType, _factory);
+                    return new WeakDelegateFactory(registerType, _factory);
                 }
+            }
+
+            public override ObjectFactoryBase GetCustomObjectLifetimeVariant(ITinyIoCObjectLifetimeProvider lifetimeProvider, string errorString)
+            {
+                return new DelegateCustomObjectLifetimeFactory(registerType, _factory, lifetimeProvider, errorString);
             }
 
             public override ObjectFactoryBase StrongReferenceVariant
@@ -2582,13 +2725,15 @@ namespace TinyIoC
 
             private WeakReference _factory;
 
+            private Func<TinyIoCContainer, NamedParameterOverloads, object> Target {get { return _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, object>; }}
+
             public override bool AssumeConstruction { get { return true; } }
 
             public override Type CreatesType { get { return this.registerType; } }
 
             public override object GetObject(Type requestedType, TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
-                var factory = _factory.Target as Func<TinyIoCContainer, NamedParameterOverloads, object>;
+                var factory = Target;
 
                 if (factory == null)
                     throw new TinyIoCWeakReferenceException(this.registerType);
@@ -2632,6 +2777,24 @@ namespace TinyIoC
                 {
                     return this;
                 }
+            }
+
+            public override ObjectFactoryBase SingletonVariant
+            {
+                get
+                {
+                    return new SingletonDelegateFactory(registerType, Target);
+                }
+            }
+
+            public override ObjectFactoryBase MultiInstanceVariant
+            {
+                get { return this; }
+            }
+
+            public override ObjectFactoryBase GetCustomObjectLifetimeVariant(ITinyIoCObjectLifetimeProvider lifetimeProvider, string errorString)
+            {
+                return new DelegateCustomObjectLifetimeFactory(registerType, Target, lifetimeProvider, errorString);
             }
 
             public override void SetConstructor(ConstructorInfo constructor)
