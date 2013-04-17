@@ -18,7 +18,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using TinyIoC.Tests.TestData.BasicClasses;
+#if !NO_MESSENGER
 using TinyMessenger;
+#endif
 
 namespace TinyIoC.Tests.TestData
 {
@@ -61,6 +63,7 @@ namespace TinyIoC.Tests.TestData
             container.Register<TestClassDefaultCtor>(item).WithWeakReference();
         }
 
+#if !NO_MESSENGER
         public static ITinyMessengerHub GetMessenger()
         {
             return new TinyMessengerHub();
@@ -85,5 +88,6 @@ namespace TinyIoC.Tests.TestData
 
             return token;
         }
+#endif
     }
 }
