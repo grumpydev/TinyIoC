@@ -22,6 +22,27 @@ namespace TinyIoC.Tests.TestData
 {
     namespace BasicClasses
     {
+
+        internal class CyclicA
+        {
+            readonly CyclicB dependency;
+
+            public CyclicA(CyclicB dependency)
+            {
+                this.dependency = dependency;
+            }
+        }
+
+        internal class CyclicB
+        {
+            readonly CyclicA dependency;
+
+            public CyclicB(CyclicA dependency)
+            {
+                this.dependency = dependency;
+            }
+        }
+
         internal interface ITestInterface
         {
         }
