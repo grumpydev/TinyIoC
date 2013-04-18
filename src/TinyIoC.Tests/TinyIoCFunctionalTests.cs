@@ -38,6 +38,31 @@ namespace TinyIoC.Tests
     [TestClass]
     public class TinyIoCFunctionalTests
     {
+
+        [TestMethod]
+        public void Container_Throws_Whith_Simple_Cyclic_Dependency()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<CyclicA>();
+            container.Register<CyclicB>();
+
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<CyclicA>());
+
+        }
+
+
+        [TestMethod]
+        public void Container_Throws_Whith_Simple_Factory_Cyclic_Dependency()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<CyclicA>((c, o) => new CyclicA(c.Resolve<CyclicB>()));
+            container.Register<CyclicB>((c, o) => new CyclicB(c.Resolve<CyclicA>()));
+
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<CyclicA>());
+
+        }
+
+
         [TestMethod]
         public void NestedInterfaceDependencies_CorrectlyRegistered_ResolvesRoot()
         {

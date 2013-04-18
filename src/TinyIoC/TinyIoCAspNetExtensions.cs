@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Web;
 
 namespace TinyIoC
@@ -12,12 +9,13 @@ namespace TinyIoC
 
         public object GetObject()
         {
-            return HttpContext.Current.Items[_KeyName];
+            return HttpContext.Current == null ? null : HttpContext.Current.Items[_KeyName];
         }
 
         public void SetObject(object value)
         {
-            HttpContext.Current.Items[_KeyName] = value;
+            if (HttpContext.Current != null)
+                HttpContext.Current.Items[_KeyName] = value;
         }
 
         public void ReleaseObject()
