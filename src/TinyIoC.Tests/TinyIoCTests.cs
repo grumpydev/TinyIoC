@@ -1473,7 +1473,7 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        //[ExpectedException(typeof(TinyIoCAutoRegistrationException))]
+        [ExpectedException(typeof(TinyIoCAutoRegistrationException))]
         public void AutoRegister_ThisAssemblySpecifiedDuplicateActionFail_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
@@ -1492,7 +1492,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_SpecifiedDuplicateActionRegisterMultiple_RegistersMultipleImplementations()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly }, DuplicateImplementationActions.RegisterMultiple);
+            container.AutoRegister(new[] { typeof(TestClassDefaultCtor).Assembly }, DuplicateImplementationActions.RegisterMultiple);
             
             var results = container.ResolveAll<ITestInterface>();
 
