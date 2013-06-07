@@ -1473,23 +1473,34 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        //[ExpectedException(typeof(TinyIoCAutoRegistrationException))]
-        public void AutoRegister_ThisAssemblySpecifiedIgnoreDuplicatesOff_ThrowsException()
+        [ExpectedException(typeof(TinyIoCAutoRegistrationException))]
+        public void AutoRegister_ThisAssemblySpecifiedDuplicateActionFail_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            AssertHelper.ThrowsException<TinyIoCAutoRegistrationException>(() => container.AutoRegister(new[] { this.GetType().Assembly() }, false));
+            container.AutoRegister(new[] { this.GetType().Assembly }, DuplicateImplementationActions.Fail);
             //Assert.IsTrue(false);
         }
 
         [TestMethod]
-        public void AutoRegister_TinyIoCAssemblySpecifiedIgnoreDuplicatesOff_NoErrors()
+        public void AutoRegister_TinyIoCAssemblySpecifiedDuplicateActionFail_NoErrors()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly() }, false);
+            container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly }, DuplicateImplementationActions.Fail);
         }
 
         [TestMethod]
-        //[ExpectedException(typeof(TinyIoCConstructorResolutionException))]
+        public void AutoRegister_SpecifiedDuplicateActionRegisterMultiple_RegistersMultipleImplementations()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.AutoRegister(new[] { typeof(TestClassDefaultCtor).Assembly }, DuplicateImplementationActions.RegisterMultiple);
+            
+            var results = container.ResolveAll<ITestInterface>();
+
+            Assert.IsInstanceOfType(results.First(), typeof(TestClassDefaultCtor));
+            Assert.IsInstanceOfType(results.ElementAt(1), typeof(DisposableTestClassWithInterface));
+        }
+
+        [TestMethod]
         public void Register_ConstructorSpecifiedForDelegateFactory_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
