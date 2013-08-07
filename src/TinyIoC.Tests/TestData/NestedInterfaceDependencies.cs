@@ -151,6 +151,28 @@ namespace TinyIoC.Tests.TestData
 
     }
 
+    public class ViewBag
+    {
+        private readonly IView _view1;
+        private readonly IView _view2;
+
+        public ViewBag([NamedDependency("SplashView")]IView view1, [NamedDependency("MainView")]IView view2)
+        {
+            _view1 = view1;
+            _view2 = view2;
+        }
+
+        public IView View1
+        {
+            get { return _view1; }
+        }
+
+        public IView View2
+        {
+            get { return _view2; }
+        }
+    }
+
     public class SplashView : IView
     {
         public object GetView()
