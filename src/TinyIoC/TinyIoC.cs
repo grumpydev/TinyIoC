@@ -646,6 +646,35 @@ namespace TinyIoC
     }
     #endregion
 
+    #region NamedDependencyAttribute
+
+    public class NamedDependencyAttribute : Attribute
+    {
+        private readonly string _name;
+        private readonly bool _nameSpecified;
+
+        public NamedDependencyAttribute(String name = null)
+        {
+            _name = name;
+            _nameSpecified = !string.IsNullOrEmpty(name);
+        }
+
+        public string Name
+        {
+            get { return _name; }
+        }
+
+        public static string GetName(ICustomAttributeProvider provider, string defaultName = null)
+        {
+            return provider.GetCustomAttributes(typeof(NamedDependencyAttribute), false)
+                           .OfType<NamedDependencyAttribute>()
+                           .Select(a => a._nameSpecified ? a.Name : defaultName)
+                           .FirstOrDefault() ?? string.Empty;
+        }
+    }
+
+    #endregion
+
     #region Public Setup / Settings Classes
     /// <summary>
     /// Name/Value pairs for specifying "user" parameters when resolving
@@ -3549,7 +3578,8 @@ namespace TinyIoC
 //#endif
                     return false;
 
-                if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options))
+                var dependencyName = NamedDependencyAttribute.GetName(parameter, parameter.Name);
+                if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType, dependencyName), NamedParameterOverloads.Default, options))
                     return false;
             }
 
@@ -3636,13 +3666,14 @@ namespace TinyIoC
             for (int parameterIndex = 0; parameterIndex < ctorParams.Count(); parameterIndex++)
             {
                 var currentParam = ctorParams[parameterIndex];
+                var dependencyName = NamedDependencyAttribute.GetName(currentParam, currentParam.Name);
 
                 try
                 {
                     args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? 
                                             parameters[currentParam.Name] : 
                                             ResolveInternal(
-                                                new TypeRegistration(currentParam.ParameterType), 
+                                                new TypeRegistration(currentParam.ParameterType, dependencyName), 
                                                 NamedParameterOverloads.Default, 
                                                 options);
                 }
@@ -3725,7 +3756,8 @@ namespace TinyIoC
                 {
                     try
                     {
-                        property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions), null);
+                        var dependencyName = NamedDependencyAttribute.GetName(property, property.Name);
+                        property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType, dependencyName), NamedParameterOverloads.Default, resolveOptions), null);
                     }
                     catch (TinyIoCResolutionException)
                     {

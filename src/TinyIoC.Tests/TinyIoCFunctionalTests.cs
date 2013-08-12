@@ -136,6 +136,29 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Dependency_Hierarchy_With_Named_Parameters_Resolves_All_Correctly()
+        {
+            var container = UtilityMethods.GetContainer();
+            var mainView = new MainView();
+            container.Register<IView, MainView>(mainView, "MainView");
+            container.Register<IView, SplashView>("SplashView").UsingConstructor(() => new SplashView());
+            var viewBag = container.Resolve<ViewBag>();
+            Assert.IsInstanceOfType(viewBag.View1, typeof(SplashView));
+            Assert.IsInstanceOfType(viewBag.View2, typeof(MainView));
+        }
+
+        [TestMethod]
+        public void Dependency_Hierarchy_Resolves_IEnumerable_Correctly()
+        {
+            var container = UtilityMethods.GetContainer();
+            var mainView = new MainView();
+            container.Register<IView, MainView>(mainView, "MainView");
+            container.Register<IView, SplashView>("SplashView").UsingConstructor(() => new SplashView());
+            var viewCollection = container.Resolve<ViewCollection>();
+            Assert.AreEqual(viewCollection.Views.Count(), 2);
+        }
+
+        [TestMethod]
         public void When_Unable_To_Resolve_Nested_Dependency_Should_Include_That_Type_In_The_Exception()
         {
             var container = UtilityMethods.GetContainer();
