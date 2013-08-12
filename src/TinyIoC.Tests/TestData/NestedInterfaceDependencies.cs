@@ -151,6 +151,21 @@ namespace TinyIoC.Tests.TestData
 
     }
 
+    public class ViewCollection
+    {
+        private readonly IEnumerable<IView> _views;
+
+        public ViewCollection(IEnumerable<IView> views)
+        {
+            _views = views;
+        }
+
+        public IEnumerable<IView> Views
+        {
+            get { return _views; }
+        }
+    }
+
     public class SplashView : IView
     {
         public object GetView()
