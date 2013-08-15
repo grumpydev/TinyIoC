@@ -81,6 +81,16 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void NestedClassDependencies_UsingConstructorFromAnotherType_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            var registerOptions = container.Register<NestedClassDependencies.RootClass>();
+
+            AssertHelper.ThrowsException<TinyIoCConstructorResolutionException>
+                (() => registerOptions.UsingConstructor(() => new RootClass(null, null)));
+        }
+
+        [TestMethod]
         public void NestedClassDependencies_MissingService3Registration_ResolvesRootResolutionOn()
         {
             var container = UtilityMethods.GetContainer();
