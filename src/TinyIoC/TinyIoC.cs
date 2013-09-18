@@ -3721,17 +3721,25 @@ namespace TinyIoC
 
             foreach (var property in properties)
             {
-                if (property.GetValue(input, null) == null)
-                {
-                    try
-                    {
-                        property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions), null);
-                    }
-                    catch (TinyIoCResolutionException)
-                    {
-                        // Catch any resolution errors and ignore them
-                    }
-                }
+		try
+		{
+			if (property.GetValue(input, null) != null)
+				continue;
+		}
+		catch
+		{
+			// Ignore properties that throw exceptions
+			continue;
+		}
+	
+		try
+		{
+			property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions), null);
+		}
+		catch (TinyIoCResolutionException)
+		{
+			// Catch any resolution errors and ignore them
+		}
             }
         }
 
