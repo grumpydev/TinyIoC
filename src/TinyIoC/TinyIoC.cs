@@ -3237,6 +3237,23 @@ namespace TinyIoC
                     return CanConstruct(factory.Constructor, parameters, options);
             }
 
+#if RESOLVE_OPEN_GENERICS
+            if (checkType.IsInterface && checkType.IsGenericType)
+            {
+                // if the type is registered as an open generic, then see if the open generic is registered
+                if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType.GetGenericTypeDefinition(), name), out factory))
+                {
+                    if (factory.AssumeConstruction)
+                        return true;
+
+                    if (factory.Constructor == null)
+                        return (GetBestConstructor(factory.CreatesType, parameters, options) != null) ? true : false;
+                    else
+                        return CanConstruct(factory.Constructor, parameters, options);
+                }
+            }
+#endif
+
             // Fail if requesting named resolution and settings set to fail if unresolved
             // Or bubble up if we have a parent
             if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
