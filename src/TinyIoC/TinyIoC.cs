@@ -3097,14 +3097,12 @@ namespace TinyIoC
                         {
                             RegisterMultiple(type, implementations);
                         }
-                    }   
-
-                    var firstImplementation = implementations.FirstOrDefault();
-                    if (firstImplementation != null)
+                    }
+                    else if (implementations.Count() == 1)
                     {
                         try
                         {
-                            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, firstImplementation));
+                            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, implementations.First()));
                         }
                         catch (MethodAccessException)
                         {
