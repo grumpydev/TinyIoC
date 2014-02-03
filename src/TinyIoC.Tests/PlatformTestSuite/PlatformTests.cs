@@ -251,6 +251,7 @@ namespace TinyIoC.Tests.PlatformTestSuite
 #if RESOLVE_OPEN_GENERICS 
                 OpenGenericRegistration,
                 OpenGenericResolution,
+                OpenGenericCanResolve
 #endif
             };
         }
@@ -527,6 +528,15 @@ namespace TinyIoC.Tests.PlatformTestSuite
             var result = container.Resolve<IThing<object>>();
 
             return result != null && result.GetType() == typeof(DefaultThing<object>);
+        }
+
+        private bool OpenGenericCanResolve(TinyIoCContainer container, ILogger logger)
+        {
+            logger.WriteLine("OpenGenericCanResolve");
+
+            container.Register(typeof(IThing<>), typeof(DefaultThing<>));
+
+            return container.CanResolve(typeof(IThing<int>));
         }
     }
 }
