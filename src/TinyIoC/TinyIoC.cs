@@ -3789,7 +3789,7 @@ namespace TinyIoC
                 if (registerType.IsInterface())
                 {
 #if WINDOWS_PHONE
-                    return registerImplementation.GetInterface(registerType.Name, true) != null;
+                    if (registerImplementation.GetInterface(registerType.Name, true) == null)
 #else
                     if (!registerImplementation.FindInterfaces((t, o) => t.Name == registerType.Name, null).Any())
                         return false;
