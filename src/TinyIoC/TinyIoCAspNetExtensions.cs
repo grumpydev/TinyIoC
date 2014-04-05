@@ -37,5 +37,10 @@ namespace TinyIoC
         {
             return TinyIoCContainer.RegisterOptions.ToCustomLifetimeManager(registerOptions, new HttpContextLifetimeProvider(), "per request singleton");
         }
+
+        public static TinyIoCContainer.MultiRegisterOptions AsPerRequestSingleton(this TinyIoCContainer.MultiRegisterOptions registerOptions)
+        {
+            return TinyIoCContainer.MultiRegisterOptions.ToCustomLifetimeManager(registerOptions, new HttpContextLifetimeProvider(), "per request singleton");
+        }
     }
 }
