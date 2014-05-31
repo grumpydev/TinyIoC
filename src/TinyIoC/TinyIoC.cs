@@ -88,11 +88,20 @@ namespace TinyIoC
 
     #region SafeDictionary
 #if READER_WRITER_LOCK_SLIM
+    /// <summary>
+    /// A thread-safe dictionary, and disposes all values when dictionary is disposed.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
     public class SafeDictionary<TKey, TValue> : IDisposable
     {
         private readonly ReaderWriterLockSlim _padlock = new ReaderWriterLockSlim();
         private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
 
+        /// <summary>
+        /// Gets or sets the value associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the value to get or set.</param>
         public TValue this[TKey key]
         {
             set
@@ -119,6 +128,12 @@ namespace TinyIoC
             }
         }
 
+        /// <summary>
+        /// Gets the value with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the value to get.</param>
+        /// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found; otherwise the default value for the type of the <paramref name="value"/> parameter. This parameter is passed uninitialized.</param>
+        /// <returns>true if the key was found; false otherwise</returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
             _padlock.EnterReadLock();
@@ -132,6 +147,11 @@ namespace TinyIoC
             }
         }
 
+        /// <summary>
+        /// Removes an value associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the value to remove</param>
+        /// <returns>true if the key was found; false otherwise</returns>
         public bool Remove(TKey key)
         {
             _padlock.EnterWriteLock();
@@ -145,6 +165,9 @@ namespace TinyIoC
             }
         }
 
+        /// <summary>
+        /// Empties the dictionary of all key/value pairs.
+        /// </summary>
         public void Clear()
         {
             _padlock.EnterWriteLock();
@@ -158,6 +181,9 @@ namespace TinyIoC
             }
         }
 
+        /// <summary>
+        /// Gets a collection of all keys in the dictionary.
+        /// </summary>
         public IEnumerable<TKey> Keys
         {
             get
@@ -176,6 +202,9 @@ namespace TinyIoC
 
         #region IDisposable Members
 
+        /// <summary>
+        /// Disposes the dictionary, and all values implementing <see cref="IDisposable"/> within the dictionary
+        /// </summary>
         public void Dispose()
         {
             _padlock.EnterWriteLock();
@@ -283,8 +312,16 @@ namespace TinyIoC
     #endregion
 
     #region Extensions
+    /// <summary>
+    /// Assembly extension methods.
+    /// </summary>
     public static class AssemblyExtensions
     {
+        /// <summary>
+        /// Gets the types defined in specified assembly, handling the most common exceptions.
+        /// </summary>
+        /// <param name="assembly">The assembly containing the types.</param>
+        /// <returns>An array of <see cref="Type"/> containing all the types in the assembly. An empty array is returned if an error occured.</returns>
         public static Type[] SafeGetTypes(this Assembly assembly)
         {
             Type[] assemblies;
@@ -311,6 +348,9 @@ namespace TinyIoC
         }
     }
 
+    /// <summary>
+    /// Extension methods for types.
+    /// </summary>
     public static class TypeExtensions
     {
         private static SafeDictionary<GenericMethodCacheKey, MethodInfo> _genericMethodCache;
@@ -526,111 +566,209 @@ namespace TinyIoC
     #endregion
 
     #region TinyIoC Exception Types
+    /// <summary>
+    /// Represents an error when not being able to resolve specified type.
+    /// </summary>
     public class TinyIoCResolutionException : Exception
     {
         private const string ERROR_TEXT = "Unable to resolve type: {0}";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCResolutionException"/> class
+        /// </summary>
+        /// <param name="type">The type that could not be resolved.</param>
         public TinyIoCResolutionException(Type type)
             : base(String.Format(ERROR_TEXT, type.FullName))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCResolutionException"/> class, with the specified inner exception.
+        /// </summary>
+        /// <param name="type">The type that could not be resolved.</param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCResolutionException(Type type, Exception innerException)
             : base(String.Format(ERROR_TEXT, type.FullName), innerException)
         {
         }
     }
 
+    /// <summary>
+    /// Represents an error that occured when attempting to register a type.
+    /// </summary>
     public class TinyIoCRegistrationTypeException : Exception
     {
         private const string REGISTER_ERROR_TEXT = "Cannot register type {0} - abstract classes or interfaces are not valid implementation types for {1}.";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCRegistrationTypeException"/> class
+        /// </summary>
+        /// <param name="type">The type that was attempted to be registered.</param>
+        /// <param name="factory">The name of the factory that was supposed to be implemented by <paramref name="type"/>"/></param>
         public TinyIoCRegistrationTypeException(Type type, string factory)
             : base(String.Format(REGISTER_ERROR_TEXT, type.FullName, factory))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCRegistrationTypeException"/> class, with the specified inner exception.
+        /// </summary>
+        /// <param name="type">The type that was attempted to be registered.</param>
+        /// <param name="factory">The name of the factory that was supposed to be implemented by <paramref name="type"/>"/></param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCRegistrationTypeException(Type type, string factory, Exception innerException)
             : base(String.Format(REGISTER_ERROR_TEXT, type.FullName, factory), innerException)
         {
         }
     }
 
+    /// <summary>
+    /// Represents an error that occured when attempting to register
+    /// </summary>
     public class TinyIoCRegistrationException : Exception
     {
         private const string CONVERT_ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
         private const string GENERIC_CONSTRAINT_ERROR_TEXT = "Type {1} is not valid for a registration of type {0}";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCRegistrationException"/> class
+        /// </summary>
+        /// <param name="type">The type attempted to be registered.</param>
+        /// <param name="method">The method attempted to register the specified type as.</param>
         public TinyIoCRegistrationException(Type type, string method)
             : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCRegistrationException"/> class
+        /// </summary>
+        /// <param name="type">The type attempted to be registered.</param>
+        /// <param name="method">The method attempted to register the specified type as.</param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCRegistrationException(Type type, string method, Exception innerException)
             : base(String.Format(CONVERT_ERROR_TEXT, type.FullName, method), innerException)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCRegistrationException"/> class
+        /// </summary>
+        /// <param name="registerType">The type attempted to be registered</param>
+        /// <param name="implementationType">The implementation type attempted to be registered</param>
         public TinyIoCRegistrationException(Type registerType, Type implementationType)
             : base(String.Format(GENERIC_CONSTRAINT_ERROR_TEXT, registerType.FullName, implementationType.FullName))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCRegistrationException"/> class
+        /// </summary>
+        /// <param name="registerType">The type attempted to be registered</param>
+        /// <param name="implementationType">The implementation type attempted to be registered</param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCRegistrationException(Type registerType, Type implementationType, Exception innerException)
             : base(String.Format(GENERIC_CONSTRAINT_ERROR_TEXT, registerType.FullName, implementationType.FullName), innerException)
         {
         }
     }
 
+    /// <summary>
+    /// Represents an error that occured when trying to access an object that has been reclaimed
+    /// </summary>
     public class TinyIoCWeakReferenceException : Exception
     {
         private const string ERROR_TEXT = "Unable to instantiate {0} - referenced object has been reclaimed";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCWeakReferenceException"/> class
+        /// </summary>
+        /// <param name="type">Type type attempted to be accessed</param>
         public TinyIoCWeakReferenceException(Type type)
             : base(String.Format(ERROR_TEXT, type.FullName))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCWeakReferenceException"/> class with the specified inner exception
+        /// </summary>
+        /// <param name="type">Type type attempted to be accessed</param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCWeakReferenceException(Type type, Exception innerException)
             : base(String.Format(ERROR_TEXT, type.FullName), innerException)
         {
         }
     }
 
+    /// <summary>
+    /// Represents an error that occured when trying to resolve a constructor
+    /// </summary>
     public class TinyIoCConstructorResolutionException : Exception
     {
         private const string ERROR_TEXT = "Unable to resolve constructor for {0} using provided Expression.";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCConstructorResolutionException"/> class
+        /// </summary>
+        /// <param name="type">The type attempted to resolve a constructor for</param>
         public TinyIoCConstructorResolutionException(Type type)
             : base(String.Format(ERROR_TEXT, type.FullName))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCConstructorResolutionException"/> class
+        /// </summary>
+        /// <param name="type">The type attempted to resolve a constructor for</param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCConstructorResolutionException(Type type, Exception innerException)
             : base(String.Format(ERROR_TEXT, type.FullName), innerException)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCConstructorResolutionException"/> class
+        /// </summary>
+        /// <param name="message">The message that explains the reason for the exception</param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCConstructorResolutionException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCConstructorResolutionException"/> class
+        /// </summary>
+        /// <param name="message">The message that explains the reason for the exception</param>
         public TinyIoCConstructorResolutionException(string message)
             : base(message)
         {
         }
     }
 
+    /// <summary>
+    /// Represents an error that occured when attempting to auto register
+    /// </summary>
     public class TinyIoCAutoRegistrationException : Exception
     {
         private const string ERROR_TEXT = "Duplicate implementation of type {0} found ({1}).";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCAutoRegistrationException"/> class
+        /// </summary>
+        /// <param name="registerType">The type attempted to be registered</param>
+        /// <param name="types">The types that all implement <paramref name="registerType"/></param>
         public TinyIoCAutoRegistrationException(Type registerType, IEnumerable<Type> types)
             : base(String.Format(ERROR_TEXT, registerType, GetTypesString(types)))
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCAutoRegistrationException"/> class
+        /// </summary>
+        /// <param name="registerType">The type attempted to be registered</param>
+        /// <param name="types">The types that all implement <paramref name="registerType"/></param>
+        /// <param name="innerException">The exception that is the cause of the current exception</param>
         public TinyIoCAutoRegistrationException(Type registerType, IEnumerable<Type> types, Exception innerException)
             : base(String.Format(ERROR_TEXT, registerType, GetTypesString(types)), innerException)
         {
@@ -652,15 +790,26 @@ namespace TinyIoC
     /// </summary>
     public sealed class NamedParameterOverloads : Dictionary<string, object>
     {
+        /// <summary>
+        /// Converts a IDictionary{string,object} to <see cref="NamedParameterOverloads"/>
+        /// </summary>
+        /// <param name="data">An object implementing IDictionary{string,object}</param>
+        /// <returns>if <paramref name="data"/> is an instance of <see cref="NamedParameterOverloads"/>, <paramref name="data"/> is returned, otherwise a new instance of <see cref="NamedParameterOverloads"/> is created from the specified IDictionary{string,object}</returns>
         public static NamedParameterOverloads FromIDictionary(IDictionary<string, object> data)
         {
             return data as NamedParameterOverloads ?? new NamedParameterOverloads(data);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NamedParameterOverloads"/> class.
+        /// </summary>
         public NamedParameterOverloads()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NamedParameterOverloads"/> class, with the specified named overloads.
+        /// </summary>
         public NamedParameterOverloads(IDictionary<string, object> data)
             : base(data)
         {
@@ -668,6 +817,9 @@ namespace TinyIoC
 
         private static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
 
+        /// <summary>
+        /// Gets a static collection of default named parameter overloads.
+        /// </summary>
         public static NamedParameterOverloads Default
         {
             get
@@ -677,6 +829,9 @@ namespace TinyIoC
         }
     }
 
+    /// <summary>
+    /// Action to take when resoltion can't find a registered type.
+    /// </summary>
     public enum UnregisteredResolutionActions
     {
         /// <summary>
@@ -700,16 +855,40 @@ namespace TinyIoC
         GenericsOnly
     }
 
+    /// <summary>
+    /// Action to take when named resolution fails.
+    /// </summary>
     public enum NamedResolutionFailureActions
     {
+        /// <summary>
+        /// Attempt to resolve type using unnamed resolution.
+        /// </summary>
         AttemptUnnamedResolution,
+
+        /// <summary>
+        /// Fail resolution if type is not explictly named.
+        /// </summary>
         Fail
     }
 
+    /// <summary>
+    /// Action to take when duplicate implementations is found
+    /// </summary>
     public enum DuplicateImplementationActions
     {
+        /// <summary>
+        /// Register a single implementation
+        /// </summary>
         RegisterSingle,
+
+        /// <summary>
+        /// Register multiple implementations
+        /// </summary>
         RegisterMultiple,
+
+        /// <summary>
+        /// Fail registration
+        /// </summary>
         Fail
     }
 
@@ -724,6 +903,9 @@ namespace TinyIoC
         private static readonly ResolveOptions _FailNameNotFoundOnly = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve };
 
         private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
+        /// <summary>
+        /// Action to take when type is unregistered
+        /// </summary>
         public UnregisteredResolutionActions UnregisteredResolutionAction
         {
             get { return _UnregisteredResolutionAction; }
@@ -731,6 +913,9 @@ namespace TinyIoC
         }
 
         private NamedResolutionFailureActions _NamedResolutionFailureAction = NamedResolutionFailureActions.Fail;
+        /// <summary>
+        /// Action to take when named resolution failed.
+        /// </summary>
         public NamedResolutionFailureActions NamedResolutionFailureAction
         {
             get { return _NamedResolutionFailureAction; }
@@ -783,6 +968,9 @@ namespace TinyIoC
     }
     #endregion
 
+    /// <summary>
+    /// A tiny inversion of control container.
+    /// </summary>
     public sealed partial class TinyIoCContainer : IDisposable
     {
         #region Fake NETFX_CORE Classes
@@ -841,6 +1029,11 @@ namespace TinyIoC
             private TinyIoCContainer _Container;
             private TypeRegistration _Registration;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="RegisterOptions"/> class
+            /// </summary>
+            /// <param name="container">The parent container for this registration</param>
+            /// <param name="registration">The associated type registration</param>
             public RegisterOptions(TinyIoCContainer container, TypeRegistration registration)
             {
                 _Container = container;
@@ -851,7 +1044,7 @@ namespace TinyIoC
             /// Make registration a singleton (single instance) if possible
             /// </summary>
             /// <returns>RegisterOptions</returns>
-            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            /// <exception cref="TinyIoCRegistrationException"></exception>
             public RegisterOptions AsSingleton()
             {
                 var currentFactory = _Container.GetCurrentFactory(_Registration);
@@ -866,7 +1059,7 @@ namespace TinyIoC
             /// Make registration multi-instance if possible
             /// </summary>
             /// <returns>RegisterOptions</returns>
-            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            /// <exception cref="TinyIoCRegistrationException"></exception>
             public RegisterOptions AsMultiInstance()
             {
                 var currentFactory = _Container.GetCurrentFactory(_Registration);
@@ -881,7 +1074,7 @@ namespace TinyIoC
             /// Make registration hold a weak reference if possible
             /// </summary>
             /// <returns>RegisterOptions</returns>
-            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            /// <exception cref="TinyIoCRegistrationException"></exception>
             public RegisterOptions WithWeakReference()
             {
                 var currentFactory = _Container.GetCurrentFactory(_Registration);
@@ -896,7 +1089,7 @@ namespace TinyIoC
             /// Make registration hold a strong reference if possible
             /// </summary>
             /// <returns>RegisterOptions</returns>
-            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            /// <exception cref="TinyIoCRegistrationException"></exception>
             public RegisterOptions WithStrongReference()
             {
                 var currentFactory = _Container.GetCurrentFactory(_Registration);
@@ -908,6 +1101,13 @@ namespace TinyIoC
             }
 
 #if EXPRESSIONS
+            /// <summary>
+            /// Expresses which constructor to use for registration
+            /// </summary>
+            /// <param name="constructor">Expression for the constructor to use</param>
+            /// <typeparam name="RegisterType">Type to register</typeparam>
+            /// <returns>A instance of <see cref="RegisterOptions"/></returns>
+            /// <exception cref="TinyIoCConstructorResolutionException"></exception>
             public RegisterOptions UsingConstructor<RegisterType>(Expression<Func<RegisterType>> constructor)
             {
                 var lambda = constructor as LambdaExpression;
@@ -980,7 +1180,7 @@ namespace TinyIoC
             /// Make registration a singleton (single instance) if possible
             /// </summary>
             /// <returns>RegisterOptions</returns>
-            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            /// <exception cref="TinyIoCRegistrationException"></exception>
             public MultiRegisterOptions AsSingleton()
             {
                 _RegisterOptions = ExecuteOnAllRegisterOptions(ro => ro.AsSingleton());
@@ -991,7 +1191,7 @@ namespace TinyIoC
             /// Make registration multi-instance if possible
             /// </summary>
             /// <returns>MultiRegisterOptions</returns>
-            /// <exception cref="TinyIoCInstantiationTypeException"></exception>
+            /// <exception cref="TinyIoCRegistrationException"></exception>
             public MultiRegisterOptions AsMultiInstance()
             {
                 _RegisterOptions = ExecuteOnAllRegisterOptions(ro => ro.AsMultiInstance());
@@ -1042,6 +1242,10 @@ namespace TinyIoC
 
         #region Public API
         #region Child Containers
+        /// <summary>
+        /// Initializes a child container with current container as parent.
+        /// </summary>
+        /// <returns>A new instance of <see cref="TinyIoCContainer"/> with current container as parent.</returns>
         public TinyIoCContainer GetChildContainer()
         {
             return new TinyIoCContainer(this);
@@ -1280,7 +1484,7 @@ namespace TinyIoC
         /// <summary>
         /// Creates/replaces a container class registration with default options.
         /// </summary>
-        /// <typeparam name="RegisterImplementation">Type to register</typeparam>
+        /// <typeparam name="RegisterType">Type to register</typeparam>
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register<RegisterType>()
             where RegisterType : class
@@ -1291,7 +1495,7 @@ namespace TinyIoC
         /// <summary>
         /// Creates/replaces a named container class registration with default options.
         /// </summary>
-        /// <typeparam name="RegisterImplementation">Type to register</typeparam>
+        /// <typeparam name="RegisterType">Type to register</typeparam>
         /// <param name="name">Name of registration</param>
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register<RegisterType>(string name)
@@ -3011,18 +3215,36 @@ namespace TinyIoC
         #endregion
 
         #region Type Registrations
+        /// <summary>
+        /// Representings a type registration
+        /// </summary>
         public sealed class TypeRegistration
         {
             private int _hashCode;
 
+            /// <summary>
+            /// Gets the registered type
+            /// </summary>
             public Type Type { get; private set; }
+            /// <summary>
+            /// Gets the name of the registration, if named; otherwise null.
+            /// </summary>
             public string Name { get; private set; }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TypeRegistration"/> class.
+            /// </summary>
+            /// <param name="type">The registered type</param>
             public TypeRegistration(Type type)
                 : this(type, string.Empty)
             {
             }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TypeRegistration"/> class.
+            /// </summary>
+            /// <param name="type">The registered type</param>
+            /// <param name="name">The name of this named registration</param>
             public TypeRegistration(Type type, string name)
             {
                 Type = type;
@@ -3031,6 +3253,11 @@ namespace TinyIoC
                 _hashCode = String.Concat(Type.FullName, "|", Name).GetHashCode();
             }
 
+            /// <summary>
+            /// Compares this type registration with specified object.
+            /// </summary>
+            /// <param name="obj">The object to compare with</param>
+            /// <returns>True if <paramref name="obj"/> is an instance of <see cref="TypeRegistration"/>, and both <see cref="Type"/> and <see cref="Name"/> are equal; otherwise false</returns>
             public override bool Equals(object obj)
             {
                 var typeRegistration = obj as TypeRegistration;
@@ -3047,6 +3274,10 @@ namespace TinyIoC
                 return true;
             }
 
+            /// <summary>
+            /// Returns the hashcode for this instance.
+            /// </summary>
+            /// <returns>A hashcode for this instance</returns>
             public override int GetHashCode()
             {
                 return _hashCode;
@@ -3060,6 +3291,9 @@ namespace TinyIoC
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TinyIoCContainer"/> class.
+        /// </summary>
         public TinyIoCContainer()
         {
             _RegisteredTypes = new SafeDictionary<TypeRegistration, ObjectFactoryBase>();
@@ -3843,6 +4077,9 @@ namespace TinyIoC
 
         #region IDisposable Members
         bool disposed = false;
+        /// <summary>
+        /// Disposes the container, and all instances of IDisposable created by this container, or child containers.
+        /// </summary>
         public void Dispose()
         {
             if (!disposed)
@@ -3864,53 +4101,106 @@ namespace TinyIoC
 #if !NETFX_CORE
 namespace System.Reflection
 {
+    /// <summary>
+    /// Extension methods for <see cref="Type"/>, providing methods callbacks for common properties.
+    /// </summary>
     public static class ReverseTypeExtender
     {
+        /// <summary>
+        /// Gets a value indicating wether the <see cref="Type"/> is a class; that is not a value or interface.
+        /// </summary>
+        /// <param name="type">The <see cref="Type"/> to test.</param>
+        /// <returns>true if <paramref name="type"/> is a class</returns>
         public static bool IsClass(this Type type)
         {
             return type.IsClass;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the Type is abstract and must be overridden.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool IsAbstract(this Type type)
         {
             return type.IsAbstract;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the Type is an interface; that is, not a class or a value type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool IsInterface(this Type type)
         {
             return type.IsInterface;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the Type is one of the primitive types.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool IsPrimitive(this Type type)
         {
             return type.IsPrimitive;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the Type is a value type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool IsValueType(this Type type)
         {
             return type.IsValueType;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the current type is a generic type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool IsGenericType(this Type type)
         {
             return type.IsGenericType;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the current Type represents a type parameter in the definition of a generic type or method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool IsGenericParameter(this Type type)
         {
             return type.IsGenericParameter;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the current Type represents a generic type definition, from which other generic types can be constructed.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static bool IsGenericTypeDefinition(this Type type)
         {
             return type.IsGenericTypeDefinition;
         }
 
+        /// <summary>
+        /// Gets the type from which the current Type directly inherits.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static Type BaseType(this Type type)
         {
             return type.BaseType;
         }
 
+        /// <summary>
+        /// Gets the Assembly in which the type is declared. For generic types, gets the Assembly in which the generic type is defined.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static Assembly Assembly(this Type type)
         {
             return type.Assembly;
