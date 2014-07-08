@@ -9,6 +9,7 @@
     <projectUrl>https://github.com/grumpydev/TinyIoC</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>An easy to use, hassle free, Inversion of Control Container for small projects, libraries and beginners alike</description>
+    <developmentDependency>true</developmentDependency>
     <tags>IoC</tags>
   </metadata>
 </package>
