@@ -88,7 +88,12 @@ namespace TinyIoC
 
     #region SafeDictionary
 #if READER_WRITER_LOCK_SLIM
-    public class SafeDictionary<TKey, TValue> : IDisposable
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    class SafeDictionary<TKey, TValue> : IDisposable
     {
         private readonly ReaderWriterLockSlim _padlock = new ReaderWriterLockSlim();
         private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
@@ -202,7 +207,12 @@ namespace TinyIoC
         #endregion
     }
 #else
-    public class SafeDictionary<TKey, TValue> : IDisposable
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif 
+    class SafeDictionary<TKey, TValue> : IDisposable
     {
         private readonly object _Padlock = new object();
         private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
@@ -283,7 +293,12 @@ namespace TinyIoC
     #endregion
 
     #region Extensions
-    public static class AssemblyExtensions
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    static class AssemblyExtensions
     {
         public static Type[] SafeGetTypes(this Assembly assembly)
         {
@@ -291,7 +306,7 @@ namespace TinyIoC
 
             try
             {
-				assemblies = assembly.GetTypes();
+                assemblies = assembly.GetTypes();
             }
             catch (System.IO.FileNotFoundException)
             {
@@ -311,7 +326,12 @@ namespace TinyIoC
         }
     }
 
-    public static class TypeExtensions
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    static class TypeExtensions
     {
         private static SafeDictionary<GenericMethodCacheKey, MethodInfo> _genericMethodCache;
 
@@ -526,7 +546,12 @@ namespace TinyIoC
     #endregion
 
     #region TinyIoC Exception Types
-    public class TinyIoCResolutionException : Exception
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    class TinyIoCResolutionException : Exception
     {
         private const string ERROR_TEXT = "Unable to resolve type: {0}";
 
@@ -541,7 +566,12 @@ namespace TinyIoC
         }
     }
 
-    public class TinyIoCRegistrationTypeException : Exception
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    class TinyIoCRegistrationTypeException : Exception
     {
         private const string REGISTER_ERROR_TEXT = "Cannot register type {0} - abstract classes or interfaces are not valid implementation types for {1}.";
 
@@ -556,7 +586,12 @@ namespace TinyIoC
         }
     }
 
-    public class TinyIoCRegistrationException : Exception
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    class TinyIoCRegistrationException : Exception
     {
         private const string CONVERT_ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
         private const string GENERIC_CONSTRAINT_ERROR_TEXT = "Type {1} is not valid for a registration of type {0}";
@@ -582,7 +617,12 @@ namespace TinyIoC
         }
     }
 
-    public class TinyIoCWeakReferenceException : Exception
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    class TinyIoCWeakReferenceException : Exception
     {
         private const string ERROR_TEXT = "Unable to instantiate {0} - referenced object has been reclaimed";
 
@@ -597,7 +637,12 @@ namespace TinyIoC
         }
     }
 
-    public class TinyIoCConstructorResolutionException : Exception
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    class TinyIoCConstructorResolutionException : Exception
     {
         private const string ERROR_TEXT = "Unable to resolve constructor for {0} using provided Expression.";
 
@@ -622,7 +667,12 @@ namespace TinyIoC
         }
     }
 
-    public class TinyIoCAutoRegistrationException : Exception
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    class TinyIoCAutoRegistrationException : Exception
     {
         private const string ERROR_TEXT = "Duplicate implementation of type {0} found ({1}).";
 
@@ -650,7 +700,12 @@ namespace TinyIoC
     /// <summary>
     /// Name/Value pairs for specifying "user" parameters when resolving
     /// </summary>
-    public sealed class NamedParameterOverloads : Dictionary<string, object>
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class NamedParameterOverloads : Dictionary<string, object>
     {
         public static NamedParameterOverloads FromIDictionary(IDictionary<string, object> data)
         {
@@ -677,7 +732,12 @@ namespace TinyIoC
         }
     }
 
-    public enum UnregisteredResolutionActions
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    enum UnregisteredResolutionActions
     {
         /// <summary>
         /// Attempt to resolve type, even if the type isn't registered.
@@ -700,13 +760,23 @@ namespace TinyIoC
         GenericsOnly
     }
 
-    public enum NamedResolutionFailureActions
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    enum NamedResolutionFailureActions
     {
         AttemptUnnamedResolution,
         Fail
     }
 
-    public enum DuplicateImplementationActions
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    enum DuplicateImplementationActions
     {
         RegisterSingle,
         RegisterMultiple,
@@ -716,7 +786,12 @@ namespace TinyIoC
     /// <summary>
     /// Resolution settings
     /// </summary>
-    public sealed class ResolveOptions
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class ResolveOptions
     {
         private static readonly ResolveOptions _Default = new ResolveOptions();
         private static readonly ResolveOptions _FailUnregisteredAndNameNotFound = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.Fail };
@@ -783,7 +858,12 @@ namespace TinyIoC
     }
     #endregion
 
-    public sealed partial class TinyIoCContainer : IDisposable
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed partial class TinyIoCContainer : IDisposable
     {
         #region Fake NETFX_CORE Classes
 #if NETFX_CORE
@@ -3864,7 +3944,12 @@ namespace TinyIoC
 #if !NETFX_CORE
 namespace System.Reflection
 {
-    public static class ReverseTypeExtender
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    static class ReverseTypeExtender
     {
         public static bool IsClass(this Type type)
         {
