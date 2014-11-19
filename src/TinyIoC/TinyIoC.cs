@@ -3163,9 +3163,9 @@ namespace TinyIoC
             {
                 var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
 
-                var concreteTypes = from type in types
-                                    where type.IsClass() && (type.IsAbstract() == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition()))
-                                    select type;
+                var concreteTypes = types
+                    .Where(type => type.IsClass() && (type.IsAbstract() == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition())))
+                    .ToList();
 
                 foreach (var type in concreteTypes)
                 {
@@ -3190,7 +3190,7 @@ namespace TinyIoC
                                           where localType.IsAssignableFrom(implementationType)
                                           select implementationType;
 
-                    if (implementations.Count() > 1)
+                    if (implementations.Skip(1).Any())
                     {
                         if (duplicateAction == DuplicateImplementationActions.Fail)
                             throw new TinyIoCAutoRegistrationException(type, implementations);
