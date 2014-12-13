@@ -1553,6 +1553,54 @@ namespace TinyIoC
             return new MultiRegisterOptions(registerOptions);
         }
         #endregion
+		
+		#region Unregistration
+
+        /// <summary>
+        /// Remove a container class registration.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to unregister</typeparam>
+        /// <returns>true if the registration is successfully found and removed; otherwise, false.</returns>
+        public bool Unregister<RegisterType>()
+        {
+            return Unregister(typeof(RegisterType), string.Empty);
+        }
+
+        /// <summary>
+        /// Remove a named container class registration.
+        /// </summary>
+        /// <typeparam name="RegisterType">Type to unregister</typeparam>
+        /// <param name="name">Name of registration</param>
+        /// <returns>true if the registration is successfully found and removed; otherwise, false.</returns>
+        public bool Unregister<RegisterType>(string name)
+        {
+            return Unregister(typeof(RegisterType), name);
+        }
+
+        /// <summary>
+        /// Remove a container class registration.
+        /// </summary>
+        /// <param name="registerType">Type to unregister</param>
+        /// <returns>true if the registration is successfully found and removed; otherwise, false.</returns>
+        public bool Unregister(Type registerType)
+        {
+            return Unregister(registerType, string.Empty);
+        }
+
+        /// <summary>
+        /// Remove a named container class registration.
+        /// </summary>
+        /// <param name="registerType">Type to unregister</param>
+        /// <param name="name">Name of registration</param>
+        /// <returns>true if the registration is successfully found and removed; otherwise, false.</returns>
+        public bool Unregister(Type registerType, string name)
+        {
+            var typeRegistration = new TypeRegistration(registerType, name);
+
+            return RemoveRegistration(typeRegistration);
+        }
+
+        #endregion
 
         #region Resolution
         /// <summary>
@@ -3302,9 +3350,9 @@ namespace TinyIoC
             return new RegisterOptions(this, typeRegistration);
         }
 
-        private void RemoveRegistration(TypeRegistration typeRegistration)
+        private bool RemoveRegistration(TypeRegistration typeRegistration)
         {
-            _RegisteredTypes.Remove(typeRegistration);
+            return _RegisteredTypes.Remove(typeRegistration);
         }
 
         private ObjectFactoryBase GetDefaultObjectFactory(Type registerType, Type registerImplementation)
