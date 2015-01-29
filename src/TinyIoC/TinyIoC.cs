@@ -345,7 +345,9 @@ namespace TinyIoC
         /// Gets a generic method from a type given the method name, binding flags, generic types and parameter types
         /// </summary>
         /// <param name="sourceType">Source type</param>
+#if !NETFX_CORE
         /// <param name="bindingFlags">Binding flags</param>
+#endif
         /// <param name="methodName">Name of the method</param>
         /// <param name="genericTypes">Generic types to use to make the method generic</param>
         /// <param name="parameterTypes">Method parameters</param>
@@ -3862,7 +3864,7 @@ namespace TinyIoC
         private void BuildUpInternal(object input, ResolveOptions resolveOptions)
         {
 #if NETFX_CORE
-            var properties = from property in input.GetType().GetProperties()
+            var properties = from property in input.GetType().GetTypeInfo().DeclaredProperties
                              where (property.GetMethod != null && property.GetMethod.IsPublic) && (property.SetMethod != null && property.SetMethod.IsPublic) && !property.PropertyType.GetTypeInfo().IsValueType
                              select property;
 #else
