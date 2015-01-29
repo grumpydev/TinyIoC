@@ -22,7 +22,7 @@ namespace TinyIoC.Tests.TypeExtensions
 
     public class AnotherClassImplementingITestInterface : ITestInterface
     {
-        
+
     }
 
     public class ClassNotImplementingITestInterface
@@ -37,12 +37,20 @@ namespace TinyIoC.Tests.TypeExtensions
         {
             var firstGenericParameter = typeof(ClassNotImplementingITestInterface);
 
+#if NETFX_CORE
             var method = typeof(TinyIoCContainer).GetGenericMethod(
-                BindingFlags.Public | BindingFlags.Instance, 
-                "Register", 
-                new Type[] {firstGenericParameter}, 
+                "Register",
+                new Type[] { firstGenericParameter },
                 new Type[] { }
                 );
+#else
+            var method = typeof(TinyIoCContainer).GetGenericMethod(
+                BindingFlags.Public | BindingFlags.Instance,
+                "Register",
+                new Type[] { firstGenericParameter },
+                new Type[] { }
+                );
+#endif
 
             Assert.IsInstanceOfType(method, typeof(MethodInfo));
             Assert.IsTrue(method.IsGenericMethod);
@@ -57,12 +65,20 @@ namespace TinyIoC.Tests.TypeExtensions
             var firstGenericParameter = typeof(ITestInterface);
             var secondGenericParameter = typeof(ClassImplementingITestInterface);
 
+#if NETFX_CORE
             var method = typeof(TinyIoCContainer).GetGenericMethod(
+                "Register",
+                new Type[] { firstGenericParameter, secondGenericParameter },
+                new Type[] { }
+                );
+#else
+              var method = typeof(TinyIoCContainer).GetGenericMethod(
                 BindingFlags.Public | BindingFlags.Instance,
                 "Register",
                 new Type[] { firstGenericParameter, secondGenericParameter },
                 new Type[] { }
                 );
+#endif
 
             Assert.IsInstanceOfType(method, typeof(MethodInfo));
             Assert.IsTrue(method.IsGenericMethod);
@@ -80,6 +96,16 @@ namespace TinyIoC.Tests.TypeExtensions
             var methodTwoFirstGenericParameter = typeof(ITestInterface);
             var methodTwoSecondGenericParameter = typeof(AnotherClassImplementingITestInterface);
 
+#if NETFX_CORE
+            var methodOne = typeof(TinyIoCContainer).GetGenericMethod(
+                "Register",
+                new Type[] { methodOneFirstGenericParameter, methodOneSecondGenericParameter },
+                new Type[] { });
+            var methodTwo = typeof(TinyIoCContainer).GetGenericMethod(
+                "Register",
+                new Type[] { methodTwoFirstGenericParameter, methodTwoSecondGenericParameter },
+                new Type[] { });
+#else
             var methodOne = typeof(TinyIoCContainer).GetGenericMethod(
                 BindingFlags.Public | BindingFlags.Instance,
                 "Register",
@@ -90,6 +116,7 @@ namespace TinyIoC.Tests.TypeExtensions
                 "Register",
                 new Type[] { methodTwoFirstGenericParameter, methodTwoSecondGenericParameter },
                 new Type[] { });
+#endif
 
             Assert.IsInstanceOfType(methodOne, typeof(MethodInfo));
             Assert.IsTrue(methodOne.IsGenericMethod);
@@ -110,12 +137,20 @@ namespace TinyIoC.Tests.TypeExtensions
         {
             try
             {
+#if NETFX_CORE
+                var method = typeof(TinyIoCContainer).GetGenericMethod(
+                    "Register",
+                    new Type[] { typeof(ITestInterface), typeof(ClassNotImplementingITestInterface) },
+                    new Type[] { }
+                    );
+#else
                 var method = typeof(TinyIoCContainer).GetGenericMethod(
                     BindingFlags.Public | BindingFlags.Instance,
                     "Register",
                     new Type[] { typeof(ITestInterface), typeof(ClassNotImplementingITestInterface) },
                     new Type[] { }
                     );
+#endif
 
                 Assert.Fail();
             }
@@ -131,12 +166,20 @@ namespace TinyIoC.Tests.TypeExtensions
             var secondGenericParameter = typeof(ClassImplementingITestInterface);
             var firstParameter = typeof(string);
 
+#if NETFX_CORE
+            var method = typeof(TinyIoCContainer).GetGenericMethod(
+                "Register",
+                new Type[] { firstGenericParameter, secondGenericParameter },
+                new Type[] { firstParameter }
+                );
+#else
             var method = typeof(TinyIoCContainer).GetGenericMethod(
                 BindingFlags.Public | BindingFlags.Instance,
                 "Register",
                 new Type[] { firstGenericParameter, secondGenericParameter },
                 new Type[] { firstParameter }
                 );
+#endif
 
             Assert.IsInstanceOfType(method, typeof(MethodInfo));
             Assert.IsTrue(method.IsGenericMethod);
@@ -154,12 +197,20 @@ namespace TinyIoC.Tests.TypeExtensions
             var secondGenericParameter = typeof(ClassImplementingITestInterface);
             var firstParameter = typeof(ClassImplementingITestInterface);
 
+#if NETFX_CORE
+            var method = typeof(TinyIoCContainer).GetGenericMethod(
+                "Register",
+                new Type[] { firstGenericParameter, secondGenericParameter },
+                new Type[] { firstParameter }
+                );
+#else
             var method = typeof(TinyIoCContainer).GetGenericMethod(
                 BindingFlags.Public | BindingFlags.Instance,
                 "Register",
                 new Type[] { firstGenericParameter, secondGenericParameter },
                 new Type[] { firstParameter }
                 );
+#endif
 
             Assert.IsInstanceOfType(method, typeof(MethodInfo));
             Assert.IsTrue(method.IsGenericMethod);
