@@ -51,7 +51,7 @@ namespace TinyIoC.Tests
             var container1 = TinyIoCContainer.Current;
             var container2 = TinyIoCContainer.Current;
 
-            Assert.ReferenceEquals(container1, container2);
+            Assert.AreSame(container1, container2);
         }
 
         [TestMethod]
@@ -86,7 +86,7 @@ namespace TinyIoC.Tests
             var output = container.Resolve<ITestInterface>();
             var output2 = container.Resolve<ITestInterface>();
 
-            Assert.ReferenceEquals(output, output2);
+            Assert.AreSame(output, output2);
         }
 
         [TestMethod]
@@ -391,7 +391,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TinyIoCContainer>();
 
-            Assert.ReferenceEquals(result, container);
+            Assert.AreSame(result, container);
         }
 
         [TestMethod]
@@ -428,7 +428,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<DisposableTestClassWithInterface>();
 
-            Assert.ReferenceEquals(item, result);
+            Assert.AreSame(item, result);
         }
 
         [TestMethod]
@@ -440,7 +440,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<ITestInterface>();
 
-            Assert.ReferenceEquals(item, result);
+            Assert.AreSame(item, result);
         }
 
 #if MOQ
@@ -486,7 +486,7 @@ namespace TinyIoC.Tests
             var result = container.Resolve<TestClassNoInterfaceDefaultCtor>();
             var result2 = container.Resolve<TestClassNoInterfaceDefaultCtor>();
 
-            Assert.ReferenceEquals(result, result2);
+            Assert.AreSame(result, result2);
         }
 
         [TestMethod]
@@ -643,7 +643,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassDefaultCtor>("TestName");
 
-            Assert.ReferenceEquals(instance1, result);
+            Assert.AreSame(instance1, result);
         }
 
         [TestMethod]
@@ -657,7 +657,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassDefaultCtor>();
 
-            Assert.ReferenceEquals(instance1, result);
+            Assert.AreSame(instance1, result);
         }
 
 
@@ -672,7 +672,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassDefaultCtor>("TestName");
 
-            Assert.ReferenceEquals(instance1, result);
+            Assert.AreSame(instance1, result);
         }
 
         [TestMethod]
@@ -686,7 +686,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassDefaultCtor>();
 
-            Assert.ReferenceEquals(instance1, result);
+            Assert.AreSame(instance1, result);
         }
 
         [TestMethod]
@@ -1188,7 +1188,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<ITestInterface>();
 
-            Assert.ReferenceEquals(item, result);
+            Assert.AreSame(item, result);
         }
 
         [TestMethod]
@@ -1202,7 +1202,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<ITestInterface>("TestName");
 
-            Assert.ReferenceEquals(item, result);
+            Assert.AreSame(item, result);
         }
 
         [TestMethod]
@@ -1350,7 +1350,7 @@ namespace TinyIoC.Tests
 
             var result = container.Resolve<TestClassDefaultCtor>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
 
-            Assert.ReferenceEquals(item, result);
+            Assert.AreSame(item, result);
         }
 
         [TestMethod]
@@ -1419,8 +1419,8 @@ namespace TinyIoC.Tests
             item.Method1();
             item.Method2();
 
-            Assert.ReferenceEquals(item.Prop1, item1);
-            Assert.ReferenceEquals(item.Prop2, item2);
+            Assert.AreSame(item.Prop1, item1);
+            Assert.AreSame(item.Prop2, item2);
         }
 
         [TestMethod]
@@ -1794,7 +1794,7 @@ namespace TinyIoC.Tests
 
             container.BuildUp(input);
 
-            Assert.ReferenceEquals(preset, input.Property1);
+            Assert.AreSame(preset, input.Property1);
             Assert.IsNotNull(input.Property2);
         }
 
@@ -1973,7 +1973,7 @@ namespace TinyIoC.Tests
 
             var result = child.Resolve<ITestInterface>();
 
-            Assert.ReferenceEquals(result, childInstance);
+            Assert.AreSame(result, childInstance);
         }
 
         [TestMethod]
@@ -1988,7 +1988,7 @@ namespace TinyIoC.Tests
 
             var result = child.Resolve<ITestInterface>("Testing");
 
-            Assert.ReferenceEquals(result, containerInstance);
+            Assert.AreSame(result, containerInstance);
         }
 
         [TestMethod]
@@ -2016,9 +2016,9 @@ namespace TinyIoC.Tests
             container.Register<ITestInterface>(containerInstance, "Testing");
             child.Register<ITestInterface>(childInstance);
 
-            var result = child.Resolve<ITestInterface>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
+            var result = child.Resolve<ITestInterface>(new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
 
-            Assert.ReferenceEquals(result, childInstance);
+            Assert.AreSame(result, childInstance);
         }
 
         [TestMethod]
@@ -2029,10 +2029,11 @@ namespace TinyIoC.Tests
             var child = container.GetChildContainer();
             var childInstance = new TestClassDefaultCtor();
             container.Register<ITestInterface>(containerInstance, "Testing");
+            child.Register<ITestInterface>(childInstance);
 
             var result = child.Resolve<ITestInterface>("Testing", new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution });
 
-            Assert.ReferenceEquals(result, childInstance);
+            Assert.AreSame(result, containerInstance);
         }
 
         [TestMethod]
@@ -2722,7 +2723,7 @@ namespace TinyIoC.Tests
             container.Register(typeof(TestClassDefaultCtor), instance);
             var result = container.Resolve<TestClassDefaultCtor>(ResolveOptions.FailUnregisteredAndNameNotFound);
 
-            Assert.ReferenceEquals(instance, result);
+            Assert.AreSame(instance, result);
         }
 
         [TestMethod]
@@ -2734,7 +2735,7 @@ namespace TinyIoC.Tests
             container.Register(typeof(TestClassDefaultCtor), instance, "TestClass");
             var result = container.Resolve<TestClassDefaultCtor>("TestClass", ResolveOptions.FailUnregisteredAndNameNotFound);
 
-            Assert.ReferenceEquals(instance, result);
+            Assert.AreSame(instance, result);
         }
 
         [TestMethod]
@@ -2863,8 +2864,8 @@ namespace TinyIoC.Tests
             var result1Class2Instance = result1.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault();
             var result2Class2Instance = result2.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault();
 
-            Assert.ReferenceEquals(result1Class1Instance, result2Class1Instance);
-            Assert.ReferenceEquals(result1Class2Instance, result2Class2Instance);
+            Assert.AreSame(result1Class1Instance, result2Class1Instance);
+            Assert.AreSame(result1Class2Instance, result2Class2Instance);
         }
 
         [TestMethod]

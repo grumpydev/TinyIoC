@@ -159,7 +159,7 @@ namespace TinyIoC.Tests
 
             messenger.Publish<TestMessage>(message);
 
-            Assert.ReferenceEquals(message, proxy.Message);
+            Assert.AreSame(message, proxy.Message);
         }
 
         [TestMethod]
@@ -172,7 +172,7 @@ namespace TinyIoC.Tests
 
             messenger.Publish<TestMessage>(message);
 
-            Assert.ReferenceEquals(message, proxy.Message);
+            Assert.AreSame(message, proxy.Message);
         }
 
         [TestMethod]
@@ -185,7 +185,7 @@ namespace TinyIoC.Tests
 
             messenger.Publish<TestMessage>(message);
 
-            Assert.ReferenceEquals(message, proxy.Message);
+            Assert.AreSame(message, proxy.Message);
         }
 
         [TestMethod]
@@ -198,7 +198,7 @@ namespace TinyIoC.Tests
 
             messenger.Publish<TestMessage>(message);
 
-            Assert.ReferenceEquals(message, proxy.Message);
+            Assert.AreSame(message, proxy.Message);
         }
 
         [TestMethod]
@@ -274,7 +274,7 @@ namespace TinyIoC.Tests
 
             messenger.Publish<TestMessage>(payload);
 
-            Assert.ReferenceEquals(payload, receivedMessage);
+            Assert.AreSame(payload, receivedMessage);
         }
 
         [TestMethod]
