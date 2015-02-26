@@ -1473,11 +1473,15 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(TinyIoCAutoRegistrationException))]
+        //[ExpectedException(typeof(TinyIoCAutoRegistrationException))]
         public void AutoRegister_ThisAssemblySpecifiedDuplicateActionFail_ThrowsException()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly }, DuplicateImplementationActions.Fail);
+#if NETFX_CORE
+            AssertHelper.ThrowsException<TinyIoCAutoRegistrationException>(() => container.AutoRegister(new[] { this.GetType().GetTypeInfo().Assembly }, DuplicateImplementationActions.Fail));
+#else
+            AssertHelper.ThrowsException<TinyIoCAutoRegistrationException>(() => container.AutoRegister(new[] { this.GetType().Assembly }, DuplicateImplementationActions.Fail));
+#endif
             //Assert.IsTrue(false);
         }
 
@@ -1485,14 +1489,22 @@ namespace TinyIoC.Tests
         public void AutoRegister_TinyIoCAssemblySpecifiedDuplicateActionFail_NoErrors()
         {
             var container = UtilityMethods.GetContainer();
+#if NETFX_CORE
+            container.AutoRegister(new[] { typeof(TinyIoCContainer).GetTypeInfo().Assembly }, DuplicateImplementationActions.Fail);
+#else
             container.AutoRegister(new[] { typeof(TinyIoCContainer).Assembly }, DuplicateImplementationActions.Fail);
+#endif
         }
 
         [TestMethod]
         public void AutoRegister_SpecifiedDuplicateActionRegisterMultiple_RegistersMultipleImplementations()
         {
             var container = UtilityMethods.GetContainer();
+#if NETFX_CORE
+            container.AutoRegister(new[] { typeof(TestClassDefaultCtor).GetTypeInfo().Assembly }, DuplicateImplementationActions.RegisterMultiple);
+#else
             container.AutoRegister(new[] { typeof(TestClassDefaultCtor).Assembly }, DuplicateImplementationActions.RegisterMultiple);
+#endif
             
             var results = container.ResolveAll<ITestInterface>();
 
