@@ -1435,14 +1435,14 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
 
-            container.AutoRegister(new[] { this.GetType().Assembly() });
+            container.AutoRegister(new[] { this.GetType().Assembly });
         }
 
         [TestMethod]
         public void AutoRegister_TestAssembly_CanResolveInterface()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly() });
+            container.AutoRegister(new[] { this.GetType().Assembly });
 
             var result = container.Resolve<ITestInterface>();
 
@@ -1453,7 +1453,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_TestAssembly_CanResolveAbstractBaseClass()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly() });
+            container.AutoRegister(new[] { this.GetType().Assembly });
 
             var result = container.Resolve<TestClassBase>();
 
@@ -1465,7 +1465,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_TinyIoCAssembly_CannotResolveInternalTinyIoCClass()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { container.GetType().Assembly() });
+            container.AutoRegister(new[] { container.GetType().Assembly });
 
             AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TinyIoCContainer.TypeRegistration>(new NamedParameterOverloads() { { "type", this.GetType() } }, new ResolveOptions() { UnregisteredResolutionAction = UnregisteredResolutionActions.Fail }));
 
@@ -1858,7 +1858,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_IEnumerableAssemblies_DoesNotThrow()
         {
             var container = UtilityMethods.GetContainer();
-            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly(), typeof(ExternalTypes.IExternalTestInterface).Assembly() };
+            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly, typeof(ExternalTypes.IExternalTestInterface).Assembly };
 
             container.AutoRegister(assemblies);
         }
@@ -1867,7 +1867,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_IEnumerableAssemblies_TypesFromBothAssembliesResolve()
         {
             var container = UtilityMethods.GetContainer();
-            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly(), typeof(ExternalTypes.IExternalTestInterface).Assembly() };
+            List<Assembly> assemblies = new List<Assembly>() { this.GetType().Assembly, typeof(ExternalTypes.IExternalTestInterface).Assembly };
 
             container.AutoRegister(assemblies);
 
@@ -3235,7 +3235,7 @@ namespace TinyIoC.Tests
         public void AutoRegister_TypeExcludedViaPredicate_FailsToResolveType()
         {
             var container = UtilityMethods.GetContainer();
-            container.AutoRegister(new[] { this.GetType().Assembly() }, t => t != typeof(ITestInterface));
+            container.AutoRegister(new[] { this.GetType().Assembly }, t => t != typeof(ITestInterface));
 
             AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<ITestInterface>());
 
