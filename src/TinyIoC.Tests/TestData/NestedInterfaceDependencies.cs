@@ -109,6 +109,11 @@ namespace TinyIoC.Tests.TestData
                 IntProperty = intProperty;
             }
         }
+
+        internal abstract class ImAAbstractExample
+        {
+
+        }
     }
 
     // Nested deps with func

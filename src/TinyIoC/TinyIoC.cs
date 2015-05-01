@@ -563,9 +563,15 @@ namespace TinyIoC
     class TinyIoCResolutionException : Exception
     {
         private const string ERROR_TEXT = "Unable to resolve type: {0}";
+        private const string ERROR_TEXT_WITH_HINT = "Unable to resolve type: {0} (hint: {1})";
 
         public TinyIoCResolutionException(Type type)
             : base(String.Format(ERROR_TEXT, type.FullName))
+        {
+        }
+
+        public TinyIoCResolutionException(Type type, string hint)
+            : base(String.Format(ERROR_TEXT_WITH_HINT, type.FullName, hint))
         {
         }
 
@@ -3568,6 +3574,8 @@ namespace TinyIoC
             {
                 if (!registration.Type.IsAbstract() && !registration.Type.IsInterface())
                     return ConstructType(null, registration.Type, parameters, options);
+
+                throw new TinyIoCResolutionException(registration.Type, "Auto resolve failed because the type is abstract or an interface");
             }
 
             // Unable to resolve - throw

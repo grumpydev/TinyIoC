@@ -180,6 +180,27 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void When_Resolving_An_Abstract_Class_Should_Include_Abstract_Class_Message_In_The_Excpetion()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            TinyIoCResolutionException e = null;
+
+            try
+            {
+                container.Resolve<ImAAbstractExample>();
+            }
+            catch (TinyIoCResolutionException ex)
+            {
+                e = ex;
+                Console.WriteLine(ex);
+            }
+
+            Assert.IsNotNull(e);
+            Assert.IsTrue(e.ToString().Contains("Auto resolve failed because the type is abstract or an interface"));
+        }
+
+        [TestMethod]
         public void Run_Platform_Tests()
         {
             var logger = new StringLogger();
