@@ -3264,5 +3264,223 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result, typeof(DefaultThing<object>));
         }
 #endif
+
+        #region Unregister
+
+        private readonly ResolveOptions options = ResolveOptions.FailUnregisteredAndNameNotFound;
+
+        #region Unregister With Implementation
+
+        [TestMethod]
+        public void Unregister_RegisteredImplementation_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+
+            bool unregistered = container.Unregister(typeof(TestClassDefaultCtor));
+            bool resolved = container.CanResolve<TestClassDefaultCtor>(options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_NotRegisteredImplementation_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            bool unregistered = container.Unregister(typeof(TestClassDefaultCtor));
+            
+            Assert.IsFalse(unregistered);
+        }
+
+        [TestMethod]
+        public void Unregister_RegisteredNamedImplementation_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister(typeof(TestClassDefaultCtor), "TestName");
+            bool resolved = container.CanResolve<TestClassDefaultCtor>("TestName", options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_NotRegisteredNamedImplementation_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister(typeof(TestClassDefaultCtor), "UnregisteredName");
+            bool resolved = container.CanResolve<TestClassDefaultCtor>("TestName", options);
+
+            Assert.IsFalse(unregistered);
+            Assert.IsTrue(resolved);
+        }
+
+        #endregion
+
+        #region Unregister With Interface
+
+        [TestMethod]
+        public void Unregister_RegisteredInterface_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            bool unregistered = container.Unregister(typeof(ITestInterface));
+            bool resolved = container.CanResolve<ITestInterface>(options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_NotRegisteredInterface_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            bool unregistered = container.Unregister(typeof(ITestInterface));
+
+            Assert.IsFalse(unregistered);
+        }
+
+        [TestMethod]
+        public void Unregister_RegisteredNamedInterface_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister(typeof(ITestInterface), "TestName");
+            bool resolved = container.CanResolve<ITestInterface>("TestName", options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_NotRegisteredNamedInterface_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister(typeof(ITestInterface), "UnregisteredName");
+            bool resolved = container.CanResolve<ITestInterface>("TestName", options);
+
+            Assert.IsFalse(unregistered);
+            Assert.IsTrue(resolved);
+        }
+
+        #endregion
+
+        #region Unregister<T> With Implementation
+
+        [TestMethod]
+        public void Unregister_T_RegisteredImplementation_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>();
+
+            bool unregistered = container.Unregister<TestClassDefaultCtor>();
+            bool resolved = container.CanResolve<TestClassDefaultCtor>(options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_T_NotRegisteredImplementation_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            bool unregistered = container.Unregister<TestClassDefaultCtor>();
+
+            Assert.IsFalse(unregistered);
+        }
+
+        [TestMethod]
+        public void Unregister_T_RegisteredNamedImplementation_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister<TestClassDefaultCtor>("TestName");
+            bool resolved = container.CanResolve<TestClassDefaultCtor>("TestName", options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_T_NotRegisteredNamedImplementation_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister<TestClassDefaultCtor>("UnregisteredName");
+            bool resolved = container.CanResolve<TestClassDefaultCtor>("TestName", options);
+
+            Assert.IsFalse(unregistered);
+            Assert.IsTrue(resolved);
+        }
+
+        #endregion
+
+        #region Unregister<T> With Interface
+
+        [TestMethod]
+        public void Unregister_T_RegisteredInterface_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>();
+
+            bool unregistered = container.Unregister<ITestInterface>();
+            bool resolved = container.CanResolve<ITestInterface>(options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_T_NotRegisteredInterface_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            bool unregistered = container.Unregister<ITestInterface>();
+
+            Assert.IsFalse(unregistered);
+        }
+
+        [TestMethod]
+        public void Unregister_T_RegisteredNamedInterface_CanUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister<ITestInterface>("TestName");
+            bool resolved = container.CanResolve<ITestInterface>("TestName", options);
+
+            Assert.IsTrue(unregistered);
+            Assert.IsFalse(resolved);
+        }
+
+        [TestMethod]
+        public void Unregister_T_NotRegisteredNamedInterface_CannotUnregister()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface, TestClassDefaultCtor>("TestName");
+
+            bool unregistered = container.Unregister<ITestInterface>("UnregisteredName");
+            bool resolved = container.CanResolve<ITestInterface>("TestName", options);
+
+            Assert.IsFalse(unregistered);
+            Assert.IsTrue(resolved);
+        }
+
+        #endregion
+
+        #endregion
     }
 }
