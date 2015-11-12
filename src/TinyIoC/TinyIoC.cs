@@ -555,6 +555,8 @@ namespace TinyIoC
     #endregion
 
     #region TinyIoC Exception Types
+
+    [Serializable]
 #if TINYIOC_INTERNAL
     internal
 #else
@@ -575,6 +577,7 @@ namespace TinyIoC
         }
     }
 
+    [Serializable]
 #if TINYIOC_INTERNAL
     internal
 #else
@@ -595,6 +598,7 @@ namespace TinyIoC
         }
     }
 
+    [Serializable]
 #if TINYIOC_INTERNAL
     internal
 #else
@@ -626,6 +630,7 @@ namespace TinyIoC
         }
     }
 
+    [Serializable]
 #if TINYIOC_INTERNAL
     internal
 #else
@@ -646,6 +651,7 @@ namespace TinyIoC
         }
     }
 
+    [Serializable]
 #if TINYIOC_INTERNAL
     internal
 #else
@@ -676,6 +682,7 @@ namespace TinyIoC
         }
     }
 
+    [Serializable]
 #if TINYIOC_INTERNAL
     internal
 #else
