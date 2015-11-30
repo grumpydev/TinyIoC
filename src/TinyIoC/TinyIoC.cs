@@ -28,7 +28,6 @@
 // depending on platform features. If the platform has an appropriate
 // #DEFINE then these should be set automatically below.
 #define EXPRESSIONS
-using System.Runtime.Serialization;
 
 // Platform supports System.Linq.Expressions
 #define COMPILED_EXPRESSIONS                // Platform supports compiling expressions
@@ -76,6 +75,8 @@ using System.Runtime.Serialization;
 #endif
 
 #endregion
+
+using System.Runtime.Serialization;
 
 namespace TinyIoC
 {
