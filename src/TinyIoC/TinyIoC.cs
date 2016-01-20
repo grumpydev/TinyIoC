@@ -1650,6 +1650,30 @@ namespace TinyIoC
             return RemoveRegistration(typeRegistration);
         }
 
+        public void UnregisterMultiple(Type registrationType, IEnumerable<Type> implementationTypes)
+        {
+            if (implementationTypes == null)
+                throw new ArgumentNullException("implementationTypes", "types is null.");
+
+            foreach (var type in implementationTypes)
+//#if NETFX_CORE
+//              if (!registrationType.GetTypeInfo().IsAssignableFrom(type.GetTypeInfo()))
+//#else
+                if (!registrationType.IsAssignableFrom(type))
+//#endif
+                    throw new ArgumentException(String.Format("types: The type {0} is not assignable from {1}", registrationType.FullName, type.FullName));
+
+            foreach (var type in implementationTypes)
+            {
+                Unregister(registrationType, type.FullName);
+            }
+        }
+        
+        public void UnregisterMultiple<UnregisterType>(IEnumerable<Type> implementationTypes)
+        {
+            UnregisterMultiple(typeof(UnregisterType), implementationTypes);
+        }
+
         #endregion
 
         #region Resolution

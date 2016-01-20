@@ -3481,6 +3481,78 @@ namespace TinyIoC.Tests
 
         #endregion
 
+        #region Unregister Multiple
+
+        [TestMethod]
+        public void UnregisterMultiple_T_ValidTypes_CorrectCountReturnedByResolveAll()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
+
+            container.UnregisterMultiple<ITestInterface>(new Type[] {typeof(TestClassDefaultCtor)});
+            var result = container.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(1, result.Count());
+        }
+        
+        [TestMethod]
+        public void UnregisterMultiple_ValidTypes_CorrectCountReturnedByResolveAll()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.RegisterMultiple(typeof(ITestInterface), new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
+
+            container.UnregisterMultiple(typeof(ITestInterface), new Type[] {typeof(TestClassDefaultCtor)});
+            var result = container.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(1, result.Count());
+        }
+
+        [TestMethod]
+        public void UnregisterMultiple_T_ValidTypes_InstancesOfCorrectTypesReturnedByResolveAll()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.RegisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(DisposableTestClassWithInterface) });
+
+            container.UnregisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor) });
+            var result = container.ResolveAll<ITestInterface>();
+
+            Assert.IsNotNull(result.Where(o => o.GetType() == typeof(DisposableTestClassWithInterface)).FirstOrDefault());
+        }
+
+        [TestMethod]
+        public void UnregisterMultiple_T_Null_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            try
+            {
+                container.UnregisterMultiple<ITestInterface>(null);
+
+                Assert.Fail();
+            }
+            catch (ArgumentNullException)
+            {
+            }
+        }
+        
+        [TestMethod]
+        public void UnregisterMultiple_T_ATypeThatDoesntImplementTheRegisterType_Throws()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            try
+            {
+                container.UnregisterMultiple<ITestInterface>(new Type[] { typeof(TestClassDefaultCtor), typeof(TestClass2) });
+
+                Assert.Fail();
+            }
+            catch (ArgumentException)
+            {
+            }
+        }
+
+        #endregion
+
         #endregion
     }
 }
