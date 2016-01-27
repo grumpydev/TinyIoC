@@ -3001,6 +3001,39 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void ResolveAll_ChildContainerRegistrationsOverrideParentContainerRegistrations_ReturnsChildRegistrationsWithoutDuplicates()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            parentContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "1");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "2");
+            childContainer.Register<ITestInterface>(new TestClassDefaultCtor(), "3");
+
+            var result = childContainer.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(3, result.Count());
+        }
+
+        [TestMethod]
+        public void ResolveAll_ChildContainerRegistrationOverridesParentContainerRegistration_ReturnsChildRegistrations()
+        {
+            var parentContainer = UtilityMethods.GetContainer();
+            var childContainer = parentContainer.GetChildContainer();
+            var parentInstance = new TestClassDefaultCtor();
+            var childInstance = new TestClassDefaultCtor();
+            parentContainer.Register<ITestInterface>(parentInstance, "1");
+            childContainer.Register<ITestInterface>(childInstance, "1");
+
+            var result = childContainer.ResolveAll<ITestInterface>();
+
+            Assert.AreEqual(1, result.Count());
+            Assert.AreSame(childInstance, result.Single());
+        }
+
+        [TestMethod]
         public void ResolveAll_ParentContainerMultiInstanceRegistrationWithDependencyInChildContainer_ReturnsRegistrationWithChildContainerDependencyInstance()
         {
             var parentContainer = UtilityMethods.GetContainer();
