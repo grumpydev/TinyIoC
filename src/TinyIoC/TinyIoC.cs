@@ -3972,7 +3972,7 @@ namespace TinyIoC
 
         private IEnumerable<object> ResolveAllInternal(Type resolveType, bool includeUnnamed)
         {
-            var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType).Concat(GetParentRegistrationsForType(resolveType));
+            var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType).Concat(GetParentRegistrationsForType(resolveType)).Distinct();
 
             if (!includeUnnamed)
                 registrations = registrations.Where(tr => tr.Name != string.Empty);
