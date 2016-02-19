@@ -3355,6 +3355,7 @@ namespace TinyIoC
                 asm => asm.FullName.StartsWith("mscorlib,", StringComparison.Ordinal),
                 asm => asm.FullName.StartsWith("CR_VSTest", StringComparison.Ordinal),
                 asm => asm.FullName.StartsWith("DevExpress.CodeRush", StringComparison.Ordinal),
+                asm => asm.FullName.StartsWith("xunit.", StringComparison.Ordinal),
             };
 
             foreach (var check in ignoreChecks)
