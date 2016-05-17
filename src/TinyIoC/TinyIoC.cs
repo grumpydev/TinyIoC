@@ -76,7 +76,7 @@
 #endif
 
 
-#if DOTNET5_4
+#if NETSTANDARD1_5
 #undef SERIALIZABLE
 #undef APPDOMAIN_GETASSEMBLIES
 #endif
@@ -749,7 +749,7 @@ namespace TinyIoC
             : base(String.Format(ERROR_TEXT, registerType, GetTypesString(types)), innerException)
         {
         }
-        #if SERIALIZABLE
+#if SERIALIZABLE
         protected TinyIoCAutoRegistrationException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -764,9 +764,9 @@ namespace TinyIoC
             return string.Join(",", typeNames.ToArray());
         }
     }
-#endregion
+    #endregion
 
-#region Public Setup / Settings Classes
+    #region Public Setup / Settings Classes
     /// <summary>
     /// Name/Value pairs for specifying "user" parameters when resolving
     /// </summary>
@@ -926,7 +926,7 @@ namespace TinyIoC
             }
         }
     }
-#endregion
+    #endregion
 
 #if TINYIOC_INTERNAL
     internal
@@ -935,7 +935,7 @@ namespace TinyIoC
 #endif
     sealed partial class TinyIoCContainer : IDisposable
     {
-#region Fake NETFX_CORE Classes
+        #region Fake NETFX_CORE Classes
 #if NETFX_CORE
         private sealed class MethodAccessException : Exception
         {
@@ -980,9 +980,9 @@ namespace TinyIoC
             }
         }
 #endif
-#endregion
+        #endregion
 
-#region "Fluent" API
+        #region "Fluent" API
         /// <summary>
         /// Registration options for "fluent" API
         /// </summary>
@@ -1098,7 +1098,7 @@ namespace TinyIoC
                 if (lifetimeProvider == null)
                     throw new ArgumentNullException("lifetimeProvider", "lifetimeProvider is null.");
 
-                if (String.IsNullOrEmpty(errorString))
+                if (string.IsNullOrEmpty(errorString))
                     throw new ArgumentException("errorString is null or empty.", "errorString");
 
                 var currentFactory = instance._Container.GetCurrentFactory(instance._Registration);
@@ -1168,7 +1168,7 @@ namespace TinyIoC
                 if (lifetimeProvider == null)
                     throw new ArgumentNullException("lifetimeProvider", "lifetimeProvider is null.");
 
-                if (String.IsNullOrEmpty(errorString))
+                if (string.IsNullOrEmpty(errorString))
                     throw new ArgumentException("errorString is null or empty.", "errorString");
 
                 instance._RegisterOptions = instance.ExecuteOnAllRegisterOptions(ro => RegisterOptions.ToCustomLifetimeManager(ro, lifetimeProvider, errorString));
@@ -1188,17 +1188,17 @@ namespace TinyIoC
                 return newRegisterOptions;
             }
         }
-#endregion
+        #endregion
 
-#region Public API
-#region Child Containers
+        #region Public API
+        #region Child Containers
         public TinyIoCContainer GetChildContainer()
         {
             return new TinyIoCContainer(this);
         }
-#endregion
+        #endregion
 
-#region Registration
+        #region Registration
         /// <summary>
         /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
         /// 
@@ -1622,9 +1622,9 @@ namespace TinyIoC
 
             return new MultiRegisterOptions(registerOptions);
         }
-#endregion
+        #endregion
 
-#region Unregistration
+        #region Unregistration
 
         /// <summary>
         /// Remove a container class registration.
@@ -1670,9 +1670,9 @@ namespace TinyIoC
             return RemoveRegistration(typeRegistration);
         }
 
-#endregion
+        #endregion
 
-#region Resolution
+        #region Resolution
         /// <summary>
         /// Attempts to resolve a type using default options.
         /// </summary>
@@ -2578,10 +2578,10 @@ namespace TinyIoC
         {
             BuildUpInternal(input, resolveOptions);
         }
-#endregion
-#endregion
+        #endregion
+        #endregion
 
-#region Object Factories
+        #region Object Factories
         /// <summary>
         /// Provides custom lifetime management for ASP.Net per-request lifetimes etc.
         /// </summary>
@@ -3187,9 +3187,9 @@ namespace TinyIoC
                 _LifetimeProvider.ReleaseObject();
             }
         }
-#endregion
+        #endregion
 
-#region Singleton Container
+        #region Singleton Container
         private static readonly TinyIoCContainer _Current = new TinyIoCContainer();
 
         static TinyIoCContainer()
@@ -3206,9 +3206,9 @@ namespace TinyIoC
                 return _Current;
             }
         }
-#endregion
+        #endregion
 
-#region Type Registrations
+        #region Type Registrations
         public sealed class TypeRegistration
         {
             private int _hashCode;
@@ -3255,9 +3255,9 @@ namespace TinyIoC
         private delegate object ObjectConstructor(params object[] parameters);
         private static readonly SafeDictionary<ConstructorInfo, ObjectConstructor> _ObjectConstructorCache = new SafeDictionary<ConstructorInfo, ObjectConstructor>();
 #endif
-#endregion
+        #endregion
 
-#region Constructors
+        #region Constructors
         public TinyIoCContainer()
         {
             _RegisteredTypes = new SafeDictionary<TypeRegistration, ObjectFactoryBase>();
@@ -3271,9 +3271,9 @@ namespace TinyIoC
         {
             _Parent = parent;
         }
-#endregion
+        #endregion
 
-#region Internal Methods
+        #region Internal Methods
         private readonly object _AutoRegisterLock = new object();
         private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, DuplicateImplementationActions duplicateAction, Func<Type, bool> registrationPredicate)
         {
@@ -3485,11 +3485,11 @@ namespace TinyIoC
 
             // Fail if requesting named resolution and settings set to fail if unresolved
             // Or bubble up if we have a parent
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
+            if (!string.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
                 return (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options) : false;
 
             // Attemped unnamed fallback container resolution if relevant and requested
-            if (!String.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
+            if (!string.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
             {
                 if (_RegisteredTypes.TryGetValue(new TypeRegistration(checkType), out factory))
                 {
@@ -3642,11 +3642,11 @@ namespace TinyIoC
             }
 
             // Fail if requesting named resolution and settings set to fail if unresolved
-            if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
+            if (!string.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
                 throw new TinyIoCResolutionException(registration.Type);
 
             // Attemped unnamed fallback container resolution if relevant and requested
-            if (!String.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
+            if (!string.IsNullOrEmpty(registration.Name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
             {
                 if (_RegisteredTypes.TryGetValue(new TypeRegistration(registration.Type, string.Empty), out factory))
                 {
@@ -4034,7 +4034,7 @@ namespace TinyIoC
             {
                 if (registerType.IsInterface())
                 {
-#if (PORTABLE || DOTNET5_4)
+#if (PORTABLE || NETSTANDARD1_5)
                     if (!registerImplementation.GetInterfaces().Any(t => t.Name == registerType.Name))
                         return false;
 #else
@@ -4051,9 +4051,9 @@ namespace TinyIoC
             return true;
         }
 
-#endregion
+        #endregion
 
-#region IDisposable Members
+        #region IDisposable Members
         bool disposed = false;
         public void Dispose()
         {
@@ -4067,11 +4067,65 @@ namespace TinyIoC
             }
         }
 
-#endregion
+        #endregion
     }
 
+#if NETSTANDARD1_5
+    static class ReverseTypeExtender
+    {
+        public static bool IsClass(this Type type)
+        {
+            return type.GetTypeInfo().IsClass;
+        }
+
+        public static bool IsAbstract(this Type type)
+        {
+            return type.GetTypeInfo().IsAbstract;
+        }
+
+        public static bool IsInterface(this Type type)
+        {
+            return type.GetTypeInfo().IsInterface;
+        }
+
+        public static bool IsPrimitive(this Type type)
+        {
+            return type.GetTypeInfo().IsPrimitive;
+        }
+
+        public static bool IsValueType(this Type type)
+        {
+            return type.GetTypeInfo().IsValueType;
+        }
+
+        public static bool IsGenericType(this Type type)
+        {
+            return type.GetTypeInfo().IsGenericType;
+        }
+
+        public static bool IsGenericParameter(this Type type)
+        {
+            return type.IsGenericParameter;
+        }
+
+        public static bool IsGenericTypeDefinition(this Type type)
+        {
+            return type.GetTypeInfo().IsGenericTypeDefinition;
+        }
+
+        public static Type BaseType(this Type type)
+        {
+            return type.GetTypeInfo().BaseType;
+        }
+
+        public static Assembly Assembly(this Type type)
+        {
+            return type.GetTypeInfo().Assembly;
+        }
+    }
+#endif
     // reverse shim for WinRT SR changes...
-#if (!NETFX_CORE && !DOTNET5_4)
+#if (!NETFX_CORE && !NETSTANDARD1_5)
     static class ReverseTypeExtender
     {
         public static bool IsClass(this Type type)
