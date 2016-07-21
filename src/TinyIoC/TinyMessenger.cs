@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using TinyIoC;
 
 namespace TinyMessenger
 {
@@ -745,7 +746,19 @@ namespace TinyMessenger
                                            where object.ReferenceEquals(sub.Subscription.SubscriptionToken, subscriptionToken)
                                            select sub).ToList();
 
-                currentlySubscribed.ForEach(sub => currentSubscriptions.Remove(sub));
+#if !PORTABLE
+                currentlySubscribed.ForEach(sub => 
+#else
+                foreach (var sub in currentlySubscribed)
+                {
+#endif
+                    currentSubscriptions.Remove(sub)
+#if PORTABLE
+                    ;
+                }
+#else
+                );
+#endif
             }
         }
 
@@ -766,9 +779,13 @@ namespace TinyMessenger
                                        where sub.Subscription.ShouldAttemptDelivery(message)
                                        select sub).ToList();
             }
-
+#if !PORTABLE
             currentlySubscribed.ForEach(sub =>
             {
+#else
+            foreach (var sub in currentlySubscribed)
+            {
+#endif
                 try
                 {
                     sub.Proxy.Deliver(message, sub.Subscription);
@@ -778,7 +795,12 @@ namespace TinyMessenger
                     // Ignore any errors and carry on
                     // TODO - add to a list of erroring subs and remove them?
                 }
+#if !PORTABLE
             });
+#else
+                
+            }
+#endif
         }
 
         private void PublishAsyncInternal<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
@@ -787,7 +809,7 @@ namespace TinyMessenger
 
             publishAction.BeginInvoke(callback, null);
         }
-        #endregion
+#endregion
     }
-    #endregion
+#endregion
 }

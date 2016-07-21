@@ -1878,7 +1878,7 @@ namespace TinyIoC.Tests
             Assert.IsInstanceOfType(result2, typeof(ExternalTypes.IExternalTestInterface));
         }
 
-#if APPDOMAIN_GETASSEMBLIES
+#if APPDOMAIN_GETASSEMBLIES || PORTABLE
         [TestMethod]
         public void AutoRegister_NoParameters_TypesFromDifferentAssembliesInAppDomainResolve()
         {
