@@ -3926,6 +3926,9 @@ namespace TinyIoC
 
             foreach (var parameter in ctor.GetParameters())
             {
+                if (parameter.IsOptional)
+                    return true;
+
                 if (string.IsNullOrEmpty(parameter.Name))
                     return false;
 
@@ -3994,6 +3997,8 @@ namespace TinyIoC
             return ConstructType(requestedType, implementationType, null, parameters, options);
         }
 
+        private static readonly SafeDictionary<Type, object> _DefaultValues = new SafeDictionary<Type, object>();
+
         private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             var typeToConstruct = implementationType;
@@ -4028,12 +4033,39 @@ namespace TinyIoC
 
                 try
                 {
-                    args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ?
-                                            parameters[currentParam.Name] :
-                                            ResolveInternal(
-                                                new TypeRegistration(currentParam.ParameterType),
-                                                NamedParameterOverloads.Default,
-                                                options);
+                    object parameterValue;
+                    if (parameters.TryGetValue(currentParam.Name, out parameterValue))
+                    {
+                        args[parameterIndex] = parameterValue;
+                    }
+                    else
+                    {
+                        if (currentParam.IsOptional && (currentParam.ParameterType == typeof(string) || currentParam.ParameterType.IsValueType()))
+                        {
+                            try
+                            {
+                                args[parameterIndex] = currentParam.DefaultValue;
+                            }
+                            catch
+                            {
+                                // The currentParam.DefaultValue is not always valid, e.g. with default(DateTime), we get a 'SystemFormatException'- possibly due to culture differences.
+                                // If so, Activator.CreateInstance(Type) *should* always work.
+                                object defaultValue;
+                                if (!_DefaultValues.TryGetValue(currentParam.ParameterType, out defaultValue))
+                                {
+                                    // Potentially creating 'defaultValue' twice in multi-threaded writes isn't a problem; all instances arae equivalent and it'll only happen once,
+                                    // so even if Activator.CreateInstance(Type) were unpleasantly slow, it wouldn't really matter.
+                                    defaultValue = Activator.CreateInstance(currentParam.ParameterType);
+                                    _DefaultValues[currentParam.ParameterType] = defaultValue;
+                                }
+                                args[parameterIndex] = defaultValue;
+                            }
+                        }
+                        else
+                        {
+                            args[parameterIndex] = ResolveInternal(new TypeRegistration(currentParam.ParameterType), NamedParameterOverloads.Default, options);
+                        }
+                    }
                 }
                 catch (TinyIoCResolutionException ex)
                 {

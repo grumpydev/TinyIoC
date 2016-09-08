@@ -1626,6 +1626,135 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_ConstructorWithOptionalNullParameter_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalNullParameter>();
+
+            var result = container.Resolve<TestClassWithOptionalNullParameter>();
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithDependentOptionalNullParameter_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithDependentOptionalNullParameter>();
+
+            var result = container.Resolve<TestClassWithDependentOptionalNullParameter>();
+            Assert.IsTrue(result.OptionalReferenceTypeParameter.OptionalStringParameter == TestClassWithOptionalStringParameter.DefaultStringParameterValue);
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionalValueTypeParameter_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalValueTypeParameter>();
+
+            var result = container.Resolve<TestClassWithOptionalValueTypeParameter>();
+
+            Assert.IsTrue(result.OptionalValueTypeParameter == default(DateTime));
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionaInt10Parameter_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalIntParameter>();
+
+            var result = container.Resolve<TestClassWithOptionalIntParameter>();
+
+            Assert.IsTrue(result.OptionalIntParameter == 10);
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionalStringParameter_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalStringParameter>();
+
+            var result = container.Resolve<TestClassWithOptionalStringParameter>();
+
+            Assert.IsTrue(result.OptionalStringParameter == "Default string");
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionaIntParameterViaAttribute_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalIntParameterViaAttribute>();
+
+            var result = container.Resolve<TestClassWithOptionalIntParameterViaAttribute>();
+
+            Assert.IsTrue(result.OptionalIntParameter == TestClassWithOptionalIntParameterViaAttribute.DefaultIntParameterValue);
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionaDefaultIntParameterViaAttribute_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalDefaultIntParameterViaAttribute>();
+
+            var result = container.Resolve<TestClassWithOptionalDefaultIntParameterViaAttribute>();
+
+            Assert.IsTrue(result.OptionalIntParameter == TestClassWithOptionalDefaultIntParameterViaAttribute.DefaultIntParameterValue);
+        }
+
+        /// <summary>
+        /// Check that a default value is used only if a parameter value is not explicitly set.
+        /// </summary>
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionaNonDefaultIntParameter_Resolves()
+        {
+            const int value = 200;
+            var container = UtilityMethods.GetContainer();
+            container.Register(new TestClassWithOptionalIntParameter(value));
+
+            var result = container.Resolve<TestClassWithOptionalIntParameter>();
+
+            Assert.IsTrue(result.OptionalIntParameter == value);
+        }
+
+        /// <summary>
+        /// Check that a default value is used only if a parameter value is not explicitly set.
+        /// </summary>
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionaNonDefaultStringParameter_Resolves()
+        {
+            const string value = "Non default string value";
+            var container = UtilityMethods.GetContainer();
+            container.Register(new TestClassWithOptionalStringParameter(value));
+
+            var result = container.Resolve<TestClassWithOptionalStringParameter>();
+
+            Assert.IsTrue(result.OptionalStringParameter == value);
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionalStringParameterViaAttribute_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalStringParameterViaAttribute>();
+
+            var result = container.Resolve<TestClassWithOptionalStringParameterViaAttribute>();
+
+            Assert.IsTrue(result.OptionalStringParameter == TestClassWithOptionalStringParameterViaAttribute.DefaultStringParameterValue);
+        }
+
+        [TestMethod]
+        public void Resolve_ConstructorWithOptionalNullStringParameterViaAttribute_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalNullStringParameterViaAttribute>();
+
+            var result = container.Resolve<TestClassWithOptionalNullStringParameterViaAttribute>();
+
+            Assert.IsTrue(result.OptionalStringParameter == TestClassWithOptionalNullStringParameterViaAttribute.DefaultStringParameterValue);
+        }
+
+
+        [TestMethod]
         public void CanResolve_ConstructorSpecifiedThatRequiresParametersButNonePassed_ReturnsFalse()
         {
             var container = UtilityMethods.GetContainer();
@@ -1635,6 +1764,61 @@ namespace TinyIoC.Tests
             var result = container.CanResolve<TestClassWithInterfaceDependency>();
 
             Assert.IsFalse(result);
+        }
+
+        [TestMethod]
+        public void CanResolve_ConstructorWithOptionalNullParameter_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalNullParameter>();
+
+            var result = container.CanResolve<TestClassWithOptionalNullParameter>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void CanResolve_ConstructorWithDependentOptionalNullParameter_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithDependentOptionalNullParameter>();
+
+            var result = container.CanResolve<TestClassWithDependentOptionalNullParameter>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void CanResolve_ConstructorWithOptionalValueTypeParameter_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalValueTypeParameter>();
+
+            var result = container.CanResolve<TestClassWithOptionalValueTypeParameter>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void CanResolve_ConstructorWithOptionaInt10Parameter_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalIntParameter>();
+
+            var result = container.CanResolve<TestClassWithOptionalIntParameter>();
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void CanResolve_ConstructorWithOptionalStringParameter_ReturnsTrue()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithOptionalStringParameter>();
+
+            var result = container.CanResolve<TestClassWithOptionalStringParameter>();
+
+            Assert.IsTrue(result);
         }
 
         [TestMethod]
