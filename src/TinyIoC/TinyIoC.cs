@@ -1461,7 +1461,7 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType)
         {
-            return RegisterInternal(registerType, string.Empty, GetDefaultObjectFactory(registerType, registerType));
+            return RegisterInternal(registerType, registerType.RegistrationName() ?? string.Empty, GetDefaultObjectFactory(registerType, registerType));
         }
 
         /// <summary>
@@ -1484,7 +1484,7 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType, Type registerImplementation)
         {
-            return this.RegisterInternal(registerType, string.Empty, GetDefaultObjectFactory(registerType, registerImplementation));
+            return this.RegisterInternal(registerType, registerType.RegistrationName() ?? string.Empty, GetDefaultObjectFactory(registerType, registerImplementation));
         }
 
         /// <summary>
@@ -1507,7 +1507,7 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType, object instance)
         {
-            return RegisterInternal(registerType, string.Empty, new InstanceFactory(registerType, registerType, instance));
+            return RegisterInternal(registerType, registerType.RegistrationName() ?? string.Empty, new InstanceFactory(registerType, registerType, instance));
         }
 
         /// <summary>
@@ -1531,7 +1531,7 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType, Type registerImplementation, object instance)
         {
-            return RegisterInternal(registerType, string.Empty, new InstanceFactory(registerType, registerImplementation, instance));
+            return RegisterInternal(registerType, registerType.RegistrationName() ?? string.Empty, new InstanceFactory(registerType, registerImplementation, instance));
         }
 
         /// <summary>
@@ -1555,7 +1555,7 @@ namespace TinyIoC
         /// <returns>RegisterOptions for fluent API</returns>
         public RegisterOptions Register(Type registerType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
         {
-            return RegisterInternal(registerType, string.Empty, new DelegateFactory(registerType, factory));
+            return RegisterInternal(registerType, registerType.RegistrationName() ?? string.Empty, new DelegateFactory(registerType, factory));
         }
 
         /// <summary>
@@ -1760,7 +1760,7 @@ namespace TinyIoC
 
             foreach (var type in implementationTypes)
             {
-                registerOptions.Add(Register(registrationType, type, type.FullName));
+                registerOptions.Add(Register(registrationType, type, type.RegistrationName() ?? type.FullName));
             }
 
             return new MultiRegisterOptions(registerOptions);
@@ -1776,7 +1776,7 @@ namespace TinyIoC
         /// <returns>true if the registration is successfully found and removed; otherwise, false.</returns>
         public bool Unregister<RegisterType>()
         {
-            return Unregister(typeof(RegisterType), string.Empty);
+            return Unregister(typeof(RegisterType), typeof(RegisterType).RegistrationName() ?? string.Empty);
         }
 
         /// <summary>
@@ -1797,7 +1797,7 @@ namespace TinyIoC
         /// <returns>true if the registration is successfully found and removed; otherwise, false.</returns>
         public bool Unregister(Type registerType)
         {
-            return Unregister(registerType, string.Empty);
+            return Unregister(registerType, registerType.RegistrationName() ?? string.Empty);
         }
 
         /// <summary>
@@ -3427,12 +3427,11 @@ namespace TinyIoC
                 var concreteTypes = types
                     .Where(type => type.IsClass() && (type.IsAbstract() == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition())))
                     .ToList();
-
                 foreach (var type in concreteTypes)
                 {
                     try
                     {
-                        RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, type));
+                        RegisterInternal(type, type.RegistrationName() ?? string.Empty, GetDefaultObjectFactory(type, type));
                     }
 #if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
                     catch (MemberAccessException)
@@ -3455,32 +3454,16 @@ namespace TinyIoC
                                           where localType.IsAssignableFrom(implementationType)
                                           select implementationType;
 
-                    if (implementations.Skip(1).Any())
+                    foreach (var impl in implementations)
                     {
-                        if (duplicateAction == DuplicateImplementationActions.Fail)
+                        string nameToRegister = impl.RegistrationName() ?? string.Empty;
+                        bool seenAlready = CanResolve(type, nameToRegister, ResolveOptions.FailUnregisteredAndNameNotFound);
+                        if (seenAlready && duplicateAction == DuplicateImplementationActions.Fail)
                             throw new TinyIoCAutoRegistrationException(type, implementations);
-
-                        if (duplicateAction == DuplicateImplementationActions.RegisterMultiple)
-                        {
-                            RegisterMultiple(type, implementations);
-                        }
-                    }
-
-                    var firstImplementation = implementations.FirstOrDefault();
-                    if (firstImplementation != null)
-                    {
-                        try
-                        {
-                            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, firstImplementation));
-                        }
-#if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
-                        catch (MemberAccessException)
-#else
-                        catch (MethodAccessException)
-#endif
-                        {
-                            // Ignore methods we can't access - added for Silverlight
-                        }
+                        if (seenAlready)
+                            nameToRegister = impl.FullName;
+                        if(!seenAlready || duplicateAction == DuplicateImplementationActions.RegisterMultiple)
+                            Register(type, impl, nameToRegister);
                     }
                 }
             }
@@ -4172,6 +4155,7 @@ namespace TinyIoC
             return true;
         }
 
+
 #endregion
 
 #region IDisposable Members
@@ -4190,7 +4174,26 @@ namespace TinyIoC
 
 #endregion
     }
-
+    [AttributeUsage(AttributeTargets.Class)]
+    public class RegistrationName : Attribute
+    {
+        private string _name;
+        public RegistrationName(string name)
+        {
+            _name = name;
+        }
+        public string Name { get { return _name; } }
+    }
+    public static class ExtendTypeWithRegistrationName
+    {
+        public static string RegistrationName(this Type t)
+        {
+            var attr = ((RegistrationName)t.GetCustomAttributes(typeof(RegistrationName), true).FirstOrDefault());
+            if (attr != null)
+                return attr.Name;
+            return null;
+        }
+    }
 #if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
     static class ReverseTypeExtender
     {
