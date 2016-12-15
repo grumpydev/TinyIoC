@@ -2330,6 +2330,24 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void ResolveAll_MultipleTypesRegisteredAfterAutoRegister_ReturnsIEnumerableWithCorrectCount()
+        {
+            var container = UtilityMethods.GetContainer();
+            var assemblies = new List<Assembly> { this.GetType().Assembly() };
+
+            container.AutoRegister(assemblies);
+            container.RegisterMultiple<ITestInterface2>(new[]
+            {
+                typeof (TestClass2),
+                typeof (TestClassWithInterfaceDependency)
+            });
+
+            var results = container.ResolveAll<ITestInterface2>();
+
+            Assert.AreEqual(2, results.Count());
+        }
+
+        [TestMethod]
         public void ResolveAll_NamedAndUnnamedRegisteredAndPassedTrue_ReturnsIEnumerableWithNamedAndUnnamedRegistrations()
         {
             var container = UtilityMethods.GetContainer();
