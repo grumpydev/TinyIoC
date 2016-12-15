@@ -1495,9 +1495,10 @@ namespace TinyIoC.Tests
             container.AutoRegister(new[] { typeof(TestClassDefaultCtor).Assembly }, DuplicateImplementationActions.RegisterMultiple);
             
             var results = container.ResolveAll<ITestInterface>();
-
-            Assert.IsInstanceOfType(results.First(), typeof(TestClassDefaultCtor));
-            Assert.IsInstanceOfType(results.ElementAt(1), typeof(DisposableTestClassWithInterface));
+            
+            Assert.IsInstanceOfType(results.First(), typeof(DisposableTestClassWithInterface));
+            Assert.IsInstanceOfType(results.Last(), typeof(TestClassDefaultCtor));
+            Assert.AreEqual(2, results.Count());
         }
 
         [TestMethod]

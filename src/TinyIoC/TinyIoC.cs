@@ -3462,7 +3462,7 @@ namespace TinyIoC
 
                         if (duplicateAction == DuplicateImplementationActions.RegisterMultiple)
                         {
-                            RegisterMultiple(type, implementations);
+                            RegisterMultiple(type, implementations.Skip(1));
                         }
                     }
 
