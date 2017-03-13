@@ -2677,7 +2677,7 @@ namespace TinyIoC
         /// <returns>IEnumerable</returns>
         public IEnumerable<object> ResolveAll(Type resolveType)
         {
-            return ResolveAll(resolveType, false);
+            return ResolveAll(resolveType, true);
         }
 
         /// <summary>
