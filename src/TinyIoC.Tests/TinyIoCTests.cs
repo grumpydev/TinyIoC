@@ -3298,6 +3298,22 @@ namespace TinyIoC.Tests
         }
 #endif
 
+
+#if RESOLVE_OPEN_GENERICS
+        [TestMethod]
+        public void Resolve_RegisteredOpenGenericInParent_CanBeResolvedByChild()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(IThing<>), typeof(DefaultThing<>));
+
+            var child = container.GetChildContainer();
+
+            var result = child.Resolve<IThing<object>>();
+             
+            Assert.IsInstanceOfType(result, typeof(DefaultThing<object>));
+        }
+#endif
+
         #region Unregister
 
         private readonly ResolveOptions options = ResolveOptions.FailUnregisteredAndNameNotFound;
