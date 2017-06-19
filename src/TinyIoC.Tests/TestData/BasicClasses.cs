@@ -381,5 +381,59 @@ namespace TinyIoC.Tests.TestData
                 return new T();
             }
         }
+
+        internal class TestClassWithConstructorAttrib
+        {
+            [TinyIoCConstructor]
+            public TestClassWithConstructorAttrib()
+            {
+                AttributeConstructorUsed = true;
+            }
+
+            public TestClassWithConstructorAttrib(object someParameter)
+            {
+                AttributeConstructorUsed = false;
+            }
+
+            public bool AttributeConstructorUsed { get; private set; }
+        }
+
+        internal class TestClassWithInternalConstructorAttrib
+        {
+            [TinyIoCConstructor]
+            internal TestClassWithInternalConstructorAttrib()
+            {
+                AttributeConstructorUsed = true;
+            }
+
+            public TestClassWithInternalConstructorAttrib(object someParameter)
+            {
+                AttributeConstructorUsed = false;
+            }
+
+            public bool AttributeConstructorUsed { get; private set; }
+        }
+
+        internal class TestClassWithManyConstructorAttribs
+        {
+            [TinyIoCConstructor]
+            public TestClassWithManyConstructorAttribs()
+            {
+                MostGreedyAttribCtorUsed = false;
+            }
+
+            [TinyIoCConstructor]
+            public TestClassWithManyConstructorAttribs(object someParameter)
+            {
+                MostGreedyAttribCtorUsed = true;
+            }
+
+            public TestClassWithManyConstructorAttribs(object a, object b)
+            {
+                MostGreedyAttribCtorUsed = false;
+            }
+
+            public bool MostGreedyAttribCtorUsed { get; private set; }
+        }
     }
 }

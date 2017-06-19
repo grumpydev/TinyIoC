@@ -3975,7 +3975,17 @@ namespace TinyIoC
             //#if NETFX_CORE
             //			return type.GetTypeInfo().DeclaredConstructors.OrderByDescending(ctor => ctor.GetParameters().Count());
             //#else
-            return type.GetConstructors().OrderByDescending(ctor => ctor.GetParameters().Count());
+            var candidateCtors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(x => !x.IsPrivate) // Includes internal constructors but not private constructors
+                .ToList();
+
+            var attributeCtors = candidateCtors.Where(x => x.GetCustomAttributes(typeof(TinyIoCConstructorAttribute), false).Any())
+                .ToList();
+
+            if (attributeCtors.Any())
+                candidateCtors = attributeCtors;
+
+            return candidateCtors.OrderByDescending(ctor => ctor.GetParameters().Count());
             //#endif
         }
 
@@ -4300,4 +4310,14 @@ namespace TinyIoC
         }
     }
 #endif
+
+    [AttributeUsage(AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+    sealed class TinyIoCConstructorAttribute : Attribute
+    {
+    }
 }
