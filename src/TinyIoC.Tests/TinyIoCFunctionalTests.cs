@@ -81,6 +81,16 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void NestedClassDependencies_UsingConstructorFromAnotherType_ThrowsException()
+        {
+            var container = UtilityMethods.GetContainer();
+            var registerOptions = container.Register<NestedClassDependencies.RootClass>();
+
+            AssertHelper.ThrowsException<TinyIoCConstructorResolutionException>
+                (() => registerOptions.UsingConstructor(() => new RootClass(null, null)));
+        }
+
+        [TestMethod]
         public void NestedClassDependencies_MissingService3Registration_ResolvesRootResolutionOn()
         {
             var container = UtilityMethods.GetContainer();
@@ -133,6 +143,17 @@ namespace TinyIoC.Tests
             stateManager.Init();
 
             Assert.IsInstanceOfType(mainView.LoadedView, typeof(SplashView));
+        }
+
+        [TestMethod]
+        public void Dependency_Hierarchy_Resolves_IEnumerable_Correctly()
+        {
+            var container = UtilityMethods.GetContainer();
+            var mainView = new MainView();
+            container.Register<IView, MainView>(mainView, "MainView");
+            container.Register<IView, SplashView>("SplashView").UsingConstructor(() => new SplashView());
+            var viewCollection = container.Resolve<ViewCollection>();
+            Assert.AreEqual(viewCollection.Views.Count(), 2);
         }
 
         [TestMethod]
