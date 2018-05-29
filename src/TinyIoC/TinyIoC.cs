@@ -336,7 +336,7 @@ namespace TinyIoC
             try
             {
 #if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2
-                assemblies = assembly.ExportedTypes.ToArray();
+                assemblies = assembly.DefinedTypes.Select(t=>t.AsType()).ToArray();
 #else
                 assemblies = assembly.GetTypes();
 #endif
@@ -361,7 +361,12 @@ namespace TinyIoC
 
 #if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2
     [Flags]
-    internal enum BindingFlags {
+#if TINYIOC_INTERNAL
+    internal
+#else
+    public
+#endif
+        enum BindingFlags {
         Default = 0,
         IgnoreCase = 1,
         DeclaredOnly = 2,
@@ -388,7 +393,7 @@ namespace TinyIoC
 #if TINYIOC_INTERNAL
     internal
 #else
-    public
+    public 
 #endif
     static class TypeExtensions
     {
@@ -1356,9 +1361,21 @@ namespace TinyIoC
 #if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), DuplicateImplementationActions.RegisterSingle, null);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly() }, DuplicateImplementationActions.RegisterSingle, null);
+            var assemblies = GetAssemblies();
+            AutoRegisterInternal(assemblies, DuplicateImplementationActions.RegisterSingle, null);
 #endif
         }
+
+#if PORTABLE
+        private static Assembly[] GetAssemblies()
+        {
+            var appDomainType = Type.GetType("System.AppDomain");
+            var currentDomain = appDomainType.GetRuntimeProperty("CurrentDomain").GetMethod.Invoke(null, null);
+            var getAssembliesMethod = appDomainType.GetRuntimeMethod("GetAssemblies", new Type[0]);
+            var assemblies = (Assembly[])getAssembliesMethod.Invoke(currentDomain, new Type[0]);
+            return assemblies;
+        }
+#endif
 
         /// <summary>
         /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
@@ -1373,7 +1390,8 @@ namespace TinyIoC
 #if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), DuplicateImplementationActions.RegisterSingle, registrationPredicate);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly() }, DuplicateImplementationActions.RegisterSingle, registrationPredicate);
+            var assemblies = GetAssemblies();
+            AutoRegisterInternal(assemblies, DuplicateImplementationActions.RegisterSingle, registrationPredicate);
 #endif
         }
 
@@ -1387,7 +1405,8 @@ namespace TinyIoC
 #if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), duplicateAction, null);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly() }, duplicateAction, null);
+            var assemblies = GetAssemblies();
+            AutoRegisterInternal(assemblies, duplicateAction, null);
 #endif
         }
 
@@ -1403,7 +1422,8 @@ namespace TinyIoC
 #if APPDOMAIN_GETASSEMBLIES
             AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), duplicateAction, registrationPredicate);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly() }, duplicateAction, registrationPredicate);
+            var assemblies = GetAssemblies();
+            AutoRegisterInternal(assemblies, duplicateAction, registrationPredicate);
 #endif
         }
 
@@ -4249,7 +4269,7 @@ namespace TinyIoC
     }
 #endif
     // reverse shim for WinRT SR changes...
-#if (!NETFX_CORE && !PORTABLE && !NETSTANDARD1_0 && !NETSTANDARD1_1 && !NETSTANDARD1_2 && !NETSTANDARD1_3 && !NETSTANDARD1_4 && !NETSTANDARD1_5 || !NETSTANDARD1_6)
+#if (!PORTABLE && (!NETFX_CORE && !PORTABLE && !NETSTANDARD1_0 && !NETSTANDARD1_1 && !NETSTANDARD1_2 && !NETSTANDARD1_3 && !NETSTANDARD1_4 && !NETSTANDARD1_5 || !NETSTANDARD1_6))
     static class ReverseTypeExtender
     {
         public static bool IsClass(this Type type)
