@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Runtime.InteropServices;
 
 namespace TinyIoC.Tests.TestData
 {
@@ -193,6 +193,104 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
+        internal class TestClassWithOptionalNullParameter
+        {
+            public TestClassNoInterfaceDefaultCtor OptionalReferenceTypeParameter { get; private set; }
+
+            public TestClassWithOptionalNullParameter(TestClassNoInterfaceDefaultCtor optionalReferenceTypeParameter = null)
+            {
+                OptionalReferenceTypeParameter = optionalReferenceTypeParameter;
+            }
+        }
+
+        internal class TestClassWithDependentOptionalNullParameter
+        {
+            public TestClassWithOptionalStringParameter OptionalReferenceTypeParameter { get; private set; }
+
+            public TestClassWithDependentOptionalNullParameter(TestClassWithOptionalStringParameter optionalReferenceTypeParameter = null)
+            {
+                OptionalReferenceTypeParameter = optionalReferenceTypeParameter;
+            }
+        }
+
+        internal class TestClassWithOptionalValueTypeParameter
+        {
+            public DateTime OptionalValueTypeParameter { get; private set; }
+
+            public TestClassWithOptionalValueTypeParameter(DateTime optionalValueTypeParameter = default(DateTime))
+            {
+                OptionalValueTypeParameter = optionalValueTypeParameter;
+            }
+        }
+
+        internal class TestClassWithOptionalIntParameter
+        {
+            public const int DefaultIntParameterValue = 10;
+            public int OptionalIntParameter { get; private set; }
+
+            public TestClassWithOptionalIntParameter(int optionalIntParameter = DefaultIntParameterValue)
+            {
+                OptionalIntParameter = optionalIntParameter;
+            }
+        }
+
+        internal class TestClassWithOptionalIntParameterViaAttribute
+        {
+            public const int DefaultIntParameterValue = 100;
+            public int OptionalIntParameter { get; private set; }
+
+            public TestClassWithOptionalIntParameterViaAttribute([Optional, DefaultParameterValue(DefaultIntParameterValue)]int optionalIntParameter)
+            {
+                OptionalIntParameter = optionalIntParameter;
+            }
+        }
+
+        internal class TestClassWithOptionalDefaultIntParameterViaAttribute
+        {
+            public const int DefaultIntParameterValue = default(int);
+            public int OptionalIntParameter { get; private set; }
+
+            public TestClassWithOptionalDefaultIntParameterViaAttribute([Optional, DefaultParameterValue(default(int))]int optionalIntParameter)
+            {
+                OptionalIntParameter = optionalIntParameter;
+            }
+        }
+
+        internal class TestClassWithOptionalStringParameter
+        {
+            public const string DefaultStringParameterValue = "Default string";
+
+            public string OptionalStringParameter { get; private set; }
+
+            public TestClassWithOptionalStringParameter(string optionalStringParameter = DefaultStringParameterValue)
+            {
+                OptionalStringParameter = optionalStringParameter;
+            }
+        }
+
+        internal class TestClassWithOptionalStringParameterViaAttribute
+        {
+            public const string DefaultStringParameterValue = "Default string via attribute";
+
+            public string OptionalStringParameter { get; private set; }
+
+            public TestClassWithOptionalStringParameterViaAttribute([Optional, DefaultParameterValue(DefaultStringParameterValue)]string optionalStringParameter)
+            {
+                OptionalStringParameter = optionalStringParameter;
+            }
+        }
+
+        internal class TestClassWithOptionalNullStringParameterViaAttribute
+        {
+            public const string DefaultStringParameterValue = default(string);
+
+            public string OptionalStringParameter { get; private set; }
+
+            public TestClassWithOptionalNullStringParameterViaAttribute([Optional, DefaultParameterValue(default(string))]string optionalStringParameter)
+            {
+                OptionalStringParameter = optionalStringParameter;
+            }
+        }
 
         internal class GenericClassWithParametersAndDependencies<I, S>
         {
