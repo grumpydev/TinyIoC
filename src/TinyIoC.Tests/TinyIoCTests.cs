@@ -1626,6 +1626,45 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_ConstructorSpecifiedWithAttribute_UsesCorrectCtor()
+        {
+            var container = UtilityMethods.GetContainer();
+            var result = container.Resolve<TestClassWithConstructorAttrib>();
+
+            Assert.IsTrue(result.AttributeConstructorUsed);
+        }
+
+        [TestMethod]
+        public void Resolve_InternalConstructorSpecifiedWithAttribute_UsesCorrectCtor()
+        {
+            var container = UtilityMethods.GetContainer();
+            var result = container.Resolve<TestClassWithInternalConstructorAttrib>();
+
+            Assert.IsTrue(result.AttributeConstructorUsed);
+        }
+
+        [TestMethod]
+        public void Resolve_ManyConstructorsSpecifiedWithAttribute_UsesCorrectCtor()
+        {
+            var container = UtilityMethods.GetContainer();
+            var result = container.Resolve<TestClassWithManyConstructorAttribs>();
+
+            Assert.IsTrue(result.MostGreedyAttribCtorUsed);
+        }
+
+        [TestMethod]
+        public void Resolve_AttributeConstructorOverriden_UsesCorrectCtor()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassWithConstructorAttrib>()
+                .UsingConstructor(() => new TestClassWithConstructorAttrib(null)); // The non-attribute constructor
+
+            var result = container.Resolve<TestClassWithConstructorAttrib>();
+
+            Assert.IsFalse(result.AttributeConstructorUsed);
+        }
+
+        [TestMethod]
         public void CanResolve_ConstructorSpecifiedThatRequiresParametersButNonePassed_ReturnsFalse()
         {
             var container = UtilityMethods.GetContainer();
