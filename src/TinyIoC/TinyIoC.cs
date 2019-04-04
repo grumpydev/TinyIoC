@@ -3718,7 +3718,7 @@ namespace TinyIoC
 
             if (registration.Type.IsGenericType())
             {
-                var openTypeRegistration = new TypeRegistration(registration.Type.GetGenericTypeDefinition(),
+                var openTypeRegistration = new TypeRegistration(registration.Type,
                                                                 registration.Name);
 
                 if (_Parent._RegisteredTypes.TryGetValue(openTypeRegistration, out factory))

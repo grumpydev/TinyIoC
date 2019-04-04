@@ -552,6 +552,30 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Resolve_RegisteredGenericTypeWithGenericInterfaceCorrectGenericTypes_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface<int, string>, GenericClassWithGenericInterface<int, string>>();
+
+            var result = container.Resolve<ITestInterface<int, string>>();
+
+            Assert.IsInstanceOfType(result, typeof(GenericClassWithGenericInterface<int, string>));
+        }
+
+        [TestMethod]
+        public void Resolve_RegisteredGenericTypeWithGenericInterfaceCorrectGenericTypesWithParent_Resolves()
+        {
+            var container = UtilityMethods.GetContainer();
+            var child = container.GetChildContainer();
+            container.Register<ITestInterface<int, string>>(new GenericClassWithGenericInterface<int, string>());
+
+            var result = child.Resolve<ITestInterface<int, string>>();
+
+            Assert.IsInstanceOfType(result, typeof(GenericClassWithGenericInterface<int, string>));
+        }
+
+
+        [TestMethod]
         public void Register_NamedRegistration_CanRegister()
         {
             var container = UtilityMethods.GetContainer();

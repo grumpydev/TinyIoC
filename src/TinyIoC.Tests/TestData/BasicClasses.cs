@@ -26,6 +26,10 @@ namespace TinyIoC.Tests.TestData
         {
         }
 
+        internal interface ITestInterface<I, S>
+        {
+        }
+
         internal class TestClassDefaultCtor : ITestInterface
         {
             public string Prop1 { get; set; }
@@ -193,6 +197,21 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
+        internal class GenericClassWithGenericInterface<I, S> : ITestInterface<I, S>
+        {
+            public I Prop1 { get; set; }
+            public S Prop2 { get; set; }
+
+             public GenericClassWithGenericInterface()
+             {
+             }
+
+             public GenericClassWithGenericInterface(I prop1, S prop2)
+            {
+                Prop1 = prop1;
+                Prop2 = prop2;
+            }
+        }
 
         internal class GenericClassWithParametersAndDependencies<I, S>
         {
