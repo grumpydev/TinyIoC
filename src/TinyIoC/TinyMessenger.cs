@@ -33,20 +33,54 @@ namespace TinyMessenger
     }
 
     /// <summary>
+    /// A TinyMessage to be published/delivered by TinyMessenger
+    /// </summary>
+    /// <typeparam name="TSender">Type of the messenge sender</typeparam>
+    public interface ITinyMessage<TSender> : ITinyMessage 
+        where TSender: class
+    {
+        /// <summary>
+        /// The sender of the message, or null if not supported by the message implementation.
+        /// </summary>
+        new TSender Sender { get; }
+    }
+
+    /// <summary>
     /// Base class for messages that provides weak refrence storage of the sender
     /// </summary>
-    public abstract class TinyMessageBase : ITinyMessage
+    public abstract class TinyMessageBase: TinyMessageBase<object>
+    {
+        public TinyMessageBase(object sender)
+            : base(sender)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Base class for messages that provides weak refrence storage of the sender
+    /// </summary>
+    /// <typeparam name="TSender">Type of the messenge sender</typeparam>
+    public abstract class TinyMessageBase<TSender> : ITinyMessage<TSender>
+        where TSender: class
     {
         /// <summary>
         /// Store a WeakReference to the sender just in case anyone is daft enough to
         /// keep the message around and prevent the sender from being collected.
         /// </summary>
         private WeakReference _Sender;
-        public object Sender
+        public TSender Sender
         {
             get
             {
-                return (_Sender == null) ? null : _Sender.Target;
+                return (_Sender == null) ? null : (TSender)_Sender.Target;
+            }
+        }
+
+        object ITinyMessage.Sender
+        {
+            get
+            {
+                return Sender;
             }
         }
 
@@ -54,7 +88,7 @@ namespace TinyMessenger
         /// Initializes a new instance of the MessageBase class.
         /// </summary>
         /// <param name="sender">Message sender (usually "this")</param>
-        public TinyMessageBase(object sender)
+        public TinyMessageBase(TSender sender)
         {
             if (sender == null)
                 throw new ArgumentNullException("sender");
@@ -65,9 +99,23 @@ namespace TinyMessenger
 
     /// <summary>
     /// Generic message with user specified content
-    /// </summary>
+    /// </summary>    
     /// <typeparam name="TContent">Content type to store</typeparam>
-    public class GenericTinyMessage<TContent> : TinyMessageBase
+    public class GenericTinyMessage<TContent> : GenericTinyMessage<object, TContent>
+    {
+        public GenericTinyMessage(object sender, TContent content)
+            : base(sender, content)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Generic message with user specified content
+    /// </summary>
+    /// <typeparam name="TSender">Type of the messenge sender</typeparam>
+    /// <typeparam name="TContent">Content type to store</typeparam>
+    public class GenericTinyMessage<TSender, TContent> : TinyMessageBase<TSender>
+        where TSender: class
     {
         /// <summary>
         /// Contents of the message
@@ -79,7 +127,7 @@ namespace TinyMessenger
         /// </summary>
         /// <param name="sender">Message sender (usually "this")</param>
         /// <param name="content">Contents of the message</param>
-        public GenericTinyMessage(object sender, TContent content)
+        public GenericTinyMessage(TSender sender, TContent content)
             : base(sender)
         {
             Content = content;
@@ -90,7 +138,21 @@ namespace TinyMessenger
     /// Basic "cancellable" generic message
     /// </summary>
     /// <typeparam name="TContent">Content type to store</typeparam>
-    public class CancellableGenericTinyMessage<TContent> : TinyMessageBase
+    public class CancellableGenericTinyMessage<TContent> : CancellableGenericTinyMessage<object, TContent>
+    {
+        public CancellableGenericTinyMessage(object sender, TContent content, Action cancelAction)
+            : base(sender, content, cancelAction)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Basic "cancellable" generic message
+    /// </summary>
+    /// <typeparam name="TSender">Type of the messenge sender</typeparam>    
+    /// <typeparam name="TContent">Content type to store</typeparam>
+    public class CancellableGenericTinyMessage<TSender, TContent> : TinyMessageBase<TSender>
+        where TSender: class
     {
         /// <summary>
         /// Cancel action
@@ -108,7 +170,7 @@ namespace TinyMessenger
         /// <param name="sender">Message sender (usually "this")</param>
         /// <param name="content">Contents of the message</param>
         /// <param name="cancelAction">Action to call for cancellation</param>
-        public CancellableGenericTinyMessage(object sender, TContent content, Action cancelAction)
+        public CancellableGenericTinyMessage(TSender sender, TContent content, Action cancelAction)
             : base(sender)
         {
             if (cancelAction == null)
