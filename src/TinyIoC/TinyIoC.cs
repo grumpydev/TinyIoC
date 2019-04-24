@@ -3780,6 +3780,23 @@ namespace TinyIoC
                         throw new TinyIoCResolutionException(registration.Type, ex);
                     }
                 }
+
+                var bubbledOpenTypeObjectFactory = GetParentObjectFactory(openTypeRegistration);
+                if (bubbledOpenTypeObjectFactory != null)
+                {
+                    try
+                    {
+                        return bubbledOpenTypeObjectFactory.GetObject(registration.Type, this, parameters, options);
+                    }
+                    catch (TinyIoCResolutionException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new TinyIoCResolutionException(registration.Type, ex);
+                    }
+                }
             }
 #endif
 
