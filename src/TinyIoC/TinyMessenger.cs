@@ -17,6 +17,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+#if NETSTANDARD
+using System.Threading.Tasks;
+#endif
 
 namespace TinyMessenger
 {
@@ -781,12 +784,23 @@ namespace TinyMessenger
             });
         }
 
+        #if !NETSTANDARD
         private void PublishAsyncInternal<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
         {
             Action publishAction = () => { PublishInternal<TMessage>(message); };
 
             publishAction.BeginInvoke(callback, null);
         }
+        #else
+        private async void PublishAsyncInternal<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
+        {
+            Action publishAction = () => { PublishInternal<TMessage>(message); };
+
+            await Task.Run(publishAction.Invoke);
+            PublishInternal<TMessage>(message);
+        }
+        #endif
+
         #endregion
     }
     #endregion
