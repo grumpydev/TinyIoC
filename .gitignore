@@ -37,3 +37,6 @@ _ReSharper*/
 build/
 *.ncrunchproject
 *.ncrunchsolution
+*.testlog
+testlog.manifest
+src/.vs/TinyIoC/DesignTimeBuild/.dtbcache.v2
