@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ProjectGuid>{3A76E659-8688-4431-8120-B6CDBE8C69A4}</ProjectGuid>
+    <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <PackageCertificateKeyFile>TinyIoC.Tests.MetroStyle_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateThumbprint>2B0D8E99A4732E7886153FA3A407EE1EEDA60C21</PackageCertificateThumbprint>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <DefineConstants>NETFX_CORE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AppXPackage>True</AppXPackage>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="..\TinyIoC.Tests\Fakes\FakeLifetimeProvider.cs" Link="Fakes\FakeLifetimeProvider.cs" />
+    <Compile Include="..\TinyIoC.Tests\Helpers\AssertHelper.cs" Link="Helpers\AssertHelper.cs" />
+    <Compile Include="..\TinyIoC.Tests\PlatformTestSuite\PlatformTests.cs" Link="PlatformTestSuite\PlatformTests.cs" />
+    <Compile Include="..\TinyIoC.Tests\TestData\BasicClasses.cs" Link="TestData\BasicClasses.cs" />
+    <Compile Include="..\TinyIoC.Tests\TestData\NestedClassDependencies.cs" Link="TestData\NestedClassDependencies.cs" />
+    <Compile Include="..\TinyIoC.Tests\TestData\NestedInterfaceDependencies.cs" Link="TestData\NestedInterfaceDependencies.cs" />
+    <Compile Include="..\TinyIoC.Tests\TestData\TinyMessengerTestData.cs" Link="TestData\TinyMessengerTestData.cs" />
+    <Compile Include="..\TinyIoC.Tests\TestData\UtilityMethods.cs" Link="TestData\UtilityMethods.cs" />
+    <Compile Include="..\TinyIoC.Tests\TinyIoCFunctionalTests.cs" Link="TinyIoCFunctionalTests.cs" />
+    <Compile Include="..\TinyIoC.Tests\TinyIoCTests.cs" Link="TinyIoCTests.cs" />
+    <Compile Include="..\TinyIoC.Tests\TinyMessageSubscriptionTokenTests.cs" Link="TinyMessageSubscriptionTokenTests.cs" />
+    <Compile Include="..\TinyIoC.Tests\TinyMessengerTests.cs" Link="TinyMessengerTests.cs" />
+    <Compile Include="..\TinyIoC.Tests\TypeExtensionsTests.cs" Link="TypeExtensionsTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Images\UnitTestLogo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\UnitTestSmallLogo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\UnitTestSplashScreen.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\UnitTestStoreLogo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TinyIoC.Tests.MetroStyle_TemporaryKey.pfx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TinyIoC.MetroStyle\TinyIoC.MetroStyle.csproj" />
+    <ProjectReference Include="..\TinyIoC.Tests.ExternalTypes.MetroStyle\TinyIoC.Tests.ExternalTypes.MetroStyle.csproj" />
+  </ItemGroup>
+</Project>

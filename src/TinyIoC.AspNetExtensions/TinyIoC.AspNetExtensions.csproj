@@ -5,7 +5,11 @@
   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
   </PropertyGroup>
-  
+
+  <PropertyGroup Label="Package">
+    <PackageTags>IoC,ASPNET</PackageTags>
+  </PropertyGroup>
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -20,5 +24,12 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <Compile Remove="TinyIoCAspNetExtensions.cs" />
+    <None Include="TinyIoCAspNetExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TinyIoC\TinyIoC.csproj" />
   </ItemGroup>
 </Project>
