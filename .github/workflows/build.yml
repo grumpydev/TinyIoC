@@ -19,8 +19,6 @@ jobs:
     - name: Build Version
       id: version
       uses: thefringeninja/action-minver@2.0.0-preview1
-      with:
-        tag-prefix: v
     - name: Build
       run: dotnet build --configuration Release TinyIoC.sln
     - name: Run Tests

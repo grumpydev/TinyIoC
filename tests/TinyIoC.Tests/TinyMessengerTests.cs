@@ -14,7 +14,6 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 
 namespace TinyIoC.Tests
 {
-
     [TestClass]
     public class TinyMessengerTests
     {

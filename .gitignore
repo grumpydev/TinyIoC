@@ -43,3 +43,5 @@ src/.vs/TinyIoC/DesignTimeBuild/.dtbcache.v2
 .idea/.idea.TinyIoC/.idea/
 
 .DS_Store
+
+artifacts/
