@@ -1,0 +1,37 @@
+<Project>
+
+  <PropertyGroup>
+    <Product>TinyIoC</Product>
+    <authors>Steven Robbins</authors>
+    <owners>Andy Sherwood, Steven Robbins, Blake Niemyjski</owners>
+    <Description>An easy to use, hassle free, Inversion of Control Container for small projects, libraries and beginners alike</Description>
+    <PackageProjectUrl>https://github.com/grumpydev/TinyIoC</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/grumpydev/TinyIoC/releases</PackageReleaseNotes>
+    <PackageTags>IoC</PackageTags>
+    <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
+    <MinVerTagPrefix></MinVerTagPrefix>
+
+    <developmentDependency>true</developmentDependency>
+    <NoWarn>$(NoWarn);CS1591;NU1701;CS8021</NoWarn>
+    <WarningsAsErrors>true</WarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageOutputPath>$(SolutionDir)artifacts</PackageOutputPath>
+    <PackageIcon>TinyIoC.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="2.2.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../LICENSE.txt" Pack="true" Visible="false" PackagePath="$(PackageLicenseFile)" />
+    <None Include="../../build/TinyIoC.png" Pack="true" PackagePath="$(PackageIcon)" />
+  </ItemGroup>
+</Project>
