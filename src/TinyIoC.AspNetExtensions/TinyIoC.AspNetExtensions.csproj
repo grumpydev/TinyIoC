@@ -32,4 +32,11 @@
   <ItemGroup>
     <ProjectReference Include="..\TinyIoC\TinyIoC.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TinyIoCAspNetExtensions.cs">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
 </Project>

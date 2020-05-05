@@ -8,6 +8,7 @@
     <PackageProjectUrl>https://github.com/grumpydev/TinyIoC</PackageProjectUrl>
     <PackageReleaseNotes>https://github.com/grumpydev/TinyIoC/releases</PackageReleaseNotes>
     <PackageTags>IoC</PackageTags>
+    <Configurations>Source;Debug;Release</Configurations>
     <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
     <MinVerTagPrefix></MinVerTagPrefix>
 
@@ -24,6 +25,17 @@
     <EmbedUntrackedSources>false</EmbedUntrackedSources>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Source'">
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoBuild>true</NoBuild>
+    <NoWarn>CS8021</NoWarn>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>Content</ContentTargetFolders>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
