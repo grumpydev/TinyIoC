@@ -5,6 +5,10 @@
   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
   </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'" Label="Build">
+    <DefineConstants>$(DefineConstants);NETSTANDARD;NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
 
   <PropertyGroup Label="Package">
     <Description>A simple messenger/event aggregator</Description>
@@ -27,7 +31,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)'=='Source'">
     <Content Include="TinyMessenger.cs">
       <Pack>true</Pack>
       <PackageCopyToOutput>true</PackageCopyToOutput>

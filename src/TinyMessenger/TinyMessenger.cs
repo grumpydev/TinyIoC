@@ -317,6 +317,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter) where TMessage : class, ITinyMessage;
 
@@ -329,6 +330,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <param name="proxy">Proxy to use when delivering the messages</param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, ITinyMessageProxy proxy) where TMessage : class, ITinyMessage;
@@ -341,6 +343,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, bool useStrongReferences) where TMessage : class, ITinyMessage;
@@ -354,6 +357,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
         /// <param name="proxy">Proxy to use when delivering the messages</param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
@@ -439,7 +443,7 @@ namespace TinyMessenger
             /// <summary>
             /// Initializes a new instance of the WeakTinyMessageSubscription class.
             /// </summary>
-            /// <param name="destination">Destination object</param>
+            /// <param name="subscriptionToken"></param>
             /// <param name="deliveryAction">Delivery action</param>
             /// <param name="messageFilter">Filter function</param>
             public WeakTinyMessageSubscription(TinyMessageSubscriptionToken subscriptionToken, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter)
@@ -490,7 +494,7 @@ namespace TinyMessenger
             /// <summary>
             /// Initializes a new instance of the TinyMessageSubscription class.
             /// </summary>
-            /// <param name="destination">Destination object</param>
+            /// <param name="subscriptionToken"></param>
             /// <param name="deliveryAction">Delivery action</param>
             /// <param name="messageFilter">Filter function</param>
             public StrongTinyMessageSubscription(TinyMessageSubscriptionToken subscriptionToken, Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter)
@@ -597,6 +601,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter) where TMessage : class, ITinyMessage
         {
@@ -612,6 +617,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <param name="proxy">Proxy to use when delivering the messages</param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, ITinyMessageProxy proxy) where TMessage : class, ITinyMessage
@@ -627,6 +633,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
         public TinyMessageSubscriptionToken Subscribe<TMessage>(Action<TMessage> deliveryAction, Func<TMessage, bool> messageFilter, bool useStrongReferences) where TMessage : class, ITinyMessage
@@ -643,6 +650,7 @@ namespace TinyMessenger
         /// </summary>
         /// <typeparam name="TMessage">Type of message</typeparam>
         /// <param name="deliveryAction">Action to invoke when message is delivered</param>
+        /// <param name="messageFilter"></param>
         /// <param name="useStrongReferences">Use strong references to destination and deliveryAction </param>
         /// <param name="proxy">Proxy to use when delivering the messages</param>
         /// <returns>TinyMessageSubscription used to unsubscribing</returns>
