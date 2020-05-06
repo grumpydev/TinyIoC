@@ -34,9 +34,14 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 [Bb]uild[Ll]og.*
 *.[Pp]ublish.xml
-build/
 *.ncrunchproject
 *.ncrunchsolution
 *.testlog
 testlog.manifest
 src/.vs/TinyIoC/DesignTimeBuild/.dtbcache.v2
+
+.idea/.idea.TinyIoC/.idea/
+
+.DS_Store
+
+artifacts/

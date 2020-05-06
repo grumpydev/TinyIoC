@@ -1,12 +1,15 @@
+[![Build status](https://github.com/grumpydev/TinyIoC/workflows/Build/badge.svg)](https://github.com/grumpydev/TinyIoC/actions)
+[![NuGet Version](http://img.shields.io/nuget/v/TinyIoC.svg?style=flat)](https://www.nuget.org/packages/TinyIoC/)
+
 ## Welcome to TinyIoC
 
-### Overview ###
+### Overview
 
 Welcome to TinyIoC - an easy to use, hassle free, Inversion of Control Container. TinyIoC has been designed to fulfil a single key requirement - to lower the "level of entry" for using an IoC container; both for small projects, and developers who are new to IoC who might be "scared" of the "big boys"!
 
 To that end, TinyIoC attempts to stick to the following core principals:
 
-* **Simplfied Inclusion** - No assembly to reference, no binary to worry about, just a single cs file you can include in your project and you're good to go. It even works with both Mono and MonoTouch for iPhone development!
+* **Simplified Inclusion** - No assembly to reference, no binary to worry about, just a single cs file you can include in your project and you're good to go. It even works with both Mono and MonoTouch for iPhone development!
 * **Simplified Setup** - With auto-resolving of concrete types and an "auto registration" option for interfaces setup is a piece of cake. It can be reduced to 0 lines for concrete types, or 1 line if you have any interface dependencies!
 * **Simple, "Fluent" API** - Just because it's "Tiny", doesn't mean it has no features. A simple "fluent" API gives you access to the more advanced features, like specifying singleton/multi-instance, strong or weak references or forcing a particular constructor.
 
@@ -14,7 +17,7 @@ In addition to this, TinyIoC's "simplified inclusion" makes it useful for provid
 
 **Note** For ASP.Net per-request lifetime support you will need to also include TinyIoCAspNetExtensions.cs, and the TinyIoC namespace. This provides an extension method for supporting per-request registrations. It's an extra file, but it's preferable to taking a dependency on Asp.Net in the main file, which then requires users to setup #DEFINEs for non-asp.net platforms.
 
-### Key Features ###
+### Key Features
 
 * Simple inclusion - just add the CS file (or VB file coming soon!) and off you go.
 * Wide platform support - actively tested on Windows, Mono, MonoTouch, PocketPC and Windows Phone 7. Also works just fine on MonoDroid.

@@ -1,0 +1,51 @@
+name: Build
+on: [push, pull_request]
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 0
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.201
+    - name: Build Reason
+      run: "echo ref: ${{github.ref}} event: ${{github.event_name}}"
+    - name: Build Version
+      id: version
+      uses: thefringeninja/action-minver@2.0.0-preview1
+    - name: Build
+      run: dotnet build --configuration Release TinyIoC.sln
+    - name: Run Tests
+      run: dotnet test --configuration Release --results-directory artifacts --no-build --logger:trx TinyIoC.sln
+    - name: Package
+      if: github.event_name != 'pull_request'
+      run: dotnet pack --configuration Source
+    - name: Publish CI Packages
+      shell: bash
+      run: |
+        for package in $(find -name "*.nupkg" | grep "minver" -v); do
+          echo "${0##*/}": Pushing $package...
+
+          # GPR
+          # workaround for GPR push issue
+          curl -sX PUT -u "TinyIoC:${{ secrets.GITHUB_TOKEN }}" -F package=@$package https://nuget.pkg.github.com/TinyIoC/
+        done
+    - name: Publish Release Packages
+      shell: bash
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        for package in $(find -name "*.nupkg" | grep "minver" -v); do
+          echo "${0##*/}": Pushing $package...
+          dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_KEY }}
+        done
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: artifacts
+        path: artifacts
