@@ -13,6 +13,12 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 //===============================================================================
 
+#region Preprocessor Directives
+
+#define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
+
+#endregion
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
