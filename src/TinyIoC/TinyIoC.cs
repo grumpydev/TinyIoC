@@ -3716,23 +3716,26 @@ namespace TinyIoC
 
             ObjectFactoryBase factory;
 
-            if (registration.Type.IsGenericType())
-            {
-                var openTypeRegistration = new TypeRegistration(registration.Type,
-                                                                registration.Name);
-
-                if (_Parent._RegisteredTypes.TryGetValue(openTypeRegistration, out factory))
-                {
-                    return factory.GetFactoryForChildContainer(openTypeRegistration.Type, _Parent, this);
-                }
-
-                return _Parent.GetParentObjectFactory(registration);
-            }
-
             if (_Parent._RegisteredTypes.TryGetValue(registration, out factory))
             {
                 return factory.GetFactoryForChildContainer(registration.Type, _Parent, this);
             }
+
+#if RESOLVE_OPEN_GENERICS
+            // Attempt container resolution of open generic
+            if (registration.Type.IsGenericType())
+            {
+                var openTypeRegistration = new TypeRegistration(registration.Type.GetGenericTypeDefinition(),
+                                                                registration.Name);
+
+                if (_Parent._RegisteredTypes.TryGetValue(openTypeRegistration, out factory))
+                {
+                    return factory.GetFactoryForChildContainer(registration.Type, _Parent, this);
+                }
+
+                return _Parent.GetParentObjectFactory(registration);
+            }
+#endif
 
             return _Parent.GetParentObjectFactory(registration);
         }
