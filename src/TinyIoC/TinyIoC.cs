@@ -3994,6 +3994,7 @@ namespace TinyIoC
             //#else
             var candidateCtors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .Where(x => !x.IsPrivate) // Includes internal constructors but not private constructors
+                .Where(x => !x.IsFamily) // Excludes protected constructors
                 .ToList();
 
             var attributeCtors = candidateCtors.Where(x => x.GetCustomAttributes(typeof(TinyIoCConstructorAttribute), false).Any())
