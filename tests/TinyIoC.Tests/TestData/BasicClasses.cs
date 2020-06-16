@@ -120,6 +120,20 @@ namespace TinyIoC.Tests.TestData
             }
         }
 
+        internal class TestClassProtectedCtor
+        {
+            protected TestClassProtectedCtor()
+            {
+            }
+        }
+
+        internal class TestSubclassProtectedCtor
+        {
+            public TestSubclassProtectedCtor()
+            {
+            }
+        }
+
         internal class TestClassWithParameters
         {
             public string StringProperty { get; set; }

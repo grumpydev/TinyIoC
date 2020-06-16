@@ -949,7 +949,7 @@ namespace TinyIoC.Tests
 
         [TestMethod]
         //[ExpectedException(typeof(TinyIoCResolutionException))]
-        public void Resolve_ClassWithNoPublicConstructor_ThrowsCorrectException()
+        public void Resolve_ClassWithOnlyPrivateConstructor_ThrowsCorrectException()
         {
             var container = UtilityMethods.GetContainer();
             container.Register<TestClassPrivateCtor>();
@@ -957,6 +957,42 @@ namespace TinyIoC.Tests
             AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassPrivateCtor>());
 
             //Assert.IsInstanceOfType(result, typeof(TestClassPrivateCtor));
+        }
+
+        [TestMethod]
+        public void Resolve_ClassWithOnlyProtectedConstructor_ThrowsCorrectException()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassProtectedCtor>();
+
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<TestClassPrivateCtor>());
+        }
+
+        [TestMethod]
+        public void CanResolve_ClassWithOnlyProtectedConstructor_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassProtectedCtor>();
+
+            bool canResolve = container.CanResolve<TestClassProtectedCtor>();
+            Assert.IsFalse(canResolve);
+        }
+
+        [TestMethod]
+        public void Resolve_SubclassOfClassWithOnlyProtectedConstructor_Succeeds()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestSubclassProtectedCtor>();
+        }
+
+        [TestMethod]
+        public void CanResolve_SubclassOfClassWithOnlyProtectedConstructor_ReturnsFalse()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<TestClassProtectedCtor>();
+
+            bool canResolve = container.CanResolve<TestSubclassProtectedCtor>();
+            Assert.IsTrue(canResolve);
         }
 
         [TestMethod]
