@@ -15,7 +15,10 @@
 
 #region Preprocessor Directives
 
-#define RESOLVE_OPEN_GENERICS               // Platform supports resolving open generics
+// Skip open generics tests on platforms that don't support it
+#if PocketPC || NETFX_CORE
+#undef RESOLVE_OPEN_GENERICS
+#endif
 
 #endregion
 
