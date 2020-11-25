@@ -13,6 +13,15 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 //===============================================================================
 
+#region Preprocessor Directives
+
+// Skip open generics tests on platforms that don't support it
+#if PocketPC || NETFX_CORE
+#undef RESOLVE_OPEN_GENERICS
+#endif
+
+#endregion
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

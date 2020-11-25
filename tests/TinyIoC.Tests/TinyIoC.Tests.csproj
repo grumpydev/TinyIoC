@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>TRACE;MOQ</DefineConstants>
+    <DefineConstants>TRACE;MOQ;RESOLVE_OPEN_GENERICS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
