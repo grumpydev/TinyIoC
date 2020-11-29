@@ -3422,6 +3422,35 @@ namespace TinyIoC.Tests
         }
 #endif
 
+#if RESOLVE_OPEN_GENERICS
+        [TestMethod]
+        public void Resolve_RegisteredOpenGeneric_CanGetGenericParamAsRequestedType()
+        {
+            // container.Register(
+            //     typeof(ILogger<>),
+            //     (c, p) =>
+            //     {
+            //         var type = (p["__requestedType"] as Type)?.GenericTypeArguments[0];
+            //         Debug.Assert(type != null, nameof(type) + " != null");
+            //         return c.Resolve<ILoggerFactory>().CreateLogger(type);
+            //     });
+
+            var container = UtilityMethods.GetContainer();
+            container.Register(typeof(IThing<>), (c, parameters) =>
+            {
+                Assert.IsNotNull(parameters["__requestedType"]);
+                var genericTypeArguments = (parameters["__requestedType"] as Type).GenericTypeArguments;
+                Assert.IsTrue(genericTypeArguments.Length > 0);
+                var returnType = typeof(DefaultThing<>).MakeGenericType(genericTypeArguments);
+                return Activator.CreateInstance(returnType);
+            });
+
+            var result = container.Resolve<IThing<object>>();
+
+            Assert.IsInstanceOfType(result, typeof(DefaultThing<object>));
+        }
+#endif
+
         #region Unregister
 
         private readonly ResolveOptions options = ResolveOptions.FailUnregisteredAndNameNotFound;

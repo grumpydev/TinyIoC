@@ -2903,6 +2903,12 @@ namespace TinyIoC
 
             public override object GetObject(Type requestedType, TinyIoCContainer container, NamedParameterOverloads parameters, ResolveOptions options)
             {
+#if RESOLVE_OPEN_GENERICS
+                // Make the requested type available to the factory function
+                parameters = new NamedParameterOverloads(parameters);
+                parameters["__requestedType"] = requestedType;
+#endif
+
                 try
                 {
                     return _factory.Invoke(container, parameters);
