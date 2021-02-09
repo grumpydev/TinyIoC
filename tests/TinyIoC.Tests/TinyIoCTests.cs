@@ -136,6 +136,14 @@ namespace TinyIoC.Tests
         }
 
         [TestMethod]
+        public void Register_WithDelegateFactory_CanRegisterSingleton()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface>((c, p) => new TestClassDefaultCtor() { Prop1 = "Testing" })
+                .AsSingleton();
+        }
+        
+        [TestMethod]
         public void Resolve_TypeRegisteredWithDelegateFactoryStaticMethod_ResolvesCorrectlyUsingDelegateFactory()
         {
             var container = UtilityMethods.GetContainer();
@@ -157,6 +165,19 @@ namespace TinyIoC.Tests
             Assert.AreEqual("Testing", output.Prop1);
         }
 
+        [TestMethod]
+        public void Resolve_TypeRegisteredWithDelegateFactory_ResolvesSameInstance()
+        {
+            var container = UtilityMethods.GetContainer();
+            container.Register<ITestInterface>((c, p) => new TestClassDefaultCtor() { Prop1 = "Testing" })
+                .AsSingleton();
+
+            var instance1 = container.Resolve<ITestInterface>();
+            var instance2 = container.Resolve<ITestInterface>();
+            
+            Assert.AreSame(instance1, instance2);
+        }
+        
         [TestMethod]
         public void Resolve_UnregisteredClassTypeWithDefaultCtor_ResolvesType()
         {
@@ -1094,17 +1115,6 @@ namespace TinyIoC.Tests
         {
             var container = UtilityMethods.GetContainer();
             AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<ITestInterface, TestClassDefaultCtor>().WithWeakReference());
-
-            // Should have thrown by now
-            //Assert.IsTrue(false);
-        }
-
-        [TestMethod]
-        //[ExpectedException(typeof(TinyIoCRegistrationException))]
-        public void Register_FactoryToSingletonFluent_ThrowsException()
-        {
-            var container = UtilityMethods.GetContainer();
-            AssertHelper.ThrowsException<TinyIoCRegistrationException>(() => container.Register<TestClassDefaultCtor>((c, p) => new TestClassDefaultCtor()).AsSingleton());
 
             // Should have thrown by now
             //Assert.IsTrue(false);

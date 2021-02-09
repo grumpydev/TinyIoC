@@ -2929,6 +2929,14 @@ namespace TinyIoC
                 this.registerType = registerType;
             }
 
+            public override ObjectFactoryBase SingletonVariant
+            {
+                get
+                {
+                    return new DelegateSingletonFactory(registerType, _factory);
+                }
+            }
+
             public override ObjectFactoryBase WeakReferenceVariant
             {
                 get
@@ -3246,6 +3254,49 @@ namespace TinyIoC
 
                 if (disposable != null)
                     disposable.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// A factory that lazy instantiates a type using a factory method and after construction
+        /// always returns the same instance
+        /// </summary>
+        private class DelegateSingletonFactory : ObjectFactoryBase, IDisposable
+        {
+            private readonly Func<TinyIoCContainer, NamedParameterOverloads, object> _factory;
+            private readonly object _singletonLock = new object();
+            private object _instance;
+
+            public DelegateSingletonFactory(Type creatingType, Func<TinyIoCContainer, NamedParameterOverloads, object> factory)
+            {
+                _factory = factory;
+                CreatesType = creatingType;
+            }
+            
+            public override Type CreatesType { get; }
+
+            public override object GetObject(Type requestedType, TinyIoCContainer container, NamedParameterOverloads parameters,
+                ResolveOptions options)
+            {
+                if (_instance == null)
+                {
+                    lock (_singletonLock)
+                    {
+                        if(_instance == null)
+                            _instance = _factory(container, parameters);
+                    }
+                }
+
+                return _instance;
+            }
+
+            public void Dispose()
+            {
+                if (_instance is IDisposable disp)
+                {
+                    disp.Dispose();
+                    _instance = null;
+                }
             }
         }
 
