@@ -3664,7 +3664,7 @@ namespace TinyIoC
                     return true;
 
                 if (factory.Constructor == null)
-                    return (GetBestConstructor(factory.CreatesType, parameters, options) != null);
+                    return GetBestConstructor(factory.CreatesType, parameters, options) != null;
                 else
                     return CanConstruct(factory.Constructor, parameters, options);
             }
@@ -3679,7 +3679,7 @@ namespace TinyIoC
                         return true;
 
                     if (factory.Constructor == null)
-                        return (GetBestConstructor(factory.CreatesType, parameters, options) != null);
+                        return GetBestConstructor(factory.CreatesType, parameters, options) != null;
                     else
                         return CanConstruct(factory.Constructor, parameters, options);
                 }
@@ -3699,7 +3699,7 @@ namespace TinyIoC
                     if (factory.AssumeConstruction)
                         return true;
 
-                    return (GetBestConstructor(factory.CreatesType, parameters, options) != null);
+                    return GetBestConstructor(factory.CreatesType, parameters, options) != null;
                 }
             }
 
