@@ -583,7 +583,7 @@ namespace TinyIoC
         private static MethodInfo GetMethod(Type sourceType, BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
         {
 #if GETPARAMETERS_OPEN_GENERICS
-            var methods =
+      var methods =
                 sourceType.GetMethods(bindingFlags).Where(
                     mi => string.Equals(methodName, mi.Name, StringComparison.Ordinal)).Where(
                         mi => mi.ContainsGenericParameters).Where(mi => mi.GetGenericArguments().Length == genericTypes.Length).
@@ -595,14 +595,15 @@ namespace TinyIoC
                                 where method.Name == methodName
                                 where method.IsGenericMethod
                                 where method.GetGenericArguments().Length == genericTypes.Length
-                                let genericMethod = method.MakeGenericMethod(genericTypes)
-                                where genericMethod.GetParameters().Count() == parameterTypes.Length
-                                where genericMethod.GetParameters().Select(pi => pi.ParameterType).SequenceEqual(parameterTypes)
+                                let genericMethod = method.MakeGenericMethod(genericTypes) 
+                                let genericMethodParameters = genericMethod.GetParameters()
+                                where genericMethodParameters.Length == parameterTypes.Length
+                                where genericMethodParameters.Select(pi => pi.ParameterType).SequenceEqual(parameterTypes)
                                 select genericMethod;
 
             var methods = validMethods.ToList();
 #endif
-            if (methods.Count > 1)
+      if (methods.Count > 1)
             {
                 throw new AmbiguousMatchException();
             }
@@ -4073,7 +4074,7 @@ namespace TinyIoC
             if (attributeCtors.Any())
                 candidateCtors = attributeCtors;
 
-            return candidateCtors.OrderByDescending(ctor => ctor.GetParameters().Count());
+            return candidateCtors.OrderByDescending(ctor => ctor.GetParameters().Length);
             //#endif
         }
 
@@ -4118,9 +4119,9 @@ namespace TinyIoC
                 throw new TinyIoCResolutionException(typeToConstruct);
 
             var ctorParams = constructor.GetParameters();
-            object[] args = new object[ctorParams.Count()];
+            object[] args = new object[ctorParams.Length];
 
-            for (int parameterIndex = 0; parameterIndex < ctorParams.Count(); parameterIndex++)
+            for (int parameterIndex = 0; parameterIndex < ctorParams.Length; parameterIndex++)
             {
                 var currentParam = ctorParams[parameterIndex];
 
