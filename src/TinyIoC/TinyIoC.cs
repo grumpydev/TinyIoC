@@ -3208,6 +3208,11 @@ namespace TinyIoC
                 if (parameters.Count != 0)
                     throw new ArgumentException("Cannot specify parameters for singleton types");
 
+                //Avoid unnecessary lock when object already constructed (need to keep null check inside lock though)
+                //(this is most likely to help perf in multi-threaded environments like asp.net, but may provide a small
+                //performance boost even for single threaded use)
+                if (_Current != null) return _Current;
+
                 lock (SingletonLock)
                     if (_Current == null)
                         _Current = container.ConstructType(requestedType, this.registerImplementation, Constructor, options);
