@@ -4047,7 +4047,7 @@ namespace TinyIoC
 
             // Get constructors in reverse order based on the number of parameters
             // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
-            var ctors = this.GetTypeConstructors(type);
+            var ctors = TinyIoCReflectionCache.GetUsableConstructors(type);
 
             foreach (var ctor in ctors)
             {
@@ -4056,26 +4056,6 @@ namespace TinyIoC
             }
 
             return null;
-        }
-
-        private IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
-        {
-            //#if NETFX_CORE
-            //			return type.GetTypeInfo().DeclaredConstructors.OrderByDescending(ctor => ctor.GetParameters().Count());
-            //#else
-            var candidateCtors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .Where(x => !x.IsPrivate) // Includes internal constructors but not private constructors
-                .Where(x => !x.IsFamily) // Excludes protected constructors
-                .ToList();
-
-            var attributeCtors = candidateCtors.Where(x => x.GetCustomAttributes(typeof(TinyIoCConstructorAttribute), false).Any())
-                .ToList();
-
-            if (attributeCtors.Any())
-                candidateCtors = attributeCtors;
-
-            return candidateCtors.OrderByDescending(ctor => ctor.GetParameters().Length);
-            //#endif
         }
 
         private object ConstructType(Type requestedType, Type implementationType, ResolveOptions options)
@@ -4108,11 +4088,11 @@ namespace TinyIoC
 #endif
             if (constructor == null)
             {
-                // Try and get the best constructor that we can construct
-                // if we can't construct any then get the constructor
-                // with the least number of parameters so we can throw a meaningful
-                // resolve exception
-                constructor = GetBestConstructor(typeToConstruct, parameters, options) ?? GetTypeConstructors(typeToConstruct).LastOrDefault();
+              // Try and get the best constructor that we can construct
+              // if we can't construct any then get the constructor
+              // with the least number of parameters so we can throw a meaningful
+              // resolve exception
+              constructor = GetBestConstructor(typeToConstruct, parameters, options) ?? TinyIoCReflectionCache.GetUsableConstructors(typeToConstruct).LastOrDefault();
             }
 
             if (constructor == null)
@@ -4409,4 +4389,40 @@ namespace TinyIoC
     sealed class TinyIoCConstructorAttribute : Attribute
     {
     }
+
+#if TINYIOC_INTERNAL
+    internal
+#else
+  public
+#endif
+    static class TinyIoCReflectionCache
+  {
+    private static readonly SafeDictionary<Type, ConstructorInfo[]> _UsableConstructors = new SafeDictionary<Type, ConstructorInfo[]>();
+
+    public static IEnumerable<ConstructorInfo> GetUsableConstructors(Type type)
+    {
+      // Get constructors in reverse order based on the number of parameters
+      // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
+
+      if (!_UsableConstructors.TryGetValue(type, out var constructors))
+      {
+        var candidateCtors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(x => !x.IsPrivate) // Includes internal constructors but not private constructors
+            .Where(x => !x.IsFamily) // Excludes protected constructors
+            .ToList();
+
+        var attributeCtors = candidateCtors.Where(x => x.GetCustomAttributes(typeof(TinyIoCConstructorAttribute), false).Any())
+            .ToList();
+
+        if (attributeCtors.Any())
+          candidateCtors = attributeCtors;
+
+        constructors = candidateCtors.OrderByDescending(ctor => ctor.GetParameters().Length).ToArray();
+
+        _UsableConstructors[type] = constructors;
+      }
+
+      return constructors;
+    }
+  }
 }
