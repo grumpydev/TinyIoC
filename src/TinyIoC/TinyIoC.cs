@@ -3198,7 +3198,12 @@ namespace TinyIoC
                 this.registerImplementation = registerImplementation;
             }
 
-            public override Type CreatesType
+            //If we've already got an instance we don't need to construct another,
+            //returning true here tells the resolve code not to bother calling
+            //expensive reflection methods to find constructor details we aren't going to use.
+            public override bool AssumeConstruction => _Current != null;
+
+			      public override Type CreatesType
             {
                 get { return this.registerImplementation; }
             }
