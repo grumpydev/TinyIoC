@@ -22,7 +22,7 @@ namespace TinyIoc.Benchmarks
 	public class AutoRegisterBenchmarks
 	{
 
-		[Benchmark]
+		[BenchmarkCategory("AutoResolve"), Benchmark(Baseline = true)]
 		public TinyIoC.Original.TinyIoCContainer Original_AutoRegister()
 		{
 			var retVal = new TinyIoC.Original.TinyIoCContainer();
@@ -30,7 +30,7 @@ namespace TinyIoc.Benchmarks
 			return retVal;
 		}
 
-		[Benchmark]
+		[BenchmarkCategory("AutoResolve"), Benchmark]
 		public TinyIoC.TinyIoCContainer New_AutoRegister()
 		{
 			var retVal = new TinyIoC.TinyIoCContainer();

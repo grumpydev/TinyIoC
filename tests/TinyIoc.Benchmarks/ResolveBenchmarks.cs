@@ -19,6 +19,8 @@ namespace TinyIoc.Benchmarks
 	[MonoJob]
 #endif
 	[MemoryDiagnoser]
+	[GroupBenchmarksBy(BenchmarkDotNet.Configs.BenchmarkLogicalGroupRule.ByCategory)]
+	//[CategoriesColumn]
 	public class ResolveBenchmarks
 	{
 		private TinyIoC.TinyIoCContainer _NewContainer;
@@ -38,39 +40,39 @@ namespace TinyIoc.Benchmarks
 			_OriginalContainer.Register<ISingleParameterInstance, SingleParameterInstance>().AsMultiInstance();
 		}
 
-		[Benchmark]
+		[BenchmarkCategory("ResolveSingleton"), Benchmark(Baseline = true)]
 		public ISingleton Original_Resolve_Singleton()
 		{
 			return _OriginalContainer.Resolve<ISingleton>();
 		}
 
-		[Benchmark]
+		[BenchmarkCategory("ResolveSingleton"), Benchmark]
 		public ISingleton New_Resolve_Singleton()
 		{
 			return _NewContainer.Resolve<ISingleton>();
 		}
 
 
-		[Benchmark]
+		[BenchmarkCategory("ResolveInstance"), Benchmark(Baseline = true)]
 		public IParameterlessInstance Original_Resolve_Instance_Without_Dependencies()
 		{
 			return _OriginalContainer.Resolve<IParameterlessInstance>();
 		}
 
-		[Benchmark]
+		[BenchmarkCategory("ResolveInstance"), Benchmark]
 		public IParameterlessInstance New_Resolve_Instance_Without_Dependencies()
 		{
 			return _NewContainer.Resolve<IParameterlessInstance>();
 		}
 
 
-		[Benchmark]
+		[BenchmarkCategory("ResolveInstanceWithSingletonDependency"), Benchmark(Baseline = true)]
 		public ISingleParameterInstance Original_Resolve_Instance_With_Singleton_Dependency()
 		{
 			return _OriginalContainer.Resolve<ISingleParameterInstance>();
 		}
 
-		[Benchmark]
+		[BenchmarkCategory("ResolveInstanceWithSingletonDependency"), Benchmark]
 		public ISingleParameterInstance New_Resolve_Instance_With_Singleton_Dependency()
 		{
 			return _NewContainer.Resolve<ISingleParameterInstance>();
