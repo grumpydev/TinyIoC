@@ -3489,75 +3489,76 @@ namespace TinyIoC
 
 #region Internal Methods
         private readonly object _AutoRegisterLock = new object();
-        private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, DuplicateImplementationActions duplicateAction, Func<Type, bool> registrationPredicate)
+    private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, DuplicateImplementationActions duplicateAction, Func<Type, bool> registrationPredicate)
+    {
+      var typeOfThis = this.GetType();
+      lock (_AutoRegisterLock)
+      {
+        var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
+
+        var concreteTypes = types
+            .Where(type => type.IsClass() && (type.IsAbstract() == false) && (type != typeOfThis && (type.DeclaringType != typeOfThis) && (!type.IsGenericTypeDefinition())) && !type.IsNestedPrivate())
+            .ToList();
+
+        foreach (var type in concreteTypes)
         {
-            lock (_AutoRegisterLock)
-            {
-                var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
-
-                var concreteTypes = types
-                    .Where(type => type.IsClass() && (type.IsAbstract() == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition())))
-                    .ToList();
-
-                foreach (var type in concreteTypes)
-                {
-                    try
-                    {
-                        RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, type));
-                    }
+          try
+          {
+            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, type));
+          }
 #if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
-                    catch (MemberAccessException)
+          catch (MemberAccessException)
 #else
-                    catch (MethodAccessException)
+          catch (MethodAccessException)
 #endif
-                    {
-                        // Ignore methods we can't access - added for Silverlight
-                    }
-                }
-
-                var abstractInterfaceTypes = from type in types
-                                             where ((type.IsInterface() || type.IsAbstract()) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition()))
-                                             select type;
-
-                foreach (var type in abstractInterfaceTypes)
-                {
-                    var localType = type;
-                    var implementations = from implementationType in concreteTypes
-                                          where localType.IsAssignableFrom(implementationType)
-                                          select implementationType;
-
-                    if (implementations.Skip(1).Any())
-                    {
-                        if (duplicateAction == DuplicateImplementationActions.Fail)
-                            throw new TinyIoCAutoRegistrationException(type, implementations);
-
-                        if (duplicateAction == DuplicateImplementationActions.RegisterMultiple)
-                        {
-                            RegisterMultiple(type, implementations);
-                        }
-                    }
-
-                    var firstImplementation = implementations.FirstOrDefault();
-                    if (firstImplementation != null)
-                    {
-                        try
-                        {
-                            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, firstImplementation));
-                        }
-#if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
-                        catch (MemberAccessException)
-#else
-                        catch (MethodAccessException)
-#endif
-                        {
-                            // Ignore methods we can't access - added for Silverlight
-                        }
-                    }
-                }
-            }
+          {
+            // Ignore methods we can't access - added for Silverlight
+          }
         }
 
-        private bool IsIgnoredAssembly(Assembly assembly)
+        var abstractInterfaceTypes = from type in types
+                                     where ((type.IsInterface() || type.IsAbstract()) && (type.DeclaringType != typeOfThis) && (!type.IsGenericTypeDefinition()))
+                                     select type;
+
+        foreach (var type in abstractInterfaceTypes)
+        {
+          var localType = type;
+          var implementations = from implementationType in concreteTypes
+                                where localType.IsAssignableFrom(implementationType)
+                                select implementationType;
+
+          if (implementations.Skip(1).Any())
+          {
+            if (duplicateAction == DuplicateImplementationActions.Fail)
+              throw new TinyIoCAutoRegistrationException(type, implementations);
+
+            if (duplicateAction == DuplicateImplementationActions.RegisterMultiple)
+            {
+              RegisterMultiple(type, implementations);
+            }
+          }
+
+          var firstImplementation = implementations.FirstOrDefault();
+          if (firstImplementation != null)
+          {
+            try
+            {
+              RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, firstImplementation));
+            }
+#if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
+            catch (MemberAccessException)
+#else
+            catch (MethodAccessException)
+#endif
+            {
+              // Ignore methods we can't access - added for Silverlight
+            }
+          }
+        }
+      }
+    }
+
+    private bool IsIgnoredAssembly(Assembly assembly)
         {
             // TODO - find a better way to remove "system" assemblies from the auto registration
             var ignoreChecks = new List<Func<Assembly, bool>>()
@@ -4313,6 +4314,11 @@ namespace TinyIoC
             return type.GetTypeInfo().IsGenericTypeDefinition;
         }
 
+        public static bool IsNestedPrivate(this Type type)
+        {
+          return type.GetTypeInfo().IsNestedPrivate;
+        }
+
         public static Type BaseType(this Type type)
         {
             return type.GetTypeInfo().BaseType;
@@ -4324,7 +4330,7 @@ namespace TinyIoC
         }
     }
 #endif
-    // reverse shim for WinRT SR changes...
+  // reverse shim for WinRT SR changes...
 #if (!NETFX_CORE && !PORTABLE && !NETSTANDARD1_0 && !NETSTANDARD1_1 && !NETSTANDARD1_2 && !NETSTANDARD1_3 && !NETSTANDARD1_4 && !NETSTANDARD1_5 && !NETSTANDARD1_6)
     static class ReverseTypeExtender
     {
@@ -4368,6 +4374,11 @@ namespace TinyIoC
             return type.IsGenericTypeDefinition;
         }
 
+        public static bool IsNestedPrivate(this Type type)
+        {
+          return type.IsNestedPrivate;
+        }
+
         public static Type BaseType(this Type type)
         {
             return type.BaseType;
@@ -4380,7 +4391,7 @@ namespace TinyIoC
     }
 #endif
 
-    [AttributeUsage(AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
+  [AttributeUsage(AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
 #if TINYIOC_INTERNAL
     internal
 #else
