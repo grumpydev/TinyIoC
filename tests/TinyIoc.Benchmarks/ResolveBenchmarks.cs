@@ -33,11 +33,13 @@ namespace TinyIoc.Benchmarks
 			_NewContainer.Register<ISingleton, Singleton>().AsSingleton();
 			_NewContainer.Register<IParameterlessInstance, ParameterlessInstance>().AsMultiInstance();
 			_NewContainer.Register<ISingleParameterInstance, SingleParameterInstance>().AsMultiInstance();
+			_NewContainer.Register(typeof(IOpenGeneric<>), typeof(OpenGenericInstance<>)).AsMultiInstance();
 
 			_OriginalContainer = new TinyIoC.Original.TinyIoCContainer();
 			_OriginalContainer.Register<ISingleton, Singleton>().AsSingleton();
 			_OriginalContainer.Register<IParameterlessInstance, ParameterlessInstance>().AsMultiInstance();
 			_OriginalContainer.Register<ISingleParameterInstance, SingleParameterInstance>().AsMultiInstance();
+			_OriginalContainer.Register(typeof(IOpenGeneric<>), typeof(OpenGenericInstance<>)).AsMultiInstance();
 		}
 
 		[BenchmarkCategory("ResolveSingleton"), Benchmark(Baseline = true)]
@@ -77,6 +79,20 @@ namespace TinyIoc.Benchmarks
 		{
 			return _NewContainer.Resolve<ISingleParameterInstance>();
 		}
+
+
+		[BenchmarkCategory("ResolveOpenGeneric"), Benchmark(Baseline = true)]
+		public IOpenGeneric<string> Original_Resolve_OpenGeneric()
+		{
+			return _OriginalContainer.Resolve<IOpenGeneric<string>>();
+		}
+
+		[BenchmarkCategory("ResolveOpenGeneric"), Benchmark]
+		public IOpenGeneric<string> New_Resolve_OpenGeneric()
+		{
+			return _NewContainer.Resolve<IOpenGeneric<string>>();
+		}
+
 	}
 
 	public interface ISingleton
@@ -105,5 +121,11 @@ namespace TinyIoc.Benchmarks
 		{
 			_Singleton = singleton;
 		}
+	}
+
+	public interface IOpenGeneric<T> { T Value { get; set; } }
+	public class OpenGenericInstance<T> : IOpenGeneric<T>
+	{
+		public T Value { get; set; }
 	}
 }

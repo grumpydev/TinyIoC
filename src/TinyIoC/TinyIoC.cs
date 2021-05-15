@@ -105,6 +105,7 @@ namespace TinyIoC
 #if EXPRESSIONS
     using System.Linq.Expressions;
     using System.Threading;
+	using System.Runtime.CompilerServices;
 
 #endif
 
@@ -115,12 +116,12 @@ namespace TinyIoC
 	using Windows.UI.Xaml.Shapes;
 #endif
 
-    #region SafeDictionary
+	#region SafeDictionary
 #if READER_WRITER_LOCK_SLIM
 #if TINYIOC_INTERNAL
     internal
 #else
-    public
+	public
 #endif
     class SafeDictionary<TKey, TValue> : IDisposable
     {
@@ -4081,10 +4082,7 @@ namespace TinyIoC
 #if RESOLVE_OPEN_GENERICS
             if (implementationType.IsGenericTypeDefinition())
             {
-                if (requestedType == null || !requestedType.IsGenericType() || !requestedType.GetGenericArguments().Any())
-                    throw new TinyIoCResolutionException(typeToConstruct);
-
-                typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GetGenericArguments());
+              typeToConstruct = TinyIoCReflectionCache.GetGenericImplementationType(typeToConstruct, requestedType);
             }
 #endif
             if (constructor == null)
@@ -4409,6 +4407,7 @@ namespace TinyIoC
     static class TinyIoCReflectionCache
   {
     private static readonly SafeDictionary<Type, ConstructorInfo[]> _UsableConstructors = new SafeDictionary<Type, ConstructorInfo[]>();
+    private static readonly SafeDictionary<string, Type> _GenericTypes = new SafeDictionary<string, Type>();
 
     public static IEnumerable<ConstructorInfo> GetUsableConstructors(Type type)
     {
@@ -4434,6 +4433,22 @@ namespace TinyIoC
       }
 
       return constructors;
+    }
+
+		internal static Type GetGenericImplementationType(Type typeToConstruct, Type requestedType)
+		{
+      var key = typeToConstruct.FullName + ":" + requestedType.FullName;
+      if (!_GenericTypes.TryGetValue(key, out var retVal))
+      {
+        Type[] genericTypeArguments = null;
+        if (requestedType == null || !requestedType.IsGenericType() || !(genericTypeArguments = requestedType.GetGenericArguments()).Any())
+          throw new TinyIoCResolutionException(typeToConstruct);
+
+        retVal = typeToConstruct.MakeGenericType(genericTypeArguments);
+        _GenericTypes[key] = retVal;
+      }
+
+      return retVal;
     }
   }
 }
