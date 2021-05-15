@@ -93,6 +93,31 @@ namespace TinyIoc.Benchmarks
 			return _NewContainer.Resolve<IOpenGeneric<string>>();
 		}
 
+
+		[BenchmarkCategory("ResolveUnregistered"), Benchmark(Baseline = true)]
+		public UnregisteredInstance Original_Resolve_Unregistered()
+		{
+			return _OriginalContainer.Resolve<UnregisteredInstance>();
+		}
+
+		[BenchmarkCategory("ResolveUnregistered"), Benchmark]
+		public UnregisteredInstance New_Resolve_Unregistered()
+		{
+			return _NewContainer.Resolve<UnregisteredInstance>();
+		}
+
+
+		[BenchmarkCategory("AutomaticFuncFactory"), Benchmark(Baseline = true)]
+		public Func<ParameterlessInstance> Original_Resolve_AutomaticFuncFactory()
+		{
+			return _OriginalContainer.Resolve<Func<ParameterlessInstance>>();
+		}
+
+		[BenchmarkCategory("AutomaticFuncFactory"), Benchmark]
+		public Func<ParameterlessInstance> New_Resolve_AutomaticFuncFactory()
+		{
+			return _NewContainer.Resolve<Func<ParameterlessInstance>>();
+		}
 	}
 
 	public interface ISingleton
@@ -111,6 +136,8 @@ namespace TinyIoc.Benchmarks
 	public interface IParameterlessInstance { }
 
 	public class ParameterlessInstance : IParameterlessInstance { }
+
+	public class UnregisteredInstance { public UnregisteredInstance(ISingleton singleton) {} }
 
 	public interface ISingleParameterInstance { }
 

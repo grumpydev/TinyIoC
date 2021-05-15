@@ -128,6 +128,20 @@ namespace TinyIoC
         private readonly ReaderWriterLockSlim _padlock = new ReaderWriterLockSlim();
         private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
 
+        public bool ContainsKey(TKey key)
+		    {
+          _padlock.EnterWriteLock();
+
+          try
+          {
+            return _Dictionary.ContainsKey(key);
+          }
+          finally
+          {
+            _padlock.ExitWriteLock();
+          }
+        }
+
         public TValue this[TKey key]
         {
             set
@@ -266,6 +280,14 @@ namespace TinyIoC
                 }
             }
         }
+
+        public bool ContainsKey(TKey key)
+		    {
+          lock (_Padlock)
+          {
+            return _Dictionary.ContainsKey(key);
+          }
+		    }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
@@ -3751,6 +3773,9 @@ namespace TinyIoC
 
         private bool IsAutomaticLazyFactoryRequest(Type type)
         {
+            if (_LazyAutomaticFactories.ContainsKey(type))
+              return true;
+
             if (!type.IsGenericType())
                 return false;
 
@@ -3760,11 +3785,12 @@ namespace TinyIoC
             if (genericType == typeof(Func<>))
                 return true;
 
+            Type[] genericArguments = null; 
             // 2 parameter func with string as first parameter (name)
             //#if NETFX_CORE
             //			if ((genericType == typeof(Func<,>) && type.GetTypeInfo().GenericTypeArguments[0] == typeof(string)))
             //#else
-            if ((genericType == typeof(Func<,>) && type.GetGenericArguments()[0] == typeof(string)))
+            if ((genericType == typeof(Func<,>) && (genericArguments = type.GetGenericArguments())[0] == typeof(string)))
                 //#endif
                 return true;
 
@@ -3772,7 +3798,7 @@ namespace TinyIoC
             //#if NETFX_CORE
             //			if ((genericType == typeof(Func<,,>) && type.GetTypeInfo().GenericTypeArguments[0] == typeof(string) && type.GetTypeInfo().GenericTypeArguments[1] == typeof(IDictionary<String, object>)))
             //#else
-            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<String, object>)))
+            if ((genericType == typeof(Func<,,>) && (genericArguments = genericArguments ?? type.GetGenericArguments())[0] == typeof(string) && (genericArguments = genericArguments ?? type.GetGenericArguments())[1] == typeof(IDictionary<String, object>)))
                 //#endif
                 return true;
 
@@ -3918,87 +3944,97 @@ namespace TinyIoC
         }
 
 #if EXPRESSIONS
-        private object GetLazyAutomaticFactoryRequest(Type type)
-        {
-            if (!type.IsGenericType())
-                return null;
+    private readonly SafeDictionary<Type, object> _LazyAutomaticFactories = new SafeDictionary<Type, object>();
+    private  object GetLazyAutomaticFactoryRequest(Type type)
+    {
+      if (!type.IsGenericType())
+        return null;
 
-            Type genericType = type.GetGenericTypeDefinition();
-            //#if NETFX_CORE
-            //			Type[] genericArguments = type.GetTypeInfo().GenericTypeArguments.ToArray();
-            //#else
-            Type[] genericArguments = type.GetGenericArguments();
-            //#endif
+      if (_LazyAutomaticFactories.TryGetValue(type, out var retVal))
+        return retVal;
 
-            // Just a func
-            if (genericType == typeof(Func<>))
-            {
-                Type returnType = genericArguments[0];
+      Type genericType = type.GetGenericTypeDefinition();
+      //#if NETFX_CORE
+      //			Type[] genericArguments = type.GetTypeInfo().GenericTypeArguments.ToArray();
+      //#else
+      Type[] genericArguments = type.GetGenericArguments();
+      //#endif
 
-                //#if NETFX_CORE
-                //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => !mi.GetParameters().Any());
-                //#else
-                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { });
-                //#endif
-                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+      // Just a func
+      if (genericType == typeof(Func<>))
+      {
+        Type returnType = genericArguments[0];
 
-                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);
+        //#if NETFX_CORE
+        //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => !mi.GetParameters().Any());
+        //#else
+        MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { });
+        //#endif
+        resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
-                var resolveLambda = Expression.Lambda(resolveCall).Compile();
+        var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);
 
-                return resolveLambda;
-            }
+        var resolveLambda = Expression.Lambda(resolveCall).Compile();
 
-            // 2 parameter func with string as first parameter (name)
-            if ((genericType == typeof(Func<,>)) && (genericArguments[0] == typeof(string)))
-            {
-                Type returnType = genericArguments[1];
+        _LazyAutomaticFactories[type] = resolveLambda;
 
-                //#if NETFX_CORE
-                //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 1 && mi.GetParameters()[0].GetType() == typeof(String));
-                //#else
-                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String) });
-                //#endif
-                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+        return resolveLambda;
+      }
 
-                ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name") };
-                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
+      // 2 parameter func with string as first parameter (name)
+      if ((genericType == typeof(Func<,>)) && (genericArguments[0] == typeof(string)))
+      {
+        Type returnType = genericArguments[1];
 
-                var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
+        //#if NETFX_CORE
+        //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 1 && mi.GetParameters()[0].GetType() == typeof(String));
+        //#else
+        MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String) });
+        //#endif
+        resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
-                return resolveLambda;
-            }
+        ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name") };
+        var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
 
-            // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
-            //#if NETFX_CORE
-            //			if ((genericType == typeof(Func<,,>) && type.GenericTypeArguments[0] == typeof(string) && type.GenericTypeArguments[1] == typeof(IDictionary<string, object>)))
-            //#else
-            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<string, object>)))
-            //#endif
-            {
-                Type returnType = genericArguments[2];
+        var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
 
-                var name = Expression.Parameter(typeof(string), "name");
-                var parameters = Expression.Parameter(typeof(IDictionary<string, object>), "parameters");
+        _LazyAutomaticFactories[type] = resolveLambda;
 
-                //#if NETFX_CORE
-                //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 2 && mi.GetParameters()[0].GetType() == typeof(String) && mi.GetParameters()[1].GetType() == typeof(NamedParameterOverloads));
-                //#else
-                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String), typeof(NamedParameterOverloads) });
-                //#endif
-                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+        return resolveLambda;
+      }
 
-                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, name, Expression.Call(typeof(NamedParameterOverloads), "FromIDictionary", null, parameters));
+      // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
+      //#if NETFX_CORE
+      //			if ((genericType == typeof(Func<,,>) && type.GenericTypeArguments[0] == typeof(string) && type.GenericTypeArguments[1] == typeof(IDictionary<string, object>)))
+      //#else
+      if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<string, object>)))
+      //#endif
+      {
+        Type returnType = genericArguments[2];
 
-                var resolveLambda = Expression.Lambda(resolveCall, name, parameters).Compile();
+        var name = Expression.Parameter(typeof(string), "name");
+        var parameters = Expression.Parameter(typeof(IDictionary<string, object>), "parameters");
 
-                return resolveLambda;
-            }
+        //#if NETFX_CORE
+        //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 2 && mi.GetParameters()[0].GetType() == typeof(String) && mi.GetParameters()[1].GetType() == typeof(NamedParameterOverloads));
+        //#else
+        MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String), typeof(NamedParameterOverloads) });
+        //#endif
+        resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
-            throw new TinyIoCResolutionException(type);
-        }
+        var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, name, Expression.Call(typeof(NamedParameterOverloads), "FromIDictionary", null, parameters));
+
+        var resolveLambda = Expression.Lambda(resolveCall, name, parameters).Compile();
+
+        _LazyAutomaticFactories[type] = resolveLambda;
+
+        return resolveLambda;
+      }
+
+      throw new TinyIoCResolutionException(type);
+    }
 #endif
-        private object GetIEnumerableRequest(Type type)
+    private object GetIEnumerableRequest(Type type)
         {
             //#if NETFX_CORE
             //			var genericResolveAllMethod = this.GetType().GetGenericMethod("ResolveAll", type.GenericTypeArguments, new[] { typeof(bool) });
@@ -4106,13 +4142,13 @@ namespace TinyIoC
 
                 try
                 {
-                    args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ?
-                                            parameters[currentParam.Name] :
-                                            ResolveInternal(
-                                                new TypeRegistration(currentParam.ParameterType),
-                                                NamedParameterOverloads.Default,
-                                                options);
-                }
+					        args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ?
+																						        parameters[currentParam.Name] :
+																						        ResolveInternal(
+																								        new TypeRegistration(currentParam.ParameterType),
+																								        NamedParameterOverloads.Default,
+																								        options);
+				        }
                 catch (TinyIoCResolutionException ex)
                 {
                     // If a constructor parameter can't be resolved
