@@ -802,10 +802,8 @@ namespace TinyMessenger
         #else
         private async void PublishAsyncInternal<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
         {
-            await Task
-                .Run(() => PublishInternal<TMessage>(message))
-                .ContinueWith(t => callback?.Invoke(t))
-                .ConfigureAwait(false);
+            PublishInternal<TMessage>(message);
+            callback?.Invoke(Task.CompletedTask);
         }
         #endif
 
