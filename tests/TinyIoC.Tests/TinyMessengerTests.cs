@@ -319,27 +319,34 @@ namespace TinyIoC.Tests
             messenger.PublishAsync(new TestMessage(this));
         }
 
-// can't Thread.Sleep in WinRT...
-#if !NETFX_CORE
+        [TestMethod]
+        public void PublishAsync_Callback_EventOnce()
+        {
+            var syncRoot = new object();
+            var messageCount = 0;
+            var callbackEvent = new ManualResetEvent(false);
+
+            var messenger = UtilityMethods.GetMessenger();
+            messenger.Subscribe<TestMessage>(m => { lock (syncRoot) messageCount++; });
+            var message = new TestMessage(this);
+
+            messenger.PublishAsync<TestMessage>(message, ar => callbackEvent.Set());
+
+            Assert.IsTrue(callbackEvent.WaitOne(1000));
+            Assert.AreEqual(1, messageCount);
+        }
+
         [TestMethod]
         public void PublishAsync_NoCallback_PublishesMessage()
         {
             var messenger = UtilityMethods.GetMessenger();
-            bool received = false;
-            messenger.Subscribe<TestMessage>((m) => { received = true; });
+            var received = new ManualResetEvent(false);
+            messenger.Subscribe<TestMessage>(m => received.Set());
 
             messenger.PublishAsync(new TestMessage(this));
 
-            // Horrible wait loop!
-            int waitCount = 0;
-            while (!received && waitCount < 100)
-            {
-                Thread.Sleep(10);
-                waitCount++;
-            }
-            Assert.IsTrue(received);
+            Assert.IsTrue(received.WaitOne(1000));
         }
-#endif
 
         [TestMethod]
         public void PublishAsync_Callback_DoesNotThrow()
@@ -350,52 +357,33 @@ namespace TinyIoC.Tests
 #pragma warning restore 219
         }
 
-// can't Thread.Sleep in WinRT...
-#if !NETFX_CORE
         [TestMethod]
         public void PublishAsync_Callback_PublishesMessage()
         {
             var messenger = UtilityMethods.GetMessenger();
-            bool received = false;
-            messenger.Subscribe<TestMessage>((m) => { received = true; });
+            var received = new ManualResetEvent(false);
+            messenger.Subscribe<TestMessage>(m => received.Set());
 
 #pragma warning disable 219
             messenger.PublishAsync(new TestMessage(this), (r) => { string test = "Testing"; });
 #pragma warning restore 219
 
-            // Horrible wait loop!
-            int waitCount = 0;
-            while (!received && waitCount < 100)
-            {
-                Thread.Sleep(10);
-                waitCount++;
-            }
-            Assert.IsTrue(received);
+            Assert.IsTrue(received.WaitOne(1000));
         }
-#endif
 
-// can't Thread.Sleep in WinRT...
-#if !NETFX_CORE
         [TestMethod]
         public void PublishAsync_Callback_CallsCallback()
         {
             var messenger = UtilityMethods.GetMessenger();
-            bool received = false;
-            bool callbackReceived = false;
-            messenger.Subscribe<TestMessage>((m) => { received = true; });
+            var received = new ManualResetEvent(false);
+            var callbackReceived = new ManualResetEvent(false);
+            messenger.Subscribe<TestMessage>(m => received.Set());
 
-            messenger.PublishAsync(new TestMessage(this), (r) => { callbackReceived = true; });
+            messenger.PublishAsync(new TestMessage(this), r => callbackReceived.Set());
 
-            // Horrible wait loop!
-            int waitCount = 0;
-            while (!callbackReceived && waitCount < 100)
-            {
-                Thread.Sleep(10);
-                waitCount++;
-            }
-            Assert.IsTrue(received);
+            Assert.IsTrue(callbackReceived.WaitOne(1000));
+            Assert.IsTrue(received.WaitOne(0));
         }
-#endif
 
         [TestMethod]
         public void CancellableGenericTinyMessage_Publish_DoesNotThrow()
