@@ -804,7 +804,7 @@ namespace TinyMessenger
         {
             await Task
                 .Run(() => PublishInternal<TMessage>(message))
-                .ContinueWith(t => callback(t))
+                .ContinueWith(t => callback?.Invoke(t))
                 .ConfigureAwait(false);
         }
         #endif
