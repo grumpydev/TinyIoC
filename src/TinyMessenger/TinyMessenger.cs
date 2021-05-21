@@ -800,12 +800,10 @@ namespace TinyMessenger
             publishAction.BeginInvoke(callback, null);
         }
         #else
-        private async void PublishAsyncInternal<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
+        private void PublishAsyncInternal<TMessage>(TMessage message, AsyncCallback callback) where TMessage : class, ITinyMessage
         {
-            Action publishAction = () => { PublishInternal<TMessage>(message); };
-
-            await Task.Run(publishAction.Invoke);
-            PublishInternal<TMessage>(message);
+            Task.Run(() => PublishInternal<TMessage>(message))
+                .ContinueWith(t => callback?.Invoke(t));
         }
         #endif
 
