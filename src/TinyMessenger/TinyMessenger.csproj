@@ -5,7 +5,7 @@
   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'" Label="Build">
     <DefineConstants>$(DefineConstants);NETSTANDARD;NETSTANDARD2_0</DefineConstants>
   </PropertyGroup>
@@ -32,9 +32,15 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)'=='Source'">
-    <Content Include="TinyMessenger.cs">
+    <Compile Include="TinyMessenger.cs">
       <Pack>true</Pack>
       <PackageCopyToOutput>true</PackageCopyToOutput>
-    </Content>
+      <PackagePath>contentFiles/cs/any</PackagePath>
+    </Compile>
+    <Compile Include="TinyMessenger.cs">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <PackagePath>content</PackagePath>
+    </Compile>
   </ItemGroup>
 </Project>
