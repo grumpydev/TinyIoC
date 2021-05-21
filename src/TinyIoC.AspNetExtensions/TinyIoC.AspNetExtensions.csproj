@@ -39,9 +39,15 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)'=='Source'">
-    <Content Include="TinyIoCAspNetExtensions.cs">
+    <Compile Include="TinyIoCAspNetExtensions.cs">
       <Pack>true</Pack>
       <PackageCopyToOutput>true</PackageCopyToOutput>
-    </Content>
+      <PackagePath>contentFiles/cs/any</PackagePath>
+    </Compile>
+    <Compile Include="TinyIoCAspNetExtensions.cs">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <PackagePath>content</PackagePath>
+    </Compile>
   </ItemGroup>
 </Project>
