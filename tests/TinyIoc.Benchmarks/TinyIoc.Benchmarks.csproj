@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp3.1;net48;net461</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="bin\Release\net48\BenchmarkDotNet.Artifacts\results\TinyIoc.Benchmarks.ResolveBenchmarks-report.html" />
+    <Content Include="bin\Release\netcoreapp3.1\BenchmarkDotNet.Artifacts\results\TinyIoc.Benchmarks.ResolveBenchmarks-report.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="bin\Release\net48\BenchmarkDotNet.Artifacts\results\TinyIoc.Benchmarks.ResolveBenchmarks-report-github.md" />
+    <None Include="bin\Release\net48\BenchmarkDotNet.Artifacts\results\TinyIoc.Benchmarks.ResolveBenchmarks-report.csv" />
+    <None Include="bin\Release\netcoreapp3.1\BenchmarkDotNet.Artifacts\results\TinyIoc.Benchmarks.ResolveBenchmarks-report-github.md" />
+    <None Include="bin\Release\netcoreapp3.1\BenchmarkDotNet.Artifacts\results\TinyIoc.Benchmarks.ResolveBenchmarks-report.csv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TinyIoC\TinyIoC.csproj" />
+  </ItemGroup>
+
+</Project>

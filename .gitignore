@@ -45,3 +45,4 @@ src/.vs/TinyIoC/DesignTimeBuild/.dtbcache.v2
 .DS_Store
 
 artifacts/
+/.vs

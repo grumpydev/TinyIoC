@@ -105,6 +105,7 @@ namespace TinyIoC
 #if EXPRESSIONS
     using System.Linq.Expressions;
     using System.Threading;
+	using System.Runtime.CompilerServices;
 
 #endif
 
@@ -115,17 +116,31 @@ namespace TinyIoC
 	using Windows.UI.Xaml.Shapes;
 #endif
 
-    #region SafeDictionary
+	#region SafeDictionary
 #if READER_WRITER_LOCK_SLIM
 #if TINYIOC_INTERNAL
     internal
 #else
-    public
+	public
 #endif
     class SafeDictionary<TKey, TValue> : IDisposable
     {
         private readonly ReaderWriterLockSlim _padlock = new ReaderWriterLockSlim();
         private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
+
+        public bool ContainsKey(TKey key)
+		    {
+          _padlock.EnterWriteLock();
+
+          try
+          {
+            return _Dictionary.ContainsKey(key);
+          }
+          finally
+          {
+            _padlock.ExitWriteLock();
+          }
+        }
 
         public TValue this[TKey key]
         {
@@ -265,6 +280,14 @@ namespace TinyIoC
                 }
             }
         }
+
+        public bool ContainsKey(TKey key)
+		    {
+          lock (_Padlock)
+          {
+            return _Dictionary.ContainsKey(key);
+          }
+		    }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
@@ -583,7 +606,7 @@ namespace TinyIoC
         private static MethodInfo GetMethod(Type sourceType, BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
         {
 #if GETPARAMETERS_OPEN_GENERICS
-            var methods =
+      var methods =
                 sourceType.GetMethods(bindingFlags).Where(
                     mi => string.Equals(methodName, mi.Name, StringComparison.Ordinal)).Where(
                         mi => mi.ContainsGenericParameters).Where(mi => mi.GetGenericArguments().Length == genericTypes.Length).
@@ -595,14 +618,15 @@ namespace TinyIoC
                                 where method.Name == methodName
                                 where method.IsGenericMethod
                                 where method.GetGenericArguments().Length == genericTypes.Length
-                                let genericMethod = method.MakeGenericMethod(genericTypes)
-                                where genericMethod.GetParameters().Count() == parameterTypes.Length
-                                where genericMethod.GetParameters().Select(pi => pi.ParameterType).SequenceEqual(parameterTypes)
+                                let genericMethod = method.MakeGenericMethod(genericTypes) 
+                                let genericMethodParameters = genericMethod.GetParameters()
+                                where genericMethodParameters.Length == parameterTypes.Length
+                                where genericMethodParameters.Select(pi => pi.ParameterType).SequenceEqual(parameterTypes)
                                 select genericMethod;
 
             var methods = validMethods.ToList();
 #endif
-            if (methods.Count > 1)
+      if (methods.Count > 1)
             {
                 throw new AmbiguousMatchException();
             }
@@ -3198,7 +3222,12 @@ namespace TinyIoC
                 this.registerImplementation = registerImplementation;
             }
 
-            public override Type CreatesType
+            //If we've already got an instance we don't need to construct another,
+            //returning true here tells the resolve code not to bother calling
+            //expensive reflection methods to find constructor details we aren't going to use.
+            public override bool AssumeConstruction => _Current != null;
+
+			      public override Type CreatesType
             {
                 get { return this.registerImplementation; }
             }
@@ -3207,6 +3236,11 @@ namespace TinyIoC
             {
                 if (parameters.Count != 0)
                     throw new ArgumentException("Cannot specify parameters for singleton types");
+
+                //Avoid unnecessary lock when object already constructed (need to keep null check inside lock though)
+                //(this is most likely to help perf in multi-threaded environments like asp.net, but may provide a small
+                //performance boost even for single threaded use)
+                if (_Current != null) return _Current;
 
                 lock (SingletonLock)
                     if (_Current == null)
@@ -3478,75 +3512,76 @@ namespace TinyIoC
 
 #region Internal Methods
         private readonly object _AutoRegisterLock = new object();
-        private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, DuplicateImplementationActions duplicateAction, Func<Type, bool> registrationPredicate)
+    private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, DuplicateImplementationActions duplicateAction, Func<Type, bool> registrationPredicate)
+    {
+      var typeOfThis = this.GetType();
+      lock (_AutoRegisterLock)
+      {
+        var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
+
+        var concreteTypes = types
+            .Where(type => type.IsClass() && (type.IsAbstract() == false) && (type != typeOfThis && (type.DeclaringType != typeOfThis) && (!type.IsGenericTypeDefinition())) && !type.IsNestedPrivate())
+            .ToList();
+
+        foreach (var type in concreteTypes)
         {
-            lock (_AutoRegisterLock)
-            {
-                var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
-
-                var concreteTypes = types
-                    .Where(type => type.IsClass() && (type.IsAbstract() == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition())))
-                    .ToList();
-
-                foreach (var type in concreteTypes)
-                {
-                    try
-                    {
-                        RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, type));
-                    }
+          try
+          {
+            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, type));
+          }
 #if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
-                    catch (MemberAccessException)
+          catch (MemberAccessException)
 #else
-                    catch (MethodAccessException)
+          catch (MethodAccessException)
 #endif
-                    {
-                        // Ignore methods we can't access - added for Silverlight
-                    }
-                }
-
-                var abstractInterfaceTypes = from type in types
-                                             where ((type.IsInterface() || type.IsAbstract()) && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition()))
-                                             select type;
-
-                foreach (var type in abstractInterfaceTypes)
-                {
-                    var localType = type;
-                    var implementations = from implementationType in concreteTypes
-                                          where localType.IsAssignableFrom(implementationType)
-                                          select implementationType;
-
-                    if (implementations.Skip(1).Any())
-                    {
-                        if (duplicateAction == DuplicateImplementationActions.Fail)
-                            throw new TinyIoCAutoRegistrationException(type, implementations);
-
-                        if (duplicateAction == DuplicateImplementationActions.RegisterMultiple)
-                        {
-                            RegisterMultiple(type, implementations);
-                        }
-                    }
-
-                    var firstImplementation = implementations.FirstOrDefault();
-                    if (firstImplementation != null)
-                    {
-                        try
-                        {
-                            RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, firstImplementation));
-                        }
-#if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
-                        catch (MemberAccessException)
-#else
-                        catch (MethodAccessException)
-#endif
-                        {
-                            // Ignore methods we can't access - added for Silverlight
-                        }
-                    }
-                }
-            }
+          {
+            // Ignore methods we can't access - added for Silverlight
+          }
         }
 
-        private bool IsIgnoredAssembly(Assembly assembly)
+        var abstractInterfaceTypes = from type in types
+                                     where ((type.IsInterface() || type.IsAbstract()) && (type.DeclaringType != typeOfThis) && (!type.IsGenericTypeDefinition()))
+                                     select type;
+
+        foreach (var type in abstractInterfaceTypes)
+        {
+          var localType = type;
+          var implementations = from implementationType in concreteTypes
+                                where localType.IsAssignableFrom(implementationType)
+                                select implementationType;
+
+          if (implementations.Skip(1).Any())
+          {
+            if (duplicateAction == DuplicateImplementationActions.Fail)
+              throw new TinyIoCAutoRegistrationException(type, implementations);
+
+            if (duplicateAction == DuplicateImplementationActions.RegisterMultiple)
+            {
+              RegisterMultiple(type, implementations);
+            }
+          }
+
+          var firstImplementation = implementations.FirstOrDefault();
+          if (firstImplementation != null)
+          {
+            try
+            {
+              RegisterInternal(type, string.Empty, GetDefaultObjectFactory(type, firstImplementation));
+            }
+#if PORTABLE || NETSTANDARD1_0 || NETSTANDARD1_1 || NETSTANDARD1_2 || NETSTANDARD1_3 || NETSTANDARD1_4 || NETSTANDARD1_5 || NETSTANDARD1_6
+            catch (MemberAccessException)
+#else
+            catch (MethodAccessException)
+#endif
+            {
+              // Ignore methods we can't access - added for Silverlight
+            }
+          }
+        }
+      }
+    }
+
+    private bool IsIgnoredAssembly(Assembly assembly)
         {
             // TODO - find a better way to remove "system" assemblies from the auto registration
             var ignoreChecks = new List<Func<Assembly, bool>>()
@@ -3738,6 +3773,9 @@ namespace TinyIoC
 
         private bool IsAutomaticLazyFactoryRequest(Type type)
         {
+            if (_LazyAutomaticFactories.ContainsKey(type))
+              return true;
+
             if (!type.IsGenericType())
                 return false;
 
@@ -3747,11 +3785,12 @@ namespace TinyIoC
             if (genericType == typeof(Func<>))
                 return true;
 
+            Type[] genericArguments = null; 
             // 2 parameter func with string as first parameter (name)
             //#if NETFX_CORE
             //			if ((genericType == typeof(Func<,>) && type.GetTypeInfo().GenericTypeArguments[0] == typeof(string)))
             //#else
-            if ((genericType == typeof(Func<,>) && type.GetGenericArguments()[0] == typeof(string)))
+            if ((genericType == typeof(Func<,>) && (genericArguments = type.GetGenericArguments())[0] == typeof(string)))
                 //#endif
                 return true;
 
@@ -3759,7 +3798,7 @@ namespace TinyIoC
             //#if NETFX_CORE
             //			if ((genericType == typeof(Func<,,>) && type.GetTypeInfo().GenericTypeArguments[0] == typeof(string) && type.GetTypeInfo().GenericTypeArguments[1] == typeof(IDictionary<String, object>)))
             //#else
-            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<String, object>)))
+            if ((genericType == typeof(Func<,,>) && (genericArguments = genericArguments ?? type.GetGenericArguments())[0] == typeof(string) && (genericArguments = genericArguments ?? type.GetGenericArguments())[1] == typeof(IDictionary<String, object>)))
                 //#endif
                 return true;
 
@@ -3905,87 +3944,97 @@ namespace TinyIoC
         }
 
 #if EXPRESSIONS
-        private object GetLazyAutomaticFactoryRequest(Type type)
-        {
-            if (!type.IsGenericType())
-                return null;
+    private readonly SafeDictionary<Type, object> _LazyAutomaticFactories = new SafeDictionary<Type, object>();
+    private  object GetLazyAutomaticFactoryRequest(Type type)
+    {
+      if (!type.IsGenericType())
+        return null;
 
-            Type genericType = type.GetGenericTypeDefinition();
-            //#if NETFX_CORE
-            //			Type[] genericArguments = type.GetTypeInfo().GenericTypeArguments.ToArray();
-            //#else
-            Type[] genericArguments = type.GetGenericArguments();
-            //#endif
+      if (_LazyAutomaticFactories.TryGetValue(type, out var retVal))
+        return retVal;
 
-            // Just a func
-            if (genericType == typeof(Func<>))
-            {
-                Type returnType = genericArguments[0];
+      Type genericType = type.GetGenericTypeDefinition();
+      //#if NETFX_CORE
+      //			Type[] genericArguments = type.GetTypeInfo().GenericTypeArguments.ToArray();
+      //#else
+      Type[] genericArguments = type.GetGenericArguments();
+      //#endif
 
-                //#if NETFX_CORE
-                //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => !mi.GetParameters().Any());
-                //#else
-                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { });
-                //#endif
-                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+      // Just a func
+      if (genericType == typeof(Func<>))
+      {
+        Type returnType = genericArguments[0];
 
-                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);
+        //#if NETFX_CORE
+        //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => !mi.GetParameters().Any());
+        //#else
+        MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { });
+        //#endif
+        resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
-                var resolveLambda = Expression.Lambda(resolveCall).Compile();
+        var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod);
 
-                return resolveLambda;
-            }
+        var resolveLambda = Expression.Lambda(resolveCall).Compile();
 
-            // 2 parameter func with string as first parameter (name)
-            if ((genericType == typeof(Func<,>)) && (genericArguments[0] == typeof(string)))
-            {
-                Type returnType = genericArguments[1];
+        _LazyAutomaticFactories[type] = resolveLambda;
 
-                //#if NETFX_CORE
-                //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 1 && mi.GetParameters()[0].GetType() == typeof(String));
-                //#else
-                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String) });
-                //#endif
-                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+        return resolveLambda;
+      }
 
-                ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name") };
-                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
+      // 2 parameter func with string as first parameter (name)
+      if ((genericType == typeof(Func<,>)) && (genericArguments[0] == typeof(string)))
+      {
+        Type returnType = genericArguments[1];
 
-                var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
+        //#if NETFX_CORE
+        //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 1 && mi.GetParameters()[0].GetType() == typeof(String));
+        //#else
+        MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String) });
+        //#endif
+        resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
-                return resolveLambda;
-            }
+        ParameterExpression[] resolveParameters = new ParameterExpression[] { Expression.Parameter(typeof(String), "name") };
+        var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, resolveParameters);
 
-            // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
-            //#if NETFX_CORE
-            //			if ((genericType == typeof(Func<,,>) && type.GenericTypeArguments[0] == typeof(string) && type.GenericTypeArguments[1] == typeof(IDictionary<string, object>)))
-            //#else
-            if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<string, object>)))
-            //#endif
-            {
-                Type returnType = genericArguments[2];
+        var resolveLambda = Expression.Lambda(resolveCall, resolveParameters).Compile();
 
-                var name = Expression.Parameter(typeof(string), "name");
-                var parameters = Expression.Parameter(typeof(IDictionary<string, object>), "parameters");
+        _LazyAutomaticFactories[type] = resolveLambda;
 
-                //#if NETFX_CORE
-                //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 2 && mi.GetParameters()[0].GetType() == typeof(String) && mi.GetParameters()[1].GetType() == typeof(NamedParameterOverloads));
-                //#else
-                MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String), typeof(NamedParameterOverloads) });
-                //#endif
-                resolveMethod = resolveMethod.MakeGenericMethod(returnType);
+        return resolveLambda;
+      }
 
-                var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, name, Expression.Call(typeof(NamedParameterOverloads), "FromIDictionary", null, parameters));
+      // 3 parameter func with string as first parameter (name) and IDictionary<string, object> as second (parameters)
+      //#if NETFX_CORE
+      //			if ((genericType == typeof(Func<,,>) && type.GenericTypeArguments[0] == typeof(string) && type.GenericTypeArguments[1] == typeof(IDictionary<string, object>)))
+      //#else
+      if ((genericType == typeof(Func<,,>) && type.GetGenericArguments()[0] == typeof(string) && type.GetGenericArguments()[1] == typeof(IDictionary<string, object>)))
+      //#endif
+      {
+        Type returnType = genericArguments[2];
 
-                var resolveLambda = Expression.Lambda(resolveCall, name, parameters).Compile();
+        var name = Expression.Parameter(typeof(string), "name");
+        var parameters = Expression.Parameter(typeof(IDictionary<string, object>), "parameters");
 
-                return resolveLambda;
-            }
+        //#if NETFX_CORE
+        //				MethodInfo resolveMethod = typeof(TinyIoCContainer).GetTypeInfo().GetDeclaredMethods("Resolve").First(mi => mi.GetParameters().Length == 2 && mi.GetParameters()[0].GetType() == typeof(String) && mi.GetParameters()[1].GetType() == typeof(NamedParameterOverloads));
+        //#else
+        MethodInfo resolveMethod = typeof(TinyIoCContainer).GetMethod("Resolve", new Type[] { typeof(String), typeof(NamedParameterOverloads) });
+        //#endif
+        resolveMethod = resolveMethod.MakeGenericMethod(returnType);
 
-            throw new TinyIoCResolutionException(type);
-        }
+        var resolveCall = Expression.Call(Expression.Constant(this), resolveMethod, name, Expression.Call(typeof(NamedParameterOverloads), "FromIDictionary", null, parameters));
+
+        var resolveLambda = Expression.Lambda(resolveCall, name, parameters).Compile();
+
+        _LazyAutomaticFactories[type] = resolveLambda;
+
+        return resolveLambda;
+      }
+
+      throw new TinyIoCResolutionException(type);
+    }
 #endif
-        private object GetIEnumerableRequest(Type type)
+    private object GetIEnumerableRequest(Type type)
         {
             //#if NETFX_CORE
             //			var genericResolveAllMethod = this.GetType().GetGenericMethod("ResolveAll", type.GenericTypeArguments, new[] { typeof(bool) });
@@ -4036,7 +4085,7 @@ namespace TinyIoC
 
             // Get constructors in reverse order based on the number of parameters
             // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
-            var ctors = this.GetTypeConstructors(type);
+            var ctors = TinyIoCReflectionCache.GetUsableConstructors(type);
 
             foreach (var ctor in ctors)
             {
@@ -4045,26 +4094,6 @@ namespace TinyIoC
             }
 
             return null;
-        }
-
-        private IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
-        {
-            //#if NETFX_CORE
-            //			return type.GetTypeInfo().DeclaredConstructors.OrderByDescending(ctor => ctor.GetParameters().Count());
-            //#else
-            var candidateCtors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .Where(x => !x.IsPrivate) // Includes internal constructors but not private constructors
-                .Where(x => !x.IsFamily) // Excludes protected constructors
-                .ToList();
-
-            var attributeCtors = candidateCtors.Where(x => x.GetCustomAttributes(typeof(TinyIoCConstructorAttribute), false).Any())
-                .ToList();
-
-            if (attributeCtors.Any())
-                candidateCtors = attributeCtors;
-
-            return candidateCtors.OrderByDescending(ctor => ctor.GetParameters().Count());
-            //#endif
         }
 
         private object ConstructType(Type requestedType, Type implementationType, ResolveOptions options)
@@ -4089,40 +4118,37 @@ namespace TinyIoC
 #if RESOLVE_OPEN_GENERICS
             if (implementationType.IsGenericTypeDefinition())
             {
-                if (requestedType == null || !requestedType.IsGenericType() || !requestedType.GetGenericArguments().Any())
-                    throw new TinyIoCResolutionException(typeToConstruct);
-
-                typeToConstruct = typeToConstruct.MakeGenericType(requestedType.GetGenericArguments());
+              typeToConstruct = TinyIoCReflectionCache.GetGenericImplementationType(typeToConstruct, requestedType);
             }
 #endif
             if (constructor == null)
             {
-                // Try and get the best constructor that we can construct
-                // if we can't construct any then get the constructor
-                // with the least number of parameters so we can throw a meaningful
-                // resolve exception
-                constructor = GetBestConstructor(typeToConstruct, parameters, options) ?? GetTypeConstructors(typeToConstruct).LastOrDefault();
+              // Try and get the best constructor that we can construct
+              // if we can't construct any then get the constructor
+              // with the least number of parameters so we can throw a meaningful
+              // resolve exception
+              constructor = GetBestConstructor(typeToConstruct, parameters, options) ?? TinyIoCReflectionCache.GetUsableConstructors(typeToConstruct).LastOrDefault();
             }
 
             if (constructor == null)
                 throw new TinyIoCResolutionException(typeToConstruct);
 
             var ctorParams = constructor.GetParameters();
-            object[] args = new object[ctorParams.Count()];
+            object[] args = new object[ctorParams.Length];
 
-            for (int parameterIndex = 0; parameterIndex < ctorParams.Count(); parameterIndex++)
+            for (int parameterIndex = 0; parameterIndex < ctorParams.Length; parameterIndex++)
             {
                 var currentParam = ctorParams[parameterIndex];
 
                 try
                 {
-                    args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ?
-                                            parameters[currentParam.Name] :
-                                            ResolveInternal(
-                                                new TypeRegistration(currentParam.ParameterType),
-                                                NamedParameterOverloads.Default,
-                                                options);
-                }
+					        args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ?
+																						        parameters[currentParam.Name] :
+																						        ResolveInternal(
+																								        new TypeRegistration(currentParam.ParameterType),
+																								        NamedParameterOverloads.Default,
+																								        options);
+				        }
                 catch (TinyIoCResolutionException ex)
                 {
                     // If a constructor parameter can't be resolved
@@ -4322,6 +4348,11 @@ namespace TinyIoC
             return type.GetTypeInfo().IsGenericTypeDefinition;
         }
 
+        public static bool IsNestedPrivate(this Type type)
+        {
+          return type.GetTypeInfo().IsNestedPrivate;
+        }
+
         public static Type BaseType(this Type type)
         {
             return type.GetTypeInfo().BaseType;
@@ -4333,7 +4364,7 @@ namespace TinyIoC
         }
     }
 #endif
-    // reverse shim for WinRT SR changes...
+  // reverse shim for WinRT SR changes...
 #if (!NETFX_CORE && !PORTABLE && !NETSTANDARD1_0 && !NETSTANDARD1_1 && !NETSTANDARD1_2 && !NETSTANDARD1_3 && !NETSTANDARD1_4 && !NETSTANDARD1_5 && !NETSTANDARD1_6)
     static class ReverseTypeExtender
     {
@@ -4377,6 +4408,11 @@ namespace TinyIoC
             return type.IsGenericTypeDefinition;
         }
 
+        public static bool IsNestedPrivate(this Type type)
+        {
+          return type.IsNestedPrivate;
+        }
+
         public static Type BaseType(this Type type)
         {
             return type.BaseType;
@@ -4389,7 +4425,7 @@ namespace TinyIoC
     }
 #endif
 
-    [AttributeUsage(AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
+  [AttributeUsage(AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
 #if TINYIOC_INTERNAL
     internal
 #else
@@ -4398,4 +4434,57 @@ namespace TinyIoC
     sealed class TinyIoCConstructorAttribute : Attribute
     {
     }
+
+#if TINYIOC_INTERNAL
+    internal
+#else
+  public
+#endif
+    static class TinyIoCReflectionCache
+  {
+    private static readonly SafeDictionary<Type, ConstructorInfo[]> _UsableConstructors = new SafeDictionary<Type, ConstructorInfo[]>();
+    private static readonly SafeDictionary<string, Type> _GenericTypes = new SafeDictionary<string, Type>();
+
+    public static IEnumerable<ConstructorInfo> GetUsableConstructors(Type type)
+    {
+      // Get constructors in reverse order based on the number of parameters
+      // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
+
+      if (!_UsableConstructors.TryGetValue(type, out var constructors))
+      {
+        var candidateCtors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(x => !x.IsPrivate) // Includes internal constructors but not private constructors
+            .Where(x => !x.IsFamily) // Excludes protected constructors
+            .ToList();
+
+        var attributeCtors = candidateCtors.Where(x => x.GetCustomAttributes(typeof(TinyIoCConstructorAttribute), false).Any())
+            .ToList();
+
+        if (attributeCtors.Any())
+          candidateCtors = attributeCtors;
+
+        constructors = candidateCtors.OrderByDescending(ctor => ctor.GetParameters().Length).ToArray();
+
+        _UsableConstructors[type] = constructors;
+      }
+
+      return constructors;
+    }
+
+		internal static Type GetGenericImplementationType(Type typeToConstruct, Type requestedType)
+		{
+      var key = typeToConstruct.FullName + ":" + requestedType.FullName;
+      if (!_GenericTypes.TryGetValue(key, out var retVal))
+      {
+        Type[] genericTypeArguments = null;
+        if (requestedType == null || !requestedType.IsGenericType() || !(genericTypeArguments = requestedType.GetGenericArguments()).Any())
+          throw new TinyIoCResolutionException(typeToConstruct);
+
+        retVal = typeToConstruct.MakeGenericType(genericTypeArguments);
+        _GenericTypes[key] = retVal;
+      }
+
+      return retVal;
+    }
+  }
 }
