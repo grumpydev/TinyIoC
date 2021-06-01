@@ -3580,53 +3580,54 @@ namespace TinyIoC
         }
       }
     }
-
-    private bool IsIgnoredAssembly(Assembly assembly)
+    
+    // TODO - find a better way to remove "system" assemblies from the auto registration
+        private readonly List<Func<Assembly, bool>> ignoredAssemlies = new List<Func<Assembly, bool>>()
         {
-            // TODO - find a better way to remove "system" assemblies from the auto registration
-            var ignoreChecks = new List<Func<Assembly, bool>>()
-            {
-                asm => asm.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
-                asm => asm.FullName.StartsWith("System.", StringComparison.Ordinal),
-                asm => asm.FullName.StartsWith("System,", StringComparison.Ordinal),
-                asm => asm.FullName.StartsWith("CR_ExtUnitTest", StringComparison.Ordinal),
-                asm => asm.FullName.StartsWith("mscorlib,", StringComparison.Ordinal),
-                asm => asm.FullName.StartsWith("CR_VSTest", StringComparison.Ordinal),
-                asm => asm.FullName.StartsWith("DevExpress.CodeRush", StringComparison.Ordinal),
-                asm => asm.FullName.StartsWith("xunit.", StringComparison.Ordinal),
-            };
+            asm => asm.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
+            asm => asm.FullName.StartsWith("System.", StringComparison.Ordinal),
+            asm => asm.FullName.StartsWith("System,", StringComparison.Ordinal),
+            asm => asm.FullName.StartsWith("CR_ExtUnitTest", StringComparison.Ordinal),
+            asm => asm.FullName.StartsWith("mscorlib,", StringComparison.Ordinal),
+            asm => asm.FullName.StartsWith("CR_VSTest", StringComparison.Ordinal),
+            asm => asm.FullName.StartsWith("DevExpress.CodeRush", StringComparison.Ordinal),
+            asm => asm.FullName.StartsWith("xunit.", StringComparison.Ordinal),
+        };
 
-            foreach (var check in ignoreChecks)
+        private bool IsIgnoredAssembly(Assembly assembly)
+        {
+            for (int i = 0; i < ignoredAssemlies.Count; i++)
             {
-                if (check(assembly))
+                if (ignoredAssemlies[i].Invoke(assembly))
                     return true;
             }
 
             return false;
         }
-
-        private bool IsIgnoredType(Type type, Func<Type, bool> registrationPredicate)
+        
+        // TODO - find a better way to remove "system" types from the auto registration
+        private readonly List<Func<Type, bool>> ignoreChecks = new List<Func<Type, bool>>()
         {
-            // TODO - find a better way to remove "system" types from the auto registration
-            var ignoreChecks = new List<Func<Type, bool>>()
-            {
-                t => t.FullName.StartsWith("System.", StringComparison.Ordinal),
-                t => t.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
-                t => t.IsPrimitive(),
+            t => t.FullName.StartsWith("System.", StringComparison.Ordinal),
+            t => t.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
+            t => t.IsPrimitive(),
 #if !UNBOUND_GENERICS_GETCONSTRUCTORS
                 t => t.IsGenericTypeDefinition(),
 #endif
-                t => (t.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(t.IsInterface() || t.IsAbstract()),
-            };
+            t => (t.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(t.IsInterface() || t.IsAbstract()),
+        };
 
-            if (registrationPredicate != null)
+        private bool IsIgnoredType(Type type, Func<Type, bool> registrationPredicate)
+        {
+            if (registrationPredicate != null && !registrationPredicate(type))
             {
                 ignoreChecks.Add(t => !registrationPredicate(t));
+                return true;
             }
 
-            foreach (var check in ignoreChecks)
+            for (int i = 0; i < ignoreChecks.Count; i++)
             {
-                if (check(type))
+                if (ignoreChecks[i](type))
                     return true;
             }
 
