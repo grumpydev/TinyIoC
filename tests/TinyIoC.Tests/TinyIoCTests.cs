@@ -3393,6 +3393,20 @@ namespace TinyIoC.Tests
             //Assert.IsInstanceOfType(result, typeof(TinyIoCResolutionException));
         }
 
+        [TestMethod]
+        public void AutoRegister_Resolve_MultipleCalls()
+        {
+            var container = UtilityMethods.GetContainer();
+
+            container.AutoRegister(new[] { this.GetType().Assembly }, t => typeof(ITestInterface).IsAssignableFrom(t));
+            Assert.IsNotNull(container.Resolve<ITestInterface>());
+            AssertHelper.ThrowsException<TinyIoCResolutionException>(() => container.Resolve<ITestInterface2>());
+
+            container.AutoRegister(new[] { this.GetType().Assembly }, t => typeof(ITestInterface2).IsAssignableFrom(t));
+            Assert.IsNotNull(container.Resolve<ITestInterface>());
+            Assert.IsNotNull(container.Resolve<ITestInterface2>());
+        }
+
 #if RESOLVE_OPEN_GENERICS
         [TestMethod]
         public void Register_OpenGeneric_DoesNotThrow()
