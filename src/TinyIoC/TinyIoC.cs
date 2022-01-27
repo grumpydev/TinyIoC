@@ -3582,7 +3582,7 @@ namespace TinyIoC
     }
     
     // TODO - find a better way to remove "system" assemblies from the auto registration
-        private readonly List<Func<Assembly, bool>> ignoredAssemlies = new List<Func<Assembly, bool>>()
+        private static readonly IReadOnlyList<Func<Assembly, bool>> ignoredAssemlies = new List<Func<Assembly, bool>>()
         {
             asm => asm.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
             asm => asm.FullName.StartsWith("System.", StringComparison.Ordinal),
@@ -3604,9 +3604,9 @@ namespace TinyIoC
 
             return false;
         }
-        
+
         // TODO - find a better way to remove "system" types from the auto registration
-        private readonly List<Func<Type, bool>> ignoreChecks = new List<Func<Type, bool>>()
+        private static readonly IReadOnlyList<Func<Type, bool>> ignoreChecks = new List<Func<Type, bool>>()
         {
             t => t.FullName.StartsWith("System.", StringComparison.Ordinal),
             t => t.FullName.StartsWith("Microsoft.", StringComparison.Ordinal),
@@ -3619,19 +3619,10 @@ namespace TinyIoC
 
         private bool IsIgnoredType(Type type, Func<Type, bool> registrationPredicate)
         {
-            if (registrationPredicate != null && !registrationPredicate(type))
-            {
-                ignoreChecks.Add(t => !registrationPredicate(t));
+            if (ignoreChecks.Any(c => c(type)))
                 return true;
-            }
 
-            for (int i = 0; i < ignoreChecks.Count; i++)
-            {
-                if (ignoreChecks[i](type))
-                    return true;
-            }
-
-            return false;
+            return registrationPredicate != null && !registrationPredicate(type);
         }
 
         private void RegisterDefaultTypes()
