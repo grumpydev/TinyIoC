@@ -344,6 +344,43 @@ namespace TinyIoC
 #endif
     #endregion
 
+    #region ResolutionCache
+
+    enum ResolutionStatus
+    {
+        Resolvable,
+        Unresolvable,
+        Unknown
+    }
+
+    sealed class ResolutionCache
+    {
+        private SafeDictionary<Type, ConstructorInfo> _bestConstructorCache = new SafeDictionary<Type, ConstructorInfo>();
+        private SafeDictionary<ConstructorInfo, bool> _canConstructCache = new SafeDictionary<ConstructorInfo, bool>();
+
+        public bool TryGetBestConstructor(Type type, out ConstructorInfo bestConstructor)
+        {
+            return _bestConstructorCache.TryGetValue(type, out bestConstructor);
+        }
+
+        public void SetBestConstructor(Type type, ConstructorInfo ctor)
+        {
+            _bestConstructorCache[type] = ctor;
+        }
+
+        public bool TryGetCanConstruct(ConstructorInfo ctor, out bool canConstruct)
+        {
+            return _canConstructCache.TryGetValue(ctor, out canConstruct);
+        }
+
+        public void SetCanConstruct(ConstructorInfo ctor, bool canConstruct)
+        {
+            _canConstructCache[ctor] = canConstruct;
+        }
+    }
+
+    #endregion
+
     #region Extensions
 #if TINYIOC_INTERNAL
     internal
@@ -1851,7 +1888,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType)
         {
-            return ResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, ResolveOptions.Default);
+            return ResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -1863,7 +1900,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType, ResolveOptions options)
         {
-            return ResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, options);
+            return ResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -1878,7 +1915,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType, string name)
         {
-            return ResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, ResolveOptions.Default);
+            return ResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -1894,7 +1931,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType, string name, ResolveOptions options)
         {
-            return ResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, options);
+            return ResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -1909,7 +1946,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType, NamedParameterOverloads parameters)
         {
-            return ResolveInternal(new TypeRegistration(resolveType), parameters, ResolveOptions.Default);
+            return ResolveInternal(new TypeRegistration(resolveType), parameters, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -1925,7 +1962,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType, NamedParameterOverloads parameters, ResolveOptions options)
         {
-            return ResolveInternal(new TypeRegistration(resolveType), parameters, options);
+            return ResolveInternal(new TypeRegistration(resolveType), parameters, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -1941,7 +1978,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType, string name, NamedParameterOverloads parameters)
         {
-            return ResolveInternal(new TypeRegistration(resolveType, name), parameters, ResolveOptions.Default);
+            return ResolveInternal(new TypeRegistration(resolveType, name), parameters, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -1958,7 +1995,7 @@ namespace TinyIoC
         /// <exception cref="TinyIoCResolutionException">Unable to resolve the type.</exception>
         public object Resolve(Type resolveType, string name, NamedParameterOverloads parameters, ResolveOptions options)
         {
-            return ResolveInternal(new TypeRegistration(resolveType, name), parameters, options);
+            return ResolveInternal(new TypeRegistration(resolveType, name), parameters, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -2096,7 +2133,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve(Type resolveType)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, ResolveOptions.Default);
+            return CanResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -2109,7 +2146,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         private bool CanResolve(Type resolveType, string name)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, ResolveOptions.Default);
+            return CanResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -2122,7 +2159,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve(Type resolveType, ResolveOptions options)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, options);
+            return CanResolveInternal(new TypeRegistration(resolveType), NamedParameterOverloads.Default, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -2136,7 +2173,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve(Type resolveType, string name, ResolveOptions options)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, options);
+            return CanResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -2152,7 +2189,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve(Type resolveType, NamedParameterOverloads parameters)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType), parameters, ResolveOptions.Default);
+            return CanResolveInternal(new TypeRegistration(resolveType), parameters, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -2169,7 +2206,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve(Type resolveType, string name, NamedParameterOverloads parameters)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType, name), parameters, ResolveOptions.Default);
+            return CanResolveInternal(new TypeRegistration(resolveType, name), parameters, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -2186,7 +2223,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve(Type resolveType, NamedParameterOverloads parameters, ResolveOptions options)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType), parameters, options);
+            return CanResolveInternal(new TypeRegistration(resolveType), parameters, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -2204,7 +2241,7 @@ namespace TinyIoC
         /// <returns>Bool indicating whether the type can be resolved</returns>
         public bool CanResolve(Type resolveType, string name, NamedParameterOverloads parameters, ResolveOptions options)
         {
-            return CanResolveInternal(new TypeRegistration(resolveType, name), parameters, options);
+            return CanResolveInternal(new TypeRegistration(resolveType, name), parameters, options, new ResolutionCache());
         }
 
         /// <summary>
@@ -2694,7 +2731,7 @@ namespace TinyIoC
         /// <returns>IEnumerable</returns>
         public IEnumerable<object> ResolveAll(Type resolveType, bool includeUnnamed)
         {
-            return ResolveAllInternal(resolveType, includeUnnamed);
+            return ResolveAllInternal(resolveType, includeUnnamed, new ResolutionCache());
         }
 
         /// <summary>
@@ -2736,7 +2773,7 @@ namespace TinyIoC
         /// <param name="input">Object to "build up"</param>
         public void BuildUp(object input)
         {
-            BuildUpInternal(input, ResolveOptions.Default);
+            BuildUpInternal(input, ResolveOptions.Default, new ResolutionCache());
         }
 
         /// <summary>
@@ -2746,7 +2783,7 @@ namespace TinyIoC
         /// <param name="resolveOptions">Resolve options to use</param>
         public void BuildUp(object input, ResolveOptions resolveOptions)
         {
-            BuildUpInternal(input, resolveOptions);
+            BuildUpInternal(input, resolveOptions, new ResolutionCache());
         }
 #endregion
 #endregion
@@ -2882,7 +2919,7 @@ namespace TinyIoC
             {
                 try
                 {
-                    return container.ConstructType(requestedType, this.registerImplementation, Constructor, parameters, options);
+                    return container.ConstructType(requestedType, this.registerImplementation, Constructor, parameters, options, new ResolutionCache());
                 }
                 catch (TinyIoCResolutionException ex)
                 {
@@ -3244,7 +3281,7 @@ namespace TinyIoC
 
                 lock (SingletonLock)
                     if (_Current == null)
-                        _Current = container.ConstructType(requestedType, this.registerImplementation, Constructor, options);
+                        _Current = container.ConstructType(requestedType, this.registerImplementation, Constructor, options, new ResolutionCache());
 
                 return _Current;
             }
@@ -3378,7 +3415,7 @@ namespace TinyIoC
                     current = _LifetimeProvider.GetObject();
                     if (current == null)
                     {
-                        current = container.ConstructType(requestedType, this.registerImplementation, Constructor, options);
+                        current = container.ConstructType(requestedType, this.registerImplementation, Constructor, options, new ResolutionCache());
                         _LifetimeProvider.SetObject(current);
                     }
                 }
@@ -3676,7 +3713,7 @@ namespace TinyIoC
             return new MultiInstanceFactory(registerType, registerImplementation);
         }
 
-        private bool CanResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
+        private bool CanResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options, ResolutionCache resolutionCache)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -3691,9 +3728,9 @@ namespace TinyIoC
                     return true;
 
                 if (factory.Constructor == null)
-                    return GetBestConstructor(factory.CreatesType, parameters, options) != null;
+                    return GetBestConstructor(factory.CreatesType, parameters, options, resolutionCache) != null;
                 else
-                    return CanConstruct(factory.Constructor, parameters, options);
+                    return CanConstruct(factory.Constructor, parameters, options, resolutionCache);
             }
 
 #if RESOLVE_OPEN_GENERICS
@@ -3706,9 +3743,9 @@ namespace TinyIoC
                         return true;
 
                     if (factory.Constructor == null)
-                        return GetBestConstructor(factory.CreatesType, parameters, options) != null;
+                        return GetBestConstructor(factory.CreatesType, parameters, options, resolutionCache) != null;
                     else
-                        return CanConstruct(factory.Constructor, parameters, options);
+                        return CanConstruct(factory.Constructor, parameters, options, resolutionCache);
                 }
             }
 #endif
@@ -3716,7 +3753,7 @@ namespace TinyIoC
             // Fail if requesting named resolution and settings set to fail if unresolved
             // Or bubble up if we have a parent
             if (!string.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.Fail)
-                return (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options) : false;
+                return (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options, resolutionCache) : false;
 
             // Attempted unnamed fallback container resolution if relevant and requested
             if (!string.IsNullOrEmpty(name) && options.NamedResolutionFailureAction == NamedResolutionFailureActions.AttemptUnnamedResolution)
@@ -3726,7 +3763,7 @@ namespace TinyIoC
                     if (factory.AssumeConstruction)
                         return true;
 
-                    return GetBestConstructor(factory.CreatesType, parameters, options) != null;
+                    return GetBestConstructor(factory.CreatesType, parameters, options, resolutionCache) != null;
                 }
             }
 
@@ -3741,11 +3778,11 @@ namespace TinyIoC
             // Attempt unregistered construction if possible and requested
             // If we cant', bubble if we have a parent
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (checkType.IsGenericType() && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
-                return (GetBestConstructor(checkType, parameters, options) != null) ? true : (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options) : false;
+                return (GetBestConstructor(checkType, parameters, options, resolutionCache) != null) ? true : (_Parent != null) ? _Parent.CanResolveInternal(registration, parameters, options, resolutionCache) : false;
 
             // Bubble resolution up the container tree if we have a parent
             if (_Parent != null)
-                return _Parent.CanResolveInternal(registration, parameters, options);
+                return _Parent.CanResolveInternal(registration, parameters, options, new ResolutionCache());
 
             return false;
         }
@@ -3828,7 +3865,7 @@ namespace TinyIoC
             return _Parent.GetParentObjectFactory(registration);
         }
 
-        private object ResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
+        private object ResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options, ResolutionCache resolutionCache)
         {
             ObjectFactoryBase factory;
 
@@ -3928,7 +3965,7 @@ namespace TinyIoC
             if ((options.UnregisteredResolutionAction == UnregisteredResolutionActions.AttemptResolve) || (registration.Type.IsGenericType() && options.UnregisteredResolutionAction == UnregisteredResolutionActions.GenericsOnly))
             {
                 if (!registration.Type.IsAbstract() && !registration.Type.IsInterface())
-                    return ConstructType(null, registration.Type, parameters, options);
+                    return ConstructType(null, registration.Type, parameters, options, resolutionCache);
             }
 
             // Unable to resolve - throw
@@ -4037,15 +4074,21 @@ namespace TinyIoC
             return genericResolveAllMethod.Invoke(this, new object[] { false });
         }
 
-        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
+        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options, ResolutionCache resolutionCache)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
 
+            if (resolutionCache.TryGetCanConstruct(ctor, out var canConstruct))
+                return canConstruct;
+
             foreach (var parameter in ctor.GetParameters())
             {
                 if (string.IsNullOrEmpty(parameter.Name))
+                {
+                    resolutionCache.SetCanConstruct(ctor, false);
                     return false;
+                }
 
                 var isParameterOverload = parameters.ContainsKey(parameter.Name);
 
@@ -4054,19 +4097,29 @@ namespace TinyIoC
                 //#else
                 if (parameter.ParameterType.IsPrimitive() && !isParameterOverload)
                     //#endif
+                {
+                    resolutionCache.SetCanConstruct(ctor, false);
                     return false;
+                }
 
-                if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options))
+                if (!isParameterOverload && !CanResolveInternal(new TypeRegistration(parameter.ParameterType), NamedParameterOverloads.Default, options, resolutionCache))
+                {
+                    resolutionCache.SetCanConstruct(ctor, false);
                     return false;
+                }
             }
 
+            resolutionCache.SetCanConstruct(ctor, true);
             return true;
         }
 
-        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters, ResolveOptions options)
+        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters, ResolveOptions options, ResolutionCache resolutionCache)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
+
+            if (resolutionCache.TryGetBestConstructor(type, out var bestConstructor))
+                return bestConstructor;
 
             //#if NETFX_CORE
             //			if (type.GetTypeInfo().IsValueType)
@@ -4081,29 +4134,33 @@ namespace TinyIoC
 
             foreach (var ctor in ctors)
             {
-                if (this.CanConstruct(ctor, parameters, options))
+                if (this.CanConstruct(ctor, parameters, options, resolutionCache))
+                {
+                    resolutionCache.SetBestConstructor(type, ctor);
                     return ctor;
+                }
             }
 
+            resolutionCache.SetBestConstructor(type, null);
             return null;
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, ResolveOptions options)
+        private object ConstructType(Type requestedType, Type implementationType, ResolveOptions options, ResolutionCache resolutionCache)
         {
-            return ConstructType(requestedType, implementationType, null, NamedParameterOverloads.Default, options);
+            return ConstructType(requestedType, implementationType, null, NamedParameterOverloads.Default, options, resolutionCache);
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, ResolveOptions options)
+        private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, ResolveOptions options, ResolutionCache resolutionCache)
         {
-            return ConstructType(requestedType, implementationType, constructor, NamedParameterOverloads.Default, options);
+            return ConstructType(requestedType, implementationType, constructor, NamedParameterOverloads.Default, options, resolutionCache);
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, NamedParameterOverloads parameters, ResolveOptions options)
+        private object ConstructType(Type requestedType, Type implementationType, NamedParameterOverloads parameters, ResolveOptions options, ResolutionCache resolutionCache)
         {
-            return ConstructType(requestedType, implementationType, null, parameters, options);
+            return ConstructType(requestedType, implementationType, null, parameters, options, resolutionCache);
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options)
+        private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options, ResolutionCache resolutionCache)
         {
             var typeToConstruct = implementationType;
 
@@ -4119,7 +4176,7 @@ namespace TinyIoC
               // if we can't construct any then get the constructor
               // with the least number of parameters so we can throw a meaningful
               // resolve exception
-              constructor = GetBestConstructor(typeToConstruct, parameters, options) ?? TinyIoCReflectionCache.GetUsableConstructors(typeToConstruct).LastOrDefault();
+              constructor = GetBestConstructor(typeToConstruct, parameters, options, resolutionCache) ?? TinyIoCReflectionCache.GetUsableConstructors(typeToConstruct).LastOrDefault();
             }
 
             if (constructor == null)
@@ -4139,7 +4196,8 @@ namespace TinyIoC
 																						        ResolveInternal(
 																								        new TypeRegistration(currentParam.ParameterType),
 																								        NamedParameterOverloads.Default,
-																								        options);
+																								        options,
+																									resolutionCache);
 				        }
                 catch (TinyIoCResolutionException ex)
                 {
@@ -4202,7 +4260,7 @@ namespace TinyIoC
         }
 #endif
 
-        private void BuildUpInternal(object input, ResolveOptions resolveOptions)
+        private void BuildUpInternal(object input, ResolveOptions resolveOptions, ResolutionCache resolutionCache)
         {
             //#if NETFX_CORE
             //			var properties = from property in input.GetType().GetTypeInfo().DeclaredProperties
@@ -4220,7 +4278,7 @@ namespace TinyIoC
                 {
                     try
                     {
-                        property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions), null);
+                        property.SetValue(input, ResolveInternal(new TypeRegistration(property.PropertyType), NamedParameterOverloads.Default, resolveOptions, resolutionCache), null);
                     }
                     catch (TinyIoCResolutionException)
                     {
@@ -4240,14 +4298,14 @@ namespace TinyIoC
             return registrations.Concat(_Parent.GetParentRegistrationsForType(resolveType));
         }
 
-        private IEnumerable<object> ResolveAllInternal(Type resolveType, bool includeUnnamed)
+        private IEnumerable<object> ResolveAllInternal(Type resolveType, bool includeUnnamed, ResolutionCache resolutionCache)
         {
             var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType).Concat(GetParentRegistrationsForType(resolveType)).Distinct();
 
             if (!includeUnnamed)
                 registrations = registrations.Where(tr => tr.Name != string.Empty);
 
-            return registrations.Select(registration => this.ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default));
+            return registrations.Select(registration => this.ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default, resolutionCache));
         }
 
         private static bool IsValidAssignment(Type registerType, Type registerImplementation)
